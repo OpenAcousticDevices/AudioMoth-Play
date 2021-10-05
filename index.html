@@ -78,7 +78,7 @@
                                 <button class="btn btn-primary nav-button" id="waveform-zoom-out-button" disabled>
                                     <img class="button-icon" src="./assets/zoom-out.svg" alt="Bootstrap">
                                 </button>
-                                <select id="amplitude-threshold-scale-select" style="vertical-align: middle; height: 35px;">
+                                <select class="custom-select" id="amplitude-threshold-scale-select" style="vertical-align: middle; height: 35px; width: 120px; font-size: 10pt;">
                                     <option value="1">16-Bit</option>
                                     <option value="2">Decibel</option>
                                     <option value="0" selected>Percentage</option>
@@ -239,7 +239,7 @@
                             
                                 <div class="row" style="margin-top: 8px; margin-bottom: 8px;">
                                     <div class="col-12" style="margin-left: 16px;">
-                                        <label class="settings-text" id="filter-label" style="width: 100%; resize:none; text-align: left; font-weight: normal;">Recordings will be filtered to frequencies above 0.0 kHz.</label>
+                                        <label class="settings-text" id="filter-label" style="width: 100%; resize:none; text-align: left; font-weight: normal;">Recordings will not be filtered.</label>
                                     </div>
                                 </div>
                             
@@ -364,7 +364,7 @@
                                 </button>
                             </div>
                             <div class="col-3" style="padding: 0px; text-align: left;">
-                                <select id="playback-mode-select" style="vertical-align: middle; width: 185px; height: 35px;">
+                                <select class="custom-select" id="playback-mode-select" style="vertical-align: middle; width: 185px; height: 35px; font-size: 10pt;">
                                     <option id="playback-mode-option-all" value="0" selected="selected">Play original WAV file</option>
                                     <option id="playback-mode-option-mute" value="1">Play resulting T.WAV file</option>
                                     <option id="playback-mode-option-skip" value="2">Play expanded T.WAV file</option>
