@@ -2882,7 +2882,7 @@ function playAnimation () {
     const displayedTime = displayLength / getSampleRate();
     const progress = getTimestamp() / displayedTime * playbackRate;
 
-    console.log(getTimestamp());
+    console.log('Timestamp:', getTimestamp());
 
     const playbackMode = getPlaybackMode();
 
