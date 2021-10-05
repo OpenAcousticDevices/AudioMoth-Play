@@ -1,0 +1,22 @@
+{
+    "name": "audiomoth-filter-playground",
+    "version": "1.0.0",
+    "description": "A web-based analysis tool for experimenting with filter and amplitude threshold settings available in the AudioMoth Configuration App.",
+    "license": "MIT",
+    "homepage": "https://playground.openacousticdevices.info/",
+    "author": "openacousticdevices.info",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenAcousticDevices/AudioMoth-Configuration-App.git"
+    },
+    "devDependencies": {
+        "eslint": "^7.28.0",
+        "eslint-config-standard": "^16.0.3",
+        "eslint-plugin-import": "^2.23.4",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-promise": "^5.1.0",
+        "eslint-plugin-standard": "^5.0.0"
+    },
+    "dependencies": {},
+    "engines": {}
+}

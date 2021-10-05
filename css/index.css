@@ -1,0 +1,89 @@
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.table>tbody>tr>td,
+.table>tbody>tr>th {
+  border: none;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.slider-selection {
+  background: rgb(173, 189, 241);
+}
+
+#playback-speed-slider .slider-track {
+  background: lightgray;
+}
+
+#playback-speed-slider .slider-selection {
+  background: lightgray;
+}
+
+#playback-speed-slider .slider-tick {
+  background: lightgray;
+  opacity: 1.0;
+}
+
+.wrapper {
+  position: relative;
+}
+
+.wrapper .label-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.wrapper .plot-canvas {
+  position: absolute;
+  top: 0;
+  left: 45px;
+}
+
+:root {
+  --plot-width-v: 810px;
+  --control-width-v: 543px;
+  --plot-control-gap-v: 20px;
+}
+
+.total-width {
+  max-width: calc(var(--plot-width-v) + var(--control-width-v) + var(--plot-control-gap-v));
+  padding: 0px;
+}
+
+.plot-width {
+  min-width: var(--plot-width-v);
+  max-width: var(--plot-width-v);
+}
+
+.control-width {
+  min-width: var(--control-width-v);
+  max-width: var(--control-width-v);
+}
+
+.control-margin {
+  margin-left: var(--plot-control-gap-v);
+}
+
+.button-icon {
+  width: 15px;
+  height: 15px;
+  vertical-align: initial;
+}
+
+.nav-button {
+  width: 40px;
+  height: 35px;
+}
