@@ -162,7 +162,7 @@ const amplitudethresholdMaxLabel = document.getElementById('amplitude-threshold-
 const amplitudethresholdMinLabel = document.getElementById('amplitude-threshold-min-label');
 
 const amplitudethresholdCheckboxLabel = document.getElementById('amplitude-threshold-checkbox-label');
-const amplitudethresholdCheckbox = document.getElementById('amplitude-threshold-checkbox');
+const amplitudeThresholdCheckbox = document.getElementById('amplitude-threshold-checkbox');
 const amplitudethresholdSliderHolder = document.getElementById('amplitude-threshold-slider-holder');
 const amplitudethresholdSlider = new Slider('#amplitude-threshold-slider', {});
 const amplitudethresholdLabel = document.getElementById('amplitude-threshold-label');
@@ -598,7 +598,7 @@ function updateAmplitudethresholdLabel () {
  */
 function updateAmplitudethresholdScale () {
 
-    if (amplitudethresholdCheckbox.checked) {
+    if (amplitudeThresholdCheckbox.checked) {
 
         updateAmplitudethresholdLabel();
 
@@ -634,7 +634,7 @@ function updateAmplitudethresholdScale () {
  */
 function updateAmplitudethresholdUI () {
 
-    if (amplitudethresholdCheckbox.checked && sampleCount !== 0 && !drawing && !playing) {
+    if (amplitudeThresholdCheckbox.checked && sampleCount !== 0 && !drawing && !playing) {
 
         playbackModeOptionMute.disabled = false;
         playbackModeOptionSkip.disabled = false;
@@ -669,7 +669,7 @@ function updateAmplitudethresholdUI () {
 
         // If the UI is disabled because app is drawing, rather than manually disabled, don't rewrite the label
 
-        if (!amplitudethresholdCheckbox.disabled) {
+        if (!amplitudeThresholdCheckbox.disabled) {
 
             amplitudethresholdLabel.textContent = 'All audio will be written to a WAV file.';
 
@@ -1411,7 +1411,7 @@ function drawWaveformPlotAndReenableUI (samples, isInitialRender, spectrogramCom
         resetCanvas(waveformThresholdLineCanvas);
         clearSVG(waveformLoadingSVG);
 
-        if (amplitudethresholdCheckbox.checked) {
+        if (amplitudeThresholdCheckbox.checked) {
 
             drawThresholdedPeriods();
             drawThresholdLines();
@@ -1434,7 +1434,7 @@ function drawWaveformPlotAndReenableUI (samples, isInitialRender, spectrogramCom
         filterCheckboxLabel.style.color = '';
         updateFilterUI();
 
-        amplitudethresholdCheckbox.disabled = false;
+        amplitudeThresholdCheckbox.disabled = false;
         amplitudethresholdCheckboxLabel.style.color = '';
         updateAmplitudethresholdUI();
 
@@ -1861,7 +1861,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray) {
 
     // Apply amplitude threshold
 
-    if (amplitudethresholdCheckbox.checked && updateThresholdedSampleArray) {
+    if (amplitudeThresholdCheckbox.checked && updateThresholdedSampleArray) {
 
         const threshold = getAmplitudeThreshold();
         const minimumTriggerDurationSecs = MINIMUM_TRIGGER_DURATIONS[getSelectedRadioValue('amplitude-threshold-duration-radio')];
@@ -1924,7 +1924,7 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
 
     }
 
-    if (!filterCheckbox.checked && !amplitudethresholdCheckbox.checked) {
+    if (!filterCheckbox.checked && !amplitudeThresholdCheckbox.checked) {
 
         processContents(unfilteredSamples, false, true);
 
@@ -2075,7 +2075,7 @@ function updateFileSizePanel () {
     const totalSeconds = unfilteredSamples.length / getSampleRate();
     const totalFileSize = getSampleRate() * 2 * totalSeconds;
 
-    if (amplitudethresholdCheckbox.checked) {
+    if (amplitudeThresholdCheckbox.checked) {
 
         const thresholdedSeconds = thresholdedSampleCount / getSampleRate();
 
@@ -2231,7 +2231,7 @@ async function loadFile (exampleFilePath) {
 
         // Generate spectrogram frames and draw plots
 
-        if (!filterCheckbox.checked && !amplitudethresholdCheckbox.checked) {
+        if (!filterCheckbox.checked && !amplitudeThresholdCheckbox.checked) {
 
             processContents(unfilteredSamples, true, true);
 
@@ -2636,7 +2636,7 @@ bandPassFilterSlider.on('slideStop', handleFilterChange);
 lowPassFilterSlider.on('slideStop', handleFilterChange);
 highPassFilterSlider.on('slideStop', handleFilterChange);
 
-amplitudethresholdCheckbox.addEventListener('change', (e) => {
+amplitudeThresholdCheckbox.addEventListener('change', (e) => {
 
     if (sampleCount === 0 || drawing || playing) {
 
@@ -2653,7 +2653,7 @@ amplitudethresholdCheckbox.addEventListener('change', (e) => {
 
     // Draw or clear the amplitude threshold lines
 
-    if (amplitudethresholdCheckbox.checked) {
+    if (amplitudeThresholdCheckbox.checked) {
 
         drawThresholdLines();
 
@@ -2700,7 +2700,7 @@ function reset () {
 
         filterCheckbox.checked = false;
         updateFilterUI();
-        amplitudethresholdCheckbox.checked = false;
+        amplitudeThresholdCheckbox.checked = false;
         updateAmplitudethresholdUI();
 
         updatePlots(false, true, true, false);
@@ -2809,7 +2809,7 @@ function exportConfig () {
         filterType: filterTypes[filterIndex],
         lowerFilter: filterValue0,
         higherFilter: filterValue1,
-        amplitudeThresholdingEnabled: amplitudethresholdCheckbox.checked,
+        amplitudeThresholdingEnabled: amplitudeThresholdCheckbox.checked,
         amplitudeThreshold: amplitudeThreshold,
         minimumAmplitudeThresholdDuration: minimumTriggerDuration,
         amplitudeThresholdingScale: amplitudeThresholdScales[amplitudethresholdScaleIndex]
@@ -2857,7 +2857,7 @@ function getPlaybackMode () {
 
     // If amplitude threshold isn't on, all modes are equivalent to playing all samples
 
-    playbackMode = (amplitudethresholdCheckbox.checked) ? playbackMode : PLAYBACK_MODE_ALL;
+    playbackMode = (amplitudeThresholdCheckbox.checked) ? playbackMode : PLAYBACK_MODE_ALL;
 
     return playbackMode;
 
@@ -2961,7 +2961,7 @@ function stopEvent () {
     filterCheckboxLabel.style.color = '';
     updateFilterUI();
 
-    amplitudethresholdCheckbox.disabled = false;
+    amplitudeThresholdCheckbox.disabled = false;
     amplitudethresholdCheckboxLabel.style.color = '';
     updateAmplitudethresholdUI();
 
@@ -3083,7 +3083,7 @@ playButton.addEventListener('click', () => {
             waveformZoomOutButton.disabled = true;
 
             filterCheckbox.disabled = true;
-            amplitudethresholdCheckbox.disabled = true;
+            amplitudeThresholdCheckbox.disabled = true;
 
             resetButton.disabled = true;
             exportButton.disabled = true;
