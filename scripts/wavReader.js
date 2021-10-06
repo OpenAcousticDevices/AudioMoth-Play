@@ -266,13 +266,24 @@ function readWavContents (contents) {
 
     let trimmed = false;
 
-    if ((contents.byteLength / 2) - LENGTH_OF_WAV_HEADER > maxSamples) {
+    const sampleCount = (contents.byteLength / 2) - LENGTH_OF_WAV_HEADER;
+
+    if (sampleCount > maxSamples) {
 
         console.log('Trimming to initial 60 seconds of recording');
 
         trimmed = true;
 
         samples = new Int16Array(contents, LENGTH_OF_WAV_HEADER, maxSamples);
+
+    } else if (sampleCount <= 0) {
+
+        return {
+            success: false,
+            error: 'Input file has zero samples.',
+            header: null,
+            samples: null
+        };
 
     } else {
 
