@@ -4,7 +4,7 @@
  * June 2021
  *****************************************************************************/
 
-/* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, Slider, readWav, applyLowPassFilter, applyHighPassFilter, applyBandPassFilter, LOW_PASS_FILTER, BAND_PASS_FILTER, HIGH_PASS_FILTER, applyAmplitudeThreshold, playAudio, stopAudio, getTimestamp, XMLHttpRequest, readWavContents, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_ALL, AMPLITUDE_THRESHOLD_BUFFER_LENGTH */
+/* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, Slider, readWav, applyLowPassFilter, applyHighPassFilter, applyBandPassFilter, LOW_PASS_FILTER, BAND_PASS_FILTER, HIGH_PASS_FILTER, applyAmplitudeThreshold, playAudio, stopAudio, getTimestamp, XMLHttpRequest, readWavContents, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_ALL, AMPLITUDE_THRESHOLD_BUFFER_LENGTH, createAudioContext */
 
 // Use these values to fill in the axis labels before samples have been loaded
 
@@ -2226,6 +2226,10 @@ async function loadFile (exampleFilePath) {
             return true;
 
         };
+
+        // Create audio context to allow for playback
+
+        createAudioContext();
 
         // Generate spectrogram frames and draw plots
 

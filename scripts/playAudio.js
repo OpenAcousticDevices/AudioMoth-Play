@@ -9,6 +9,8 @@
 let audioContext;
 let source;
 
+let startTime = 0.0;
+
 // Range of sample rates guaranteed to be supported by browsers
 
 const MIN_SAMPLE_RATE = 8000;
@@ -33,6 +35,20 @@ function scaleValue (x, max, min) {
 
 }
 
+function createAudioContext () {
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+    if (audioContext) {
+
+        audioContext.close();
+
+    }
+
+    audioContext = new AudioContext();
+
+}
+
 /**
  * Given a set of samples, play from start index for the given length
  * @param {number[]} samples Array of 16-bit samples
@@ -43,8 +59,7 @@ function scaleValue (x, max, min) {
  */
 function playAudio (samples, samplesAboveThreshold, start, length, sampleRate, playbackRate, mode, playbackBufferLength, endEvent) {
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioContext = new AudioContext();
+    startTime = audioContext.currentTime;
 
     const targetSampleRate = sampleRate * playbackRate;
 
@@ -177,8 +192,6 @@ function playAudio (samples, samplesAboveThreshold, start, length, sampleRate, p
 
     source.addEventListener('ended', () => {
 
-        audioContext.close();
-
         endEvent();
 
     });
@@ -206,6 +219,6 @@ function stopAudio () {
  */
 function getTimestamp () {
 
-    return audioContext.getOutputTimestamp().contextTime;
+    return audioContext.currentTime - startTime;
 
 }
