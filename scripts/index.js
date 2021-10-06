@@ -656,8 +656,6 @@ function updateAmplitudethresholdUI () {
 
     } else {
 
-        playbackModeSelect.value = 0;
-
         playbackModeOptionMute.disabled = true;
         playbackModeOptionSkip.disabled = true;
 
@@ -2660,6 +2658,7 @@ amplitudeThresholdCheckbox.addEventListener('change', (e) => {
     } else {
 
         resetCanvas(waveformThresholdLineCanvas);
+        playbackModeSelect.value = 0;
 
     }
 
@@ -2702,6 +2701,8 @@ function reset () {
         updateFilterUI();
         amplitudeThresholdCheckbox.checked = false;
         updateAmplitudethresholdUI();
+
+        playbackModeSelect.value = 0;
 
         updatePlots(false, true, true, false);
 
