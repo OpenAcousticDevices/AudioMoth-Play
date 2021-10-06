@@ -2882,8 +2882,6 @@ function playAnimation () {
     const displayedTime = displayLength / getSampleRate();
     const progress = getTimestamp() / displayedTime * playbackRate;
 
-    console.log('Timestamp:', getTimestamp());
-
     const playbackMode = getPlaybackMode();
 
     // Calculate x co-ordinate of playback marker
