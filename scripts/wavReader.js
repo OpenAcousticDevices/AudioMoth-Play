@@ -266,7 +266,7 @@ function readWavContents (contents) {
 
     let trimmed = false;
 
-    const sampleCount = (contents.byteLength / 2) - LENGTH_OF_WAV_HEADER;
+    const sampleCount = (contents.byteLength - LENGTH_OF_WAV_HEADER) / 2;
 
     if (sampleCount > maxSamples) {
 
@@ -280,7 +280,7 @@ function readWavContents (contents) {
 
         return {
             success: false,
-            error: 'Input file has zero samples.',
+            error: 'Input file has no audio samples.',
             header: null,
             samples: null
         };
