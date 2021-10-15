@@ -3234,4 +3234,10 @@ if (!isChrome) {
     fileSelectionDiv.style.display = 'none';
     fileSelectionTitleDiv.style.display = 'none';
 
+    setTimeout(() => {
+
+        browserErrorDisplay.style.display = 'none';
+
+    }, 3000);
+
 }
