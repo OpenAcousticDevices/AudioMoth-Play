@@ -25,9 +25,13 @@ const fileSelectionTitleDiv = document.getElementById('file-selection-title-div'
 const fileButton = document.getElementById('file-button');
 const fileSpan = document.getElementById('file-span');
 const trimmedSpan = document.getElementById('trimmed-span');
+
+// Example file variables
+
 const exampleLinks = [document.getElementById('example-link1'), document.getElementById('example-link2'), document.getElementById('example-link3')];
 const examplePaths = ['./assets/BAT.WAV', './assets/SWEEP.WAV', './assets/METRONOME.WAV'];
 const exampleNames = ['Bat', 'Frequency sweep', 'Metronome'];
+const exampleResultObjects = {};
 
 // Plot navigation buttons
 
@@ -1984,17 +1988,11 @@ function processReadResult (result, callback) {
     sampleRate = result.header.wavFormat.samplesPerSecond;
     sampleCount = result.samples.length;
 
-    filteredSamples = new Array(sampleCount);
-
     const lengthSecs = sampleCount / sampleRate;
 
     console.log('Loaded ' + sampleCount + ' samples at a sample rate of ' + sampleRate + ' Hz (' + lengthSecs + ' seconds)');
 
-    // If file has been trimmed, display warning
-
-    trimmedSpan.style.display = result.trimmed ? '' : 'none';
-
-    callback(result.samples);
+    callback(result);
 
 }
 
@@ -2010,21 +2008,9 @@ async function readFromFile (exampleFilePath, callback) {
 
     if (exampleFilePath) {
 
-        const req = new XMLHttpRequest();
+        result = exampleResultObjects[exampleFilePath];
 
-        req.open('GET', exampleFilePath, true);
-        req.responseType = 'arraybuffer';
-
-        req.onload = () => {
-
-            const arrayBuffer = req.response; // Note: not oReq.responseText
-            result = readWavContents(arrayBuffer);
-
-            processReadResult(result, callback);
-
-        };
-
-        req.send(null);
+        processReadResult(result, callback);
 
     } else {
 
@@ -2157,7 +2143,9 @@ async function loadFile (exampleFilePath, exampleName) {
 
     // Read samples
 
-    await readFromFile(exampleFilePath, (samples) => {
+    await readFromFile(exampleFilePath, (result) => {
+
+        const samples = result.samples;
 
         // If no samples can be read, return
 
@@ -2166,6 +2154,14 @@ async function loadFile (exampleFilePath, exampleName) {
             return;
 
         }
+
+        filteredSamples = new Array(sampleCount);
+
+        // If file has been trimmed, display warning
+
+        trimmedSpan.style.display = result.trimmed ? '' : 'none';
+
+        // Reset UI
 
         samplesAboveThreshold = new Array(Math.ceil(samples.length / AMPLITUDE_THRESHOLD_BUFFER_LENGTH));
 
@@ -2255,6 +2251,22 @@ async function loadFile (exampleFilePath, exampleName) {
         }
 
     });
+
+}
+
+async function loadExampleFiles () {
+
+    for (let i = 0; i < exampleNames.length; i++) {
+
+        await readFromFile(examplePaths[i], (result) => {
+
+            console.log('Loaded', exampleNames);
+
+            exampleResultObjects[examplePaths[i]] = result;
+
+        });
+
+    }
 
 }
 
@@ -3242,3 +3254,6 @@ if (!isChrome) {
     }, 3000);
 
 }
+
+loadExampleFiles();
+
