@@ -2278,11 +2278,13 @@ async function loadFile (exampleFilePath, exampleName) {
 
 async function loadExampleFiles () {
 
+    console.log('Loading example files');
+
     for (let i = 0; i < exampleNames.length; i++) {
 
         await readFromFile(examplePaths[i], (result) => {
 
-            console.log('Loaded', exampleNames);
+            console.log('Loaded', exampleNames[i]);
 
             exampleResultObjects[examplePaths[i]] = result;
 
