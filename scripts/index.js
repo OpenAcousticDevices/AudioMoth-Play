@@ -2008,9 +2008,31 @@ async function readFromFile (exampleFilePath, callback) {
 
     if (exampleFilePath) {
 
-        result = exampleResultObjects[exampleFilePath];
+        if (exampleResultObjects[exampleFilePath] === undefined) {
 
-        processReadResult(result, callback);
+            const req = new XMLHttpRequest();
+
+            req.open('GET', exampleFilePath, true);
+            req.responseType = 'arraybuffer';
+
+            req.onload = () => {
+
+                const arrayBuffer = req.response; // Note: not oReq.responseText
+                result = readWavContents(arrayBuffer);
+
+                processReadResult(result, callback);
+
+            };
+
+            req.send(null);
+
+        } else {
+
+            result = exampleResultObjects[exampleFilePath];
+
+            processReadResult(result, callback);
+
+        }
 
     } else {
 
