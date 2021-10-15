@@ -2097,8 +2097,9 @@ function updateFileSizePanel () {
 /**
  * Load a file either from a user-selected location or a hosted example file
  * @param {string} exampleFilePath Path of an example recording if file isn't chosen by user
+ * @param {string} exampleName Name of example file if file isn't chosen by user
  */
-async function loadFile (exampleFilePath) {
+async function loadFile (exampleFilePath, exampleName) {
 
     let fileName;
 
@@ -2106,7 +2107,7 @@ async function loadFile (exampleFilePath) {
 
         console.log('Loading example file');
 
-        fileName = 'example.WAV';
+        fileName = exampleName;
 
     } else {
 
@@ -2277,7 +2278,7 @@ for (let i = 0; i < examplePaths.length; i++) {
 
         if (!drawing && !playing) {
 
-            loadFile(examplePaths[i]);
+            loadFile(examplePaths[i], exampleNames[i]);
 
         }
 
