@@ -2280,6 +2280,8 @@ async function loadExampleFiles () {
 
     console.log('Loading example files');
 
+    fileSpan.innerText = 'Loading example file...';
+
     drawing = true;
 
     for (let i = 0; i < exampleNames.length; i++) {
