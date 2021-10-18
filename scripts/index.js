@@ -3275,7 +3275,7 @@ if (!isChrome) {
 
         browserErrorDisplay.style.display = 'none';
 
-    }, 3000);
+    }, 16000);
 
 }
 
