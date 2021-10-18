@@ -2280,6 +2280,8 @@ async function loadExampleFiles () {
 
     console.log('Loading example files');
 
+    drawing = true;
+
     for (let i = 0; i < exampleNames.length; i++) {
 
         await readFromFile(examplePaths[i], (result) => {
@@ -2287,6 +2289,12 @@ async function loadExampleFiles () {
             console.log('Loaded', exampleNames[i]);
 
             exampleResultObjects[examplePaths[i]] = result;
+
+            if (i === exampleNames.length - 1) {
+
+                loadFile(examplePaths[0], exampleNames[0]);
+
+            }
 
         });
 
