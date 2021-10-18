@@ -20,9 +20,8 @@ const ERROR_DISPLAY_TIME = 3000;
 
 // File selection elements
 
-const fileSelectionDiv = document.getElementById('file-selection-div');
-const fileSelectionTitleDiv = document.getElementById('file-selection-title-div');
 const fileButton = document.getElementById('file-button');
+const disabledFileButton = document.getElementById('disabled-file-button');
 const fileSpan = document.getElementById('file-span');
 const trimmedSpan = document.getElementById('trimmed-span');
 
@@ -3267,9 +3266,8 @@ const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigat
 if (!isChrome) {
 
     browserErrorDisplay.style.display = '';
-    fileButton.disabled = true;
-    fileSelectionDiv.style.display = 'none';
-    fileSelectionTitleDiv.style.display = 'none';
+    disabledFileButton.style.display = '';
+    fileButton.style.display = 'none';
 
     setTimeout(() => {
 
@@ -3280,4 +3278,3 @@ if (!isChrome) {
 }
 
 loadExampleFiles();
-
