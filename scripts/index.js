@@ -20,6 +20,7 @@ const ERROR_DISPLAY_TIME = 3000;
 
 // File selection elements
 
+const fileSelectionTitleDiv = document.getElementById('file-selection-title-div');
 const fileButton = document.getElementById('file-button');
 const disabledFileButton = document.getElementById('disabled-file-button');
 const fileSpan = document.getElementById('file-span');
@@ -3265,6 +3266,7 @@ const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigat
 
 if (!isChrome) {
 
+    fileSelectionTitleDiv.style.color = '#D3D3D3';
     browserErrorDisplay.style.display = '';
     disabledFileButton.style.display = '';
     fileButton.style.display = 'none';
