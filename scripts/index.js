@@ -2296,6 +2296,9 @@ async function loadExampleFiles () {
 
                 loadFile(examplePaths[0], exampleNames[0]);
 
+                disabledFileButton.style.display = 'none';
+                fileButton.style.display = '';
+
             }
 
         });
