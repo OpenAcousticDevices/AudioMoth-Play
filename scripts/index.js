@@ -1424,6 +1424,9 @@ function drawWaveformPlotAndReenableUI (samples, isInitialRender, spectrogramCom
 
         drawing = false;
 
+        disabledFileButton.style.display = isChrome ? 'none' : '';
+        fileButton.style.display = isChrome ? '' : 'none';
+
         fileButton.disabled = false;
 
         resetButton.disabled = false;
