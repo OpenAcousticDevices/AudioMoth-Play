@@ -3245,11 +3245,17 @@ playButton.addEventListener('click', () => {
 
 });
 
-// Hide error box on click
+// Hide error boxes on click
 
 errorDisplay.addEventListener('click', () => {
 
     errorDisplay.style.display = 'none';
+
+});
+
+browserErrorDisplay.addEventListener('click', () => {
+
+    browserErrorDisplay.style.display = 'none';
 
 });
 
