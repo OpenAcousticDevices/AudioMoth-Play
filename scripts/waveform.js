@@ -8,9 +8,6 @@
 
 const wavCanvas = document.getElementById('waveform-canvas');
 
-const WAV_PIXEL_WIDTH = wavCanvas.width;
-const WAV_PIXEL_HEIGHT = wavCanvas.height;
-
 /**
  * Draw the waveform plot
  * @param {number[]} data Absolute values of samples to be plotted. Either raw data or grouped into columns.
@@ -25,6 +22,8 @@ function renderRawWaveform (pointData, startTime, callback) {
     ctx.lineWidth = 1;
 
     ctx.beginPath();
+
+    const WAV_PIXEL_HEIGHT = wavCanvas.height;
 
     ctx.moveTo(0, WAV_PIXEL_HEIGHT / 2);
 
@@ -55,13 +54,16 @@ function renderRawWaveform (pointData, startTime, callback) {
 
 /**
  * Draw the waveform plot
- * @param {number[]} data Absolute values of samples to be plotted. Either raw data or grouped into columns.
+ * @param {number[]} data Absolute values of samples to be plotted
  * @param {number} startTime Time when render started
  * @param {function} callback Function called on completion
  */
 function renderWaveform (data, startTime, callback) {
 
     const ctx = wavCanvas.getContext('2d');
+
+    const WAV_PIXEL_WIDTH = wavCanvas.width;
+    const WAV_PIXEL_HEIGHT = wavCanvas.height;
 
     const id = ctx.getImageData(0, 0, WAV_PIXEL_WIDTH, WAV_PIXEL_HEIGHT);
 
@@ -106,6 +108,9 @@ function renderWaveform (data, startTime, callback) {
  * @param {function} callback Function called on completion
  */
 function drawWaveform (samples, offset, length, yZoom, callback) {
+
+    const WAV_PIXEL_WIDTH = wavCanvas.width;
+    const WAV_PIXEL_HEIGHT = wavCanvas.height;
 
     const halfHeight = WAV_PIXEL_HEIGHT / 2;
 

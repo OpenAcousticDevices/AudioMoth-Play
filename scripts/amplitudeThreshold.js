@@ -1,5 +1,5 @@
 /****************************************************************************
- * amplitudethreshold.js
+ * amplitudeThreshold.js
  * openacousticdevices.info
  * July 2021
  *****************************************************************************/
@@ -13,6 +13,7 @@ const AMPLITUDE_THRESHOLD_BUFFER_LENGTH = 16384;
  * @param {number[]} samples Samples to be processed
  * @param {number} threshold Amplitude threshold value
  * @param {number} minTriggerDurationSamples Minimum trigger duration in samples
+ * @param {boolean[]} output Whether or not each sample is above the given threshold
  * @returns Samples with amplitude threshold applied
  */
 function applyAmplitudeThreshold (samples, threshold, minTriggerDurationSamples, output) {

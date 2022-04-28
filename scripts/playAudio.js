@@ -18,9 +18,9 @@ const MAX_SAMPLE_RATE = 96000;
 
 // Modes which dictate how amplitude thresholded periods are handled
 
-const PLAYBACK_MODE_ALL = 0;
-const PLAYBACK_MODE_SKIP = 1;
-const PLAYBACK_MODE_MUTE = 2;
+const PLAYBACK_MODE_ALL = 0; // Play all samples, ignoring the threshold
+const PLAYBACK_MODE_SKIP = 1; // Skip over samples below the threshold, jumping to unthresholded periods
+const PLAYBACK_MODE_MUTE = 2; // Play silence when at a sample below the threshold
 
 /**
  * Scale a given value between a max and min
@@ -35,6 +35,9 @@ function scaleValue (x, max, min) {
 
 }
 
+/**
+ * Create the AudioContext object required for playback
+ */
 function createAudioContext () {
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -52,12 +55,16 @@ function createAudioContext () {
 /**
  * Given a set of samples, play from start index for the given length
  * @param {number[]} samples Array of 16-bit samples
+ * @param {boolean[]} unthresholdedSamples Whether or not each sample is above the chosen threshold
  * @param {number} start Start index for playback
  * @param {number} length Number of samples which should be played
  * @param {number} sampleRate Sample rate of audio
+ * @param {number} playbackRate Speed of playback
+ * @param {number} mode One of PLAYBACK_MODE_ALL, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_MUTE
+ * @param {number} playbackBufferLength Length of buffer holding samples to be played
  * @param {function} endEvent Callback for when playback ends or is manually stopped
  */
-function playAudio (samples, samplesAboveThreshold, start, length, sampleRate, playbackRate, mode, playbackBufferLength, endEvent) {
+function playAudio (samples, unthresholdedSamples, start, length, sampleRate, playbackRate, mode, playbackBufferLength, endEvent) {
 
     startTime = audioContext.currentTime;
 
@@ -98,7 +105,7 @@ function playAudio (samples, samplesAboveThreshold, start, length, sampleRate, p
 
             const bufferIndex = Math.floor(index / AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
 
-            thresholded = !samplesAboveThreshold[bufferIndex];
+            thresholded = !unthresholdedSamples[bufferIndex];
 
         }
 

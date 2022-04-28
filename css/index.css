@@ -87,3 +87,11 @@ input::-webkit-inner-spin-button {
   width: 40px;
   height: 35px;
 }
+
+#disabled-filter-slider .slider-handle {
+  display: none;
+}
+
+.grey {
+  color: #D3D3D3;
+}

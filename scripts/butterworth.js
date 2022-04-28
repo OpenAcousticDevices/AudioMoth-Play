@@ -6,9 +6,9 @@
 
 /* global Complex */
 
-const LOW_PASS_FILTER = 0;
-const BAND_PASS_FILTER = 1;
-const HIGH_PASS_FILTER = 2;
+const BUTTERWORTH_FILTER_LOW = 0;
+const BUTTERWORTH_FILTER_BAND = 1;
+const BUTTERWORTH_FILTER_HIGH = 2;
 
 const sPoles = [Complex.ZERO, Complex.ZERO];
 const sZeroes = [Complex.ZERO, Complex.ZERO];
@@ -92,7 +92,7 @@ function designFilter (filterType, sampleRate, freq1, freq2) {
     const warpedAlpha1 = Math.tan(Math.PI * alpha1) / Math.PI;
     const warpedAlpha2 = Math.tan(Math.PI * alpha2) / Math.PI;
 
-    if (filterType === LOW_PASS_FILTER) {
+    if (filterType === BUTTERWORTH_FILTER_LOW) {
 
         // Calculate S poles
 
@@ -123,7 +123,7 @@ function designFilter (filterType, sampleRate, freq1, freq2) {
 
         filterCoefficients.gain = 1.0 / Math.hypot(dcGain.re, dcGain.im);
 
-    } else if (filterType === HIGH_PASS_FILTER) {
+    } else if (filterType === BUTTERWORTH_FILTER_HIGH) {
 
         // Calculate S poles
 
@@ -155,7 +155,7 @@ function designFilter (filterType, sampleRate, freq1, freq2) {
 
         filterCoefficients.gain = 1.0 / Math.hypot(hfGain.re, hfGain.im);
 
-    } else if (filterType === BAND_PASS_FILTER) {
+    } else if (filterType === BUTTERWORTH_FILTER_BAND) {
 
         // Calculate S poles
 
@@ -225,7 +225,7 @@ function applyLowPassFilter (input, output, sampleRate, freq) {
 
     const length = input.length;
 
-    const filterCoefficients = designFilter(LOW_PASS_FILTER, sampleRate, freq, 0);
+    const filterCoefficients = designFilter(BUTTERWORTH_FILTER_LOW, sampleRate, freq, 0);
 
     const filter = {
         xv: [0.0, 0.0, 0.0],
@@ -262,7 +262,7 @@ function applyBandPassFilter (input, output, sampleRate, freq1, freq2) {
 
     }
 
-    const filterCoefficients = designFilter(BAND_PASS_FILTER, sampleRate, freq1, freq2);
+    const filterCoefficients = designFilter(BUTTERWORTH_FILTER_BAND, sampleRate, freq1, freq2);
 
     const filter = {
         xv: [0.0, 0.0, 0.0],
@@ -289,7 +289,7 @@ function applyHighPassFilter (input, output, sampleRate, freq) {
 
     const length = input.length;
 
-    const filterCoefficients = designFilter(HIGH_PASS_FILTER, sampleRate, freq, 0);
+    const filterCoefficients = designFilter(BUTTERWORTH_FILTER_HIGH, sampleRate, freq, 0);
 
     const filter = {
         xv: [0.0, 0.0, 0.0],

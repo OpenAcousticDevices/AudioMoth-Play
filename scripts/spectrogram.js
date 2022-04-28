@@ -42,8 +42,8 @@ function fastLog2 (n) {
 /**
  * Create spectrogram
  * @param {number[]} sampleArray Samples to be processed
- * @param {*} offset Number of samples in array to start processing
- * @param {*} length Number of samples after offset to stop
+ * @param {number} offset Number of samples in array to start processing
+ * @param {number} length Number of samples after offset to stop
  * @returns Object containing the spectrogram and its minimum and maximum values for use in colouring
  */
 function calculateSpectrogramFrames (sampleArray, offset, length) {
