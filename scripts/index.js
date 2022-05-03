@@ -2468,7 +2468,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         // Update filter range, resetting values if it's an example file
 
-        const resetSliders = exampleFilePath !== undefined || sampleRate !== prevSampleRate;
+        const resetSliders = exampleFilePath !== undefined || prevSampleRate === undefined;
 
         sampleRateChange(resetSliders, resetSliders, getSampleRate());
 
