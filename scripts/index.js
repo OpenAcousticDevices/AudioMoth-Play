@@ -2471,7 +2471,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         const resetSliders = firstFile || prevSampleRate === undefined;
 
-        console.log(firstFile, resetSliders);
+        console.log('First file?', firstFile, 'Reset sliders?', resetSliders);
 
         sampleRateChange(resetSliders, resetSliders, getSampleRate());
 
