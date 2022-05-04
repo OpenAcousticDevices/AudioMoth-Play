@@ -12,7 +12,7 @@
 /* global applyGoertzelFilter, drawGoertzelPlot, applyGoertzelThreshold, GOERTZEL_THRESHOLD_BUFFER_LENGTH, generateHammingValues */
 
 /* global prepareUI, sampleRateChange */
-/* global getPassFiltersHaveChanged, getCentreHasChanged */
+/* global getPassFiltersObserved, getCentreObserved */
 /* global getFilterRadioValue, updateThresholdTypeUI, updateThresholdUI, updateFilterLabel, getFilterType */
 /* global getThresholdTypeIndex, THRESHOLD_TYPE_NONE, THRESHOLD_TYPE_AMPLITUDE, THRESHOLD_TYPE_GOERTZEL, getFrequencyTriggerFilterFreq, getFrequencyTriggerWindowLength, updateFilterUI, getFrequencyTrigger */
 /* global thresholdScaleIndex, THRESHOLD_SCALE_PERCENTAGE, THRESHOLD_SCALE_16BIT, THRESHOLD_SCALE_DECIBEL */
@@ -2467,11 +2467,14 @@ async function loadFile (exampleFilePath, exampleName) {
         spectrumMin = 0.0;
         spectrumMax = 0.0;
 
-        // Update filter range, resetting values if it's thye first file loaded
+        // Update filter range, resetting values if it's the first file loaded or the sliders have been observed
 
         const resetSliders = firstFile || prevSampleRate === undefined;
 
-        sampleRateChange(resetSliders, resetSliders, getSampleRate());
+        const passFiltersObserved = getPassFiltersObserved();
+        const centreObserved = getCentreObserved();
+
+        sampleRateChange(resetSliders || !passFiltersObserved, resetSliders || !centreObserved, getSampleRate());
 
         if (resetSliders) {
 
@@ -3706,9 +3709,9 @@ updateThresholdUI();
 prepareUI(null, null, () => {
 
     // If a Goertzel value has been changed, don't rescale the values to defaults as sample rate changes
-    const passFiltersHaveChanged = getPassFiltersHaveChanged();
-    const centreHasChanged = getCentreHasChanged();
-    sampleRateChange(!passFiltersHaveChanged, !centreHasChanged, getSampleRate());
+    const passFiltersObserved = getPassFiltersObserved();
+    const centreObserved = getCentreObserved();
+    sampleRateChange(!passFiltersObserved, !centreObserved, getSampleRate());
 
     handleFilterChange();
 
