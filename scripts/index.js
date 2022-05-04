@@ -145,6 +145,7 @@ let sampleCount = 0;
 let sampleRate, processedSpectrumFrames;
 let spectrumMin = 0;
 let spectrumMax = 0;
+let firstFile = true;
 
 // Drawing/processing flag
 
@@ -2466,9 +2467,11 @@ async function loadFile (exampleFilePath, exampleName) {
         spectrumMin = 0.0;
         spectrumMax = 0.0;
 
-        // Update filter range, resetting values if it's an example file
+        // Update filter range, resetting values if it's thye first file loaded
 
-        const resetSliders = exampleFilePath !== undefined || prevSampleRate === undefined;
+        const resetSliders = firstFile || prevSampleRate === undefined;
+
+        console.log(firstFile, resetSliders);
 
         sampleRateChange(resetSliders, resetSliders, getSampleRate());
 
@@ -2526,6 +2529,10 @@ async function loadFile (exampleFilePath, exampleName) {
         const thresholdTypeIndex = getThresholdTypeIndex();
 
         const filterIndex = getFilterRadioValue();
+
+        // Flag that the first file has now been loaded
+
+        firstFile = false;
 
         if (filterIndex === FILTER_NONE && thresholdTypeIndex === THRESHOLD_TYPE_NONE) {
 
