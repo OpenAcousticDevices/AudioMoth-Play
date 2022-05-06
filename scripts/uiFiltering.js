@@ -98,8 +98,8 @@ const goertzelDurationRadioButtons = document.getElementsByName('goertzel-durati
 const goertzelDurationTable = document.getElementById('goertzel-duration-table');
 
 /* Only scale frequency sliders if they have been changed this session */
-let passFiltersHaveChanged = false;
-let centreHasChanged = false;
+let passFiltersObserved = false;
+let centreObserved = false;
 
 const FILTER_NONE = 3;
 const FILTER_LOW = 0;
@@ -188,17 +188,17 @@ function getFilterRadioValue () {
 }
 
 /**
- * If any of the frequency filter sliders have been changed from their default values
+ * If any of the frequency filter sliders have been observed
  */
-function getPassFiltersHaveChanged () {
+function getPassFiltersObserved () {
 
-    return passFiltersHaveChanged;
+    return passFiltersObserved;
 
 }
 
-function getCentreHasChanged () {
+function getCentreObserved () {
 
-    return centreHasChanged;
+    return centreObserved;
 
 }
 
@@ -510,7 +510,7 @@ function setBandPass (lowerSliderValue, higherSliderValue) {
  */
 function setFilters (enabled, lowerSliderValue, higherSliderValue, filterType) {
 
-    passFiltersHaveChanged = enabled;
+    passFiltersObserved = enabled;
 
     let filterTypeIndex = FILTER_NONE;
 
@@ -609,8 +609,17 @@ function setFrequencyTrigger (frequencyTrigger) {
  */
 function setFrequencyTriggerFilterFreq (freq) {
 
-    centreHasChanged = true;
     goertzelFilterCentreSlider.setValue(freq);
+
+}
+
+/**
+ * If the Goertzel centre has been observed (either directly or previously by whoever created the loaded config), the slider shouldn't be reset when the sample rate changes
+ * @param {bool} isObserved Has the centre slider been observed
+ */
+function setCentreObserved (isObserved) {
+
+    centreObserved = isObserved;
 
 }
 
@@ -1186,12 +1195,12 @@ function addFilterRadioButtonListeners (filterValueChangeFunction) {
 
             if (filterRadioButtons[i].value !== FILTER_NONE) {
 
-                passFiltersHaveChanged = true;
+                passFiltersObserved = true;
 
             }
 
             // If a Goertzel value has been changed, don't rescale the values to defaults as sample rate changes
-            filterValueChangeFunction(!passFiltersHaveChanged, !centreHasChanged);
+            filterValueChangeFunction(!passFiltersObserved, !centreObserved);
 
         });
 
@@ -1401,8 +1410,6 @@ function prepareUI (changeFunction, checkRecordingDurationFunction, filterValueC
             updateThresholdTypeUI();
             updateThresholdLabel();
 
-            centreHasChanged = true;
-
             if (updateLifeDisplayOnChange) {
 
                 updateLifeDisplayOnChange();
@@ -1412,6 +1419,12 @@ function prepareUI (changeFunction, checkRecordingDurationFunction, filterValueC
         });
 
     }
+
+    thresholdTypeRadioButtons[2].addEventListener('change', () => {
+
+        centreObserved = true;
+
+    });
 
     if (checkRecordingDurationFunction) {
 
@@ -1554,7 +1567,8 @@ function prepareUI (changeFunction, checkRecordingDurationFunction, filterValueC
 // exports.sampleRateChange = sampleRateChange;
 // exports.resetElements = resetElements;
 
-// exports.getPassFiltersHaveChanged = getPassFiltersHaveChanged;
-// exports.getCentreHasChanged = getCentreHasChanged;
+// exports.getPassFiltersObserved = getPassFiltersObserved;
+// exports.getCentreObserved = getCentreObserved;
+// exports.setCentreObserved = setCentreObserved;
 
 // exports.prepareUI = prepareUI;
