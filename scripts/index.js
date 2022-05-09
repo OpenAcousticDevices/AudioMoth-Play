@@ -3261,12 +3261,17 @@ function exportConfig () {
         minimumAmplitudeThresholdDuration: minimumTriggerDuration,
         amplitudeThresholdScale: thresholdScales[thresholdScaleIndex],
         frequencyTriggerEnabled: thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL,
-        frequencyTriggerCentreFrequency: goertzelFilterCentreSlider.getValue(),
-        frequencyTriggerWindowLength: frequencyTriggerWindowLength,
-        frequencyTriggerThreshold: frequencyTrigger,
-        minimumFrequencyTriggerDuration: minimumTriggerDuration,
         frequencyTriggerThresholdScale: thresholdScales[thresholdScaleIndex]
     };
+
+    if (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) {
+
+        settings.frequencyTriggerCentreFrequency = goertzelFilterCentreSlider.getValue();
+        settings.frequencyTriggerWindowLength = frequencyTriggerWindowLength;
+        settings.frequencyTriggerThreshold = frequencyTrigger;
+        settings.minimumFrequencyTriggerDuration = minimumTriggerDuration;
+
+    }
 
     const content = 'data:text/json;charset=utf-8,' + JSON.stringify(settings);
 
