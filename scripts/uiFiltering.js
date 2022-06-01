@@ -455,7 +455,7 @@ function updateThresholdLabel () {
         thresholdLabel.textContent += goertzelThresholdPercentage + '%';
         thresholdLabel.textContent += ' will be used when generating T.WAV files.';
 
-        goertzelFilterLabel.textContent = 'A central frequency of ' + goertzelFrequency.toFixed(1) + ' kHz will be used by the frequency trigger.';
+        goertzelFilterLabel.textContent = 'A centre frequency of ' + goertzelFrequency.toFixed(1) + ' kHz will be used by the frequency trigger.';
 
     } else {
 
@@ -604,8 +604,8 @@ function setFrequencyTrigger (frequencyTrigger) {
 }
 
 /**
- * Change the central frequency used by the Goertzel filter
- * @param {int} freq New central frequency
+ * Change the centre frequency used by the Goertzel filter
+ * @param {int} freq New centre frequency
  */
 function setFrequencyTriggerFilterFreq (freq) {
 
@@ -620,6 +620,16 @@ function setFrequencyTriggerFilterFreq (freq) {
 function setCentreObserved (isObserved) {
 
     centreObserved = isObserved;
+
+}
+
+/**
+ * If the Goertzel filters have been observed (either directly or previously by whoever created the loaded config), the slider shouldn't be reset when the sample rate changes
+ * @param {bool} isObserved Has the centre slider been observed
+ */
+function setPassFiltersObserved (isObserved) {
+
+    passFiltersObserved = isObserved;
 
 }
 
@@ -1536,8 +1546,9 @@ function prepareUI (changeFunction, checkRecordingDurationFunction, filterValueC
 // exports.getFilterType = getFilterType;
 
 // exports.getLowerSliderValue = getLowerSliderValue;
-
 // exports.getHigherSliderValue = getHigherSliderValue;
+
+// exports.setPassFiltersObserved = setPassFiltersObserved;
 
 // exports.getAmplitudeThreshold = getAmplitudeThreshold;
 // exports.amplitudeThresholdIsEnabled = amplitudeThresholdIsEnabled;

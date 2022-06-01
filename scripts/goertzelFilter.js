@@ -47,7 +47,7 @@ function generateHammingValues (N) {
  * Apply a Goertzel filter to a given set of samples
  * @param {number[]} samples Samples
  * @param {number} sampleRate Sample rate of the sample set
- * @param {number} freq Central frequency
+ * @param {number} freq Centre frequency
  * @param {number} N Filter length
  * @param {number[]} output Goertzel responses
  */

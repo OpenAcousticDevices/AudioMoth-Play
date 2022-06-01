@@ -114,53 +114,57 @@
                     <!-- Plots -->
 
                     <!-- Waveform plot -->
-                    <div id="waveform-holder" class="row" style="margin-top: 0px; height: 240px; text-align: center;">
+                    <div id="waveform-holder" class="row" style="margin-top: 0px; height: 238px; text-align: center;">
                         <span style="text-align: center; width: 748px; margin-left: 45px;">Waveform</span>
                         <div class="wrapper" style="width: 793px; height: 238px;">
-                            <svg class="label-canvas" id="waveform-label-svg" width="45" height="240" style="padding: 0%;"></svg>
-                            <canvas class="plot-canvas" id="waveform-canvas" width="748" height="238" style="border: #cdcdcd thin solid; padding: 0%;"></canvas>
-                            <canvas class="plot-canvas" id="waveform-threshold-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
-                            <canvas class="plot-canvas" id="waveform-threshold-line-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
-                            <canvas class="plot-canvas" id="waveform-playback-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
-                            <svg class="plot-canvas" id="waveform-loading-svg" width="750" height="240"></svg>
+                            <svg class="label-canvas" id="waveform-label-svg" width="45" height="238" style="padding: 0%;"></svg>
+                            <canvas class="plot-canvas" id="waveform-canvas" width="748" height="238" style="padding: 0%;"></canvas>
+                            <canvas class="plot-canvas" id="waveform-threshold-canvas" width="748" height="238"></canvas>
+                            <svg class="plot-canvas" id="waveform-threshold-line-svg" width="748" height="238"></svg>
+                            <canvas class="plot-canvas" id="waveform-playback-canvas" width="748" height="238"></canvas>
+                            <svg class="plot-canvas" id="waveform-loading-svg" width="750" height="238"></svg>
+                            <canvas class="plot-canvas" id="waveform-border-canvas" width="748" height="238" style="padding: 0%;"></canvas>
                             <!-- Drag canvas must be on top or it's not draggable -->
-                            <canvas class="plot-canvas" id="waveform-drag-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
+                            <canvas class="plot-canvas" id="waveform-drag-canvas" width="748" height="238"></canvas>
                         </div>
                     </div>
 
                     <!-- Goertzel response plot -->
-                    <div id="goertzel-canvas-holder" class="row" style="margin-top: 0px; height: 240px; text-align: center; display: none;">
+                    <div id="goertzel-canvas-holder" class="row" style="margin-top: 0px; height: 238px; text-align: center; display: none;">
                         <span style="text-align: center; width: 748px; margin-left: 45px; height: 20px;">Frequency Response</span>
                         <div class="wrapper" style="width: 793px; height: 238px;">
-                            <svg class="label-canvas" id="goertzel-label-svg" width="45" height="240" style="padding: 0%;"></svg>
-                            <canvas class="plot-canvas" id="goertzel-canvas" width="748" height="238" style="border: #cdcdcd thin solid; padding: 0%;"></canvas>
-                            <canvas class="plot-canvas" id="goertzel-threshold-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
-                            <canvas class="plot-canvas" id="goertzel-threshold-line-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
-                            <canvas class="plot-canvas" id="goertzel-playback-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
-                            <svg class="plot-canvas" id="goertzel-loading-svg" width="750" height="240"></svg>
+                            <svg class="label-canvas" id="goertzel-label-svg" width="45" height="238" style="padding: 0%;"></svg>
+                            <canvas class="plot-canvas" id="goertzel-canvas" width="748" height="238" style="padding: 0%;"></canvas>
+                            <canvas class="plot-canvas" id="goertzel-threshold-canvas" width="748" height="238"></canvas>
+                            <svg class="plot-canvas" id="goertzel-threshold-line-svg" width="748" height="238"></svg>
+                            <canvas class="plot-canvas" id="goertzel-playback-canvas" width="748" height="238"></canvas>
+                            <svg class="plot-canvas" id="goertzel-loading-svg" width="750" height="238"></svg>
+                            <canvas class="plot-canvas" id="goertzel-border-canvas" width="748" height="238" style="padding: 0%;"></canvas>
                             <!-- Drag canvas must be on top or it's not draggable -->
-                            <canvas class="plot-canvas" id="goertzel-drag-canvas" width="748" height="238" style="border: #cdcdcd thin solid;"></canvas>
+                            <canvas class="plot-canvas" id="goertzel-drag-canvas" width="748" height="238"></canvas>
                         </div>
                     </div>
 
                     <!-- Spectrogram plot -->
-                    <div class="row" style="margin-top: 20px; height: 278px; text-align: center;">
+                    <div class="row" style="margin-top: 20px; height: 275px; text-align: center;">
                         <span style="text-align: center; width: 748px; margin-left: 45px; height: 20px;">Spectrogram</span>
-                        <div class="wrapper" style="width: 793px; height: 256px;">
-                            <svg class="label-canvas" id="spectrogram-label-svg" width="45" height="257" style="padding: 0%;"></svg>
-                            <canvas class="plot-canvas" id="spectrogram-canvas" width="748" height="255" style="border: #cdcdcd thin solid; padding: 0%;"></canvas>
-                            <canvas class="plot-canvas" id="spectrogram-threshold-canvas" width="748" height="255" style="border: #cdcdcd thin solid;"></canvas>
-                            <canvas class="plot-canvas" id="spectrogram-goertzel-canvas" width="748" height="255" style="border: #cdcdcd thin solid; display: none;"></canvas>
-                            <canvas class="plot-canvas" id="spectrogram-playback-canvas" width="748" height="255" style="border: #cdcdcd thin solid;"></canvas>
-                            <svg class="plot-canvas" id="spectrogram-loading-svg" width="750" height="257"></svg>
+                        <div class="wrapper" style="width: 793px; height: 255px;">
+                            <svg class="label-canvas" id="spectrogram-label-svg" width="45" height="255" style="padding: 0%;"></svg>
+                            <canvas class="plot-canvas" id="spectrogram-canvas" width="748" height="255" style="padding: 0%;"></canvas>
+                            <canvas class="plot-canvas" id="spectrogram-threshold-canvas" width="748" height="255"></canvas>
+                            <canvas class="plot-canvas" id="spectrogram-goertzel-canvas" width="748" height="255" style="display: none;"></canvas>
+                            <svg class="plot-canvas" id="spectrogram-goertzel-line-svg" width="748" height="255" style="display: none;"></svg>
+                            <canvas class="plot-canvas" id="spectrogram-playback-canvas" width="748" height="255"></canvas>
+                            <svg class="plot-canvas" id="spectrogram-loading-svg" width="750" height="255"></svg>
+                            <canvas class="plot-canvas" id="spectrogram-border-canvas" width="748" height="255" style="padding: 0%;"></canvas>
                             <!-- Drag canvas must be on top or it's not draggable -->
-                            <canvas class="plot-canvas" id="spectrogram-drag-canvas" width="748" height="255" style="border: #cdcdcd thin solid;"></canvas>
+                            <canvas class="plot-canvas" id="spectrogram-drag-canvas" width="748" height="255"></canvas>
                         </div>
                     </div>
 
                     <!-- Time axis -->
                     <div class="row" style="margin-top: 0%; text-align: center;">
-                        <svg id="time-axis-label-svg" width="780" height="20" style="padding: 0%; margin-left: 30px;"></svg>
+                        <svg id="time-axis-label-svg" width="810" height="20" style="padding: 0%; margin-left: 0px;"></svg>
                     </div>
 
                     <!-- Time axis heading -->
@@ -570,8 +574,11 @@
                 <div class="col plot-width" style="padding: 0px;">
                     <div class="wrapper" style="width: 793px;">
                         <div class="row">
-                            <div class="col-1">
-                                <button class="btn btn-success nav-button" id="play-button" disabled style="margin-right: 15px;">
+                            <div class="col-2" style="padding-right: 0px;">
+                                <button class="btn btn-warning nav-button" id="export-modal-button" data-toggle="modal" data-target="#export-modal" disabled style="margin-left: 15px;">
+                                    <img id="camera-icon" class="button-icon" src="./assets/camera.svg" alt="Bootstrap">
+                                </button>
+                                <button class="btn btn-success nav-button" id="play-button" disabled style="margin-left: 10px;">
                                     <img id="play-icon" class="button-icon" src="./assets/play.svg" alt="Bootstrap">
                                     <img id='stop-icon' class="button-icon" src="./assets/stop.svg" alt="Bootstrap" style="display: none;">
                                 </button>
@@ -586,11 +593,33 @@
                             <div id='playback-speed-div' class="col-4 playback-slider" style="padding-top: 5px;">
                                 <input id="playback-speed-slider" data-slider-id="playback-speed-slider" type="text" class="span2" value="1" style="width: 100%;">
                             </div>
-                            <div class="col-4" style="padding-left: 0px;"></div>
+                            <div class="col-3" style="padding-left: 0px;"></div>
                         </div>
                     </div>
                 </div>
                 <div class="col control-width control-margin" style="padding-left: 0px;"></div>
+            </div>
+
+            <div class="modal fade" id="export-modal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Export Image</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        </div>
+                        <div class="modal-body">
+                            The current view can be downloaded as a PNG or PDF file.
+                        </div>
+                        <div class="modal-footer">
+                            <button id="export-png-button" type="button" class="btn btn-success">PNG</button>
+                            <button id="export-pdf-button" type="button" class="btn btn-success">PDF</button>
+                            <button id="export-both-button" type="button" class="btn btn-primary">Both</button>
+                            <button id="export-close-button" type="button" class="btn btn-secondary" data-dismiss="modal" style="display: none;">Close</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="row justify-content-md-center" style="margin-top: 15px;">
@@ -726,6 +755,7 @@
 
         </div>
     </body>
+    <script src="scripts/external/jspdf.umd.min.js"></script>
     <script src="scripts/external/complex.min.js"></script>
     <script src="scripts/butterworth.js"></script>
     <script src="scripts/wavReader.js"></script>
@@ -740,5 +770,6 @@
     <script src="scripts/playAudio.js"></script>
     <script src="scripts/sliderControl.js"></script>
     <script src="scripts/uiFiltering.js"></script>
+    <script src="scripts/exportImages.js"></script>
     <script src="scripts/index.js"></script>
 </html>

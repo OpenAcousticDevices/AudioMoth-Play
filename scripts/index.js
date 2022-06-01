@@ -21,6 +21,9 @@
 /* global prevThresholdScaleIndex, resetElements, disableFilterUI, enableFilterUI */
 
 /* global enableSlider, disableSlider */
+/* global setCentreObserved, setPassFiltersObserved */
+
+/* global exportPNG, exportPDF */
 
 // Use these values to fill in the axis labels before samples have been loaded
 
@@ -46,7 +49,7 @@ const trimmedSpan = document.getElementById('trimmed-span');
 
 const exampleLinks = [document.getElementById('example-link1'), document.getElementById('example-link2'), document.getElementById('example-link3')];
 const examplePaths = ['./assets/BAT.WAV', './assets/SWEEP.WAV', './assets/METRONOME.WAV'];
-const exampleNames = ['Bat', 'Frequency sweep', 'Metronome'];
+const exampleNames = ['Bat', 'Frequency Sweep', 'Metronome'];
 const exampleResultObjects = {};
 
 // Plot navigation buttons
@@ -101,33 +104,45 @@ const MAX_ZOOM_Y_INDEX = 8;
 
 const amplitudeThresholdScaleSelect = document.getElementById('amplitude-threshold-scale-select');
 
-// Spectrogram canvases
+// Canvases
 
 const spectrogramPlaybackCanvas = document.getElementById('spectrogram-playback-canvas'); // Canvas layer where playback progress
 const spectrogramDragCanvas = document.getElementById('spectrogram-drag-canvas'); // Canvas layer where zoom overlay is drawn
-const spectrogramGoertzelCanvas = document.getElementById('spectrogram-goertzel-canvas'); // Canvas layer where Goertzel thresholded periods are drawn
+const spectrogramGoertzelCanvas = document.getElementById('spectrogram-goertzel-canvas'); // Canvas layer where Goertzel filter is drawn
+const spectrogramGoertzelLineSVG = document.getElementById('spectrogram-goertzel-line-svg'); // SVG layer where Goertzel filter centre is drawn
 const spectrogramThresholdCanvas = document.getElementById('spectrogram-threshold-canvas'); // Canvas layer where amplitude thresholded periods are drawn
 const spectrogramCanvas = document.getElementById('spectrogram-canvas'); // Canvas layer where spectrogram is drawn
 const spectrogramLoadingSVG = document.getElementById('spectrogram-loading-svg');
+const spectrogramBorderCanvas = document.getElementById('spectrogram-border-canvas');
 
 const waveformHolder = document.getElementById('waveform-holder');
 const waveformPlaybackCanvas = document.getElementById('waveform-playback-canvas'); // Canvas layer where playback progress
 const waveformDragCanvas = document.getElementById('waveform-drag-canvas'); // Canvas layer where zoom overlay is drawn
 const waveformThresholdCanvas = document.getElementById('waveform-threshold-canvas'); // Canvas layer where amplitude thresholded periods are drawn
-const waveformThresholdLineCanvas = document.getElementById('waveform-threshold-line-canvas'); // Canvas layer where amplitude threshold value lines are drawn
+const waveformThresholdLineSVG = document.getElementById('waveform-threshold-line-svg'); // SVG layer where amplitude threshold value lines are drawn
 const waveformCanvas = document.getElementById('waveform-canvas'); // Canvas layer where waveform is drawn
 const waveformLoadingSVG = document.getElementById('waveform-loading-svg');
+const waveformBorderCanvas = document.getElementById('waveform-border-canvas');
 
 const goertzelCanvasHolder = document.getElementById('goertzel-canvas-holder');
 const goertzelPlaybackCanvas = document.getElementById('goertzel-playback-canvas'); // Canvas layer where playback progress
 const goertzelDragCanvas = document.getElementById('goertzel-drag-canvas'); // Canvas layer where zoom overlay is drawn
 const goertzelThresholdCanvas = document.getElementById('goertzel-threshold-canvas'); // Canvas layer where Goertzel thresholded periods are drawn
-const goertzelThresholdLineCanvas = document.getElementById('goertzel-threshold-line-canvas'); // Canvas layer where Goertzel thresholded periods are drawn
+const goertzelThresholdLineSVG = document.getElementById('goertzel-threshold-line-svg'); // SVG layer where Goertzel thresholded periods are drawn
 const goertzelCanvas = document.getElementById('goertzel-canvas'); // Canvas layer where Goertzel response is drawn
 const goertzelLoadingSVG = document.getElementById('goertzel-loading-svg');
+const goertzelBorderCanvas = document.getElementById('goertzel-border-canvas');
 
 const timeLabelSVG = document.getElementById('time-axis-label-svg');
 const timeAxisHeadingSVG = document.getElementById('time-axis-heading-svg');
+
+// Loading animation flag
+
+let loadingPlots = false;
+
+// How many dots appear after "Loading"
+
+const MAX_LOADING_DOTS = 5;
 
 // Y axis label canvases
 
@@ -213,6 +228,15 @@ let animationTimer;
 
 let skippingXCoords = [];
 
+// Export image UI
+
+const exportModalButton = document.getElementById('export-modal-button');
+const exportCloseButton = document.getElementById('export-close-button');
+
+const exportPNGButton = document.getElementById('export-png-button');
+const exportPDFButton = document.getElementById('export-pdf-button');
+const exportBothButton = document.getElementById('export-both-button');
+
 /**
  * Update UI based on which threshold type is selected
  */
@@ -249,6 +273,7 @@ function updateThresholdTypePlaybackUI () {
 
         goertzelCanvasHolder.style.display = 'none';
         spectrogramGoertzelCanvas.style.display = 'none';
+        spectrogramGoertzelLineSVG.style.display = 'none';
 
         waveformHolder.style.display = '';
 
@@ -258,6 +283,7 @@ function updateThresholdTypePlaybackUI () {
 
         goertzelCanvasHolder.style.display = 'none';
         spectrogramGoertzelCanvas.style.display = 'none';
+        spectrogramGoertzelLineSVG.style.display = 'none';
 
         waveformHolder.style.display = '';
 
@@ -267,6 +293,7 @@ function updateThresholdTypePlaybackUI () {
 
         goertzelCanvasHolder.style.display = '';
         spectrogramGoertzelCanvas.style.display = '';
+        spectrogramGoertzelLineSVG.style.display = '';
 
         waveformHolder.style.display = 'none';
 
@@ -298,14 +325,15 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
  * @param {number} x x coordinate
  * @param {number} y y coordinate
  * @param {string} anchor What end of the text it should be anchored to. Possible values: start/middle/end
+ * @param {string} baseline What end of the text it should be anchored to. Possible values: text-top/middle/text-bottom
  */
-function addSVGText (parent, content, x, y, anchor) {
+function addSVGText (parent, content, x, y, anchor, baseline) {
 
     const textElement = document.createElementNS(SVG_NS, 'text');
 
     textElement.setAttributeNS(null, 'x', x);
     textElement.setAttributeNS(null, 'y', y);
-    textElement.setAttributeNS(null, 'dominant-baseline', 'middle');
+    textElement.setAttributeNS(null, 'dominant-baseline', baseline);
     textElement.setAttributeNS(null, 'text-anchor', anchor);
     textElement.setAttributeNS(null, 'font-size', '10px');
 
@@ -388,6 +416,24 @@ function getDecibelZoomY () {
 function getGoertzelZoomY () {
 
     return Math.pow(2, goertzelZoomYIndex);
+
+}
+
+/**
+ * Add borders to all plots
+ */
+function drawBorders () {
+
+    const canvases = [spectrogramBorderCanvas, waveformBorderCanvas, goertzelBorderCanvas];
+
+    for (let i = 0; i < canvases.length; i++) {
+
+        const ctx = canvases[i].getContext('2d');
+
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect(0, 0, canvases[i].width, canvases[i].height);
+
+    }
 
 }
 
@@ -496,30 +542,35 @@ function drawAxisLabels () {
     const xLabelIncrementSamples = xLabelIncrementSecs * currentSampleRate;
 
     // So the centre of the text can be the label location, there's a small amount of padding around the label canvas
-    const xLabelPadding = (timeLabelSVG.width.baseVal.value - waveformCanvas.width) / 2;
+    const xLabelPadding = spectrogramLabelSVG.width.baseVal.value;
 
     while (label <= currentSampleCount) {
 
         // Convert the time to a pixel value, then take into account the label width and the padding to position correctly
 
-        const x = samplesToPixels(label) + xLabelPadding - samplesToPixels(offset);
+        let x = samplesToPixels(label) - samplesToPixels(offset);
 
-        if (x - xLabelPadding < 0) {
+        if (x < 0) {
 
             label += xLabelIncrementSamples;
             continue;
 
         }
 
-        if (x - xLabelPadding > waveformCanvas.width) {
+        if (x > waveformCanvas.width) {
 
             break;
 
         }
 
+        x = (x === 0) ? x + 1 : x;
+        x = (x === waveformCanvas.width) ? x - 0.5 : x;
+
+        x += xLabelPadding;
+
         const labelText = (label / currentSampleRate).toFixed(xLabelDecimalPlaces);
 
-        addSVGText(timeLabelSVG, labelText, x, 10, 'middle');
+        addSVGText(timeLabelSVG, labelText, x, 10, 'middle', 'middle');
         addSVGLine(timeLabelSVG, x, 0, x, xMarkerLength);
 
         label += xLabelIncrementSamples;
@@ -536,36 +587,26 @@ function drawAxisLabels () {
     const specLabelX = spectrogramLabelSVG.width.baseVal.value - 7;
     const specMarkerX = spectrogramLabelSVG.width.baseVal.value - yMarkerLength;
 
-    // Draw top and bottom label markers
-
-    addSVGLine(spectrogramLabelSVG, specMarkerX, 1, spectrogramLabelSVG.width.baseVal.value, 1);
-    const endLabelY = spectrogramLabelSVG.height.baseVal.value - 1;
-    addSVGLine(spectrogramLabelSVG, specMarkerX, endLabelY, spectrogramLabelSVG.width.baseVal.value, endLabelY);
-
-    // Draw middle labels and markers
-
     for (let i = 0; i <= Y_LABEL_COUNT; i++) {
 
         const labelText = (i * ySpecLabelIncrement / 1000) + 'kHz';
 
-        let y = spectrogramLabelSVG.height.baseVal.value - (i * ySpecIncrement);
+        const y = spectrogramLabelSVG.height.baseVal.value - (i * ySpecIncrement);
 
         if (i === 0) {
 
-            y -= 5;
+            addSVGText(spectrogramLabelSVG, labelText, specLabelX, y, 'end', 'text-bottom');
+            const endLabelY = spectrogramLabelSVG.height.baseVal.value - 0.5;
+            addSVGLine(spectrogramLabelSVG, specMarkerX, endLabelY, spectrogramLabelSVG.width.baseVal.value, endLabelY);
 
-        }
+        } else if (i === Y_LABEL_COUNT) {
 
-        if (i === Y_LABEL_COUNT) {
+            addSVGText(spectrogramLabelSVG, labelText, specLabelX, y, 'end', 'hanging');
+            addSVGLine(spectrogramLabelSVG, specMarkerX, 0.5, spectrogramLabelSVG.width.baseVal.value, 0.5);
 
-            y += 5;
+        } else {
 
-        }
-
-        addSVGText(spectrogramLabelSVG, labelText, specLabelX, y, 'end');
-
-        if (i !== 0 && i !== Y_LABEL_COUNT) {
-
+            addSVGText(spectrogramLabelSVG, labelText, specLabelX, y, 'end', 'middle');
             addSVGLine(spectrogramLabelSVG, specMarkerX, y, spectrogramLabelSVG.width.baseVal.value, y);
 
         }
@@ -582,63 +623,63 @@ function drawAxisLabels () {
             step16Bit: 8192,
             stepPercentage: 20,
             precisionPercentage: 0,
-            labelsDecibel: [0, -2, -4, -6, -12]
+            labelsDecibel: [-12, -6, -4, -2, 0]
         },
         {
             // 50%
             step16Bit: 4096,
             stepPercentage: 10,
             precisionPercentage: 0,
-            labelsDecibel: [-6, -8, -10, -12, -18]
+            labelsDecibel: [-18, -12, -10, -8, -6]
         },
         {
             // 25%
             step16Bit: 2048,
             stepPercentage: 10,
             precisionPercentage: 0,
-            labelsDecibel: [-12, -14, -16, -18, -24]
+            labelsDecibel: [-24, -18, -16, -14, -12]
         },
         {
             // 12.5%
             step16Bit: 1024,
             stepPercentage: 5,
             precisionPercentage: 0,
-            labelsDecibel: [-18, -20, -22, -24, -30]
+            labelsDecibel: [-30, -24, -22, -20, -18]
         },
         {
             // 6.25%
             step16Bit: 512,
             stepPercentage: 1,
             precisionPercentage: 0,
-            labelsDecibel: [-24, -26, -28, -30, -36]
+            labelsDecibel: [-36, -30, -28, -26, -24]
         },
         {
             // 3.125%
             step16Bit: 256,
             stepPercentage: 1,
             precisionPercentage: 0,
-            labelsDecibel: [-30, -32, -34, -36, -42]
+            labelsDecibel: [-42, -36, -34, -32, -30]
         },
         {
             // 1.5625%
             step16Bit: 128,
             stepPercentage: 0.5,
             precisionPercentage: 1,
-            labelsDecibel: [-36, -38, -40, -42, -48]
+            labelsDecibel: [-48, -42, -40, -38, -36]
         },
         {
             // 0.78125%
             step16Bit: 64,
             stepPercentage: 0.2,
             precisionPercentage: 1,
-            labelsDecibel: [-42, -44, -46, -48, -54]
+            labelsDecibel: [-54, -48, -46, -44, -42]
         },
         {
             // 0.390625%
             step16Bit: 32,
             stepPercentage: 0.1,
             precisionPercentage: 1,
-            labelsDecibel: [-48, -50, -52, -54, -60]
+            labelsDecibel: [-60, -54, -52, -50, -48]
         }
     ];
 
@@ -732,8 +773,8 @@ function drawAxisLabels () {
 
             // No label is drawn for 0, so no need to check that here
 
-            waveformLabelTexts.push(yLabelDecibelLabels[i] + 'dB');
-            waveformLabelYPositions.push(waveformCanvasHCentre + (getDecibelZoomY() * labelPosition * waveformCanvasHCentre));
+            waveformLabelTexts.unshift(yLabelDecibelLabels[i] + 'dB');
+            waveformLabelYPositions.unshift(waveformCanvasHCentre + (getDecibelZoomY() * labelPosition * waveformCanvasHCentre));
 
         }
 
@@ -747,15 +788,32 @@ function drawAxisLabels () {
         let markerY = waveformLabelYPositions[i];
         let labelY = markerY;
 
-        labelY = (labelY - 5 <= 0) ? 5 : labelY;
-        labelY = (labelY + 5 >= waveformCanvasH) ? waveformCanvasH - 5 : labelY;
+        let baseline = 'middle';
 
-        addSVGText(waveformLabelSVG, waveformLabelTexts[i], wavLabelX, labelY, 'end');
+        if (markerY === waveformCanvasH) {
+
+            baseline = 'text-bottom';
+
+        } else if (markerY === 0) {
+
+            baseline = 'hanging';
+
+            // If on Windows, offset label text slightly
+
+            if (navigator.platform.includes('Win')) {
+
+                labelY -= 1;
+
+            }
+
+        }
+
+        addSVGText(waveformLabelSVG, waveformLabelTexts[i], wavLabelX, labelY, 'end', baseline);
 
         // Nudge markers slightly onto canvas so they're not cut off
 
-        markerY = (markerY === 0) ? markerY + 1 : markerY;
-        markerY = (markerY === waveformCanvasH) ? markerY - 1 : markerY;
+        markerY = (markerY === 0) ? markerY + 0.5 : markerY;
+        markerY = (markerY === waveformCanvasH) ? markerY - 0.5 : markerY;
 
         addSVGLine(waveformLabelSVG, wavMarkerX, markerY, waveformLabelSVG.width.baseVal.value, markerY);
 
@@ -856,17 +914,32 @@ function drawAxisLabels () {
         let markerY = goertzelLabelYPositions[i];
         let labelY = markerY;
 
-        // Nudge labels slightly onto canvas so they're not cut off
+        let baseline = 'middle';
 
-        labelY = (labelY - 5 <= 0) ? 5 : labelY;
-        labelY = (labelY + 5 >= goertzelCanvasH) ? goertzelCanvasH - 5 : labelY;
+        if (i === 0) {
 
-        addSVGText(goertzelLabelSVG, goertzelLabelTexts[i], goertzelLabelX, labelY, 'end');
+            baseline = 'text-bottom';
+
+        } else if (i === goertzelLabelTexts.length - 1) {
+
+            baseline = 'hanging';
+
+            // If on Windows, offset label text slightly
+
+            if (navigator.platform.includes('Win')) {
+
+                labelY -= 1;
+
+            }
+
+        }
+
+        addSVGText(goertzelLabelSVG, goertzelLabelTexts[i], goertzelLabelX, labelY, 'end', baseline);
 
         // Nudge markers slightly onto canvas so they're not cut off
 
-        markerY = (markerY === 0) ? markerY + 1 : markerY;
-        markerY = (markerY === goertzelCanvasH) ? markerY - 1 : markerY;
+        markerY = (markerY === 0) ? markerY + 0.5 : markerY;
+        markerY = (markerY === waveformCanvasH) ? markerY - 0.5 : markerY;
 
         addSVGLine(goertzelLabelSVG, goertzelMarkerX, markerY, goertzelLabelSVG.width.baseVal.value, markerY);
 
@@ -881,7 +954,7 @@ function drawAxisHeadings () {
 
     clearSVG(timeAxisHeadingSVG);
 
-    addSVGText(timeAxisHeadingSVG, 'Time (seconds)', timeAxisHeadingSVG.width.baseVal.value / 2, 10, 'middle');
+    addSVGText(timeAxisHeadingSVG, 'Time (seconds)', timeAxisHeadingSVG.width.baseVal.value / 2, 10, 'middle', 'middle');
 
 }
 
@@ -996,51 +1069,58 @@ function updateNavigationUI () {
 }
 
 /**
- * Draw amplitude threshold value to its overlay layer
+ * Get the offset from centre the two amplitude threshold lines should be drawn
+ * @returns Offset from centre
  */
-function drawAmplitudeThresholdLines () {
+function getAmplitudeThresholdLineOffset () {
 
-    const thresholdCtx = waveformThresholdLineCanvas.getContext('2d');
-    const w = waveformThresholdLineCanvas.width;
-    const h = waveformThresholdLineCanvas.height;
-
-    resetCanvas(waveformThresholdLineCanvas);
-
-    thresholdCtx.strokeStyle = 'black';
-    thresholdCtx.lineWidth = 1;
-
-    const amplitudeThresholdValues = getAmplitudeThresholdValues();
+    const h = waveformThresholdLineSVG.height.baseVal.value;
 
     const centre = h / 2;
     let offsetFromCentre = 0;
 
+    const amplitudeThresholdValues = getAmplitudeThresholdValues();
+
     if (thresholdScaleIndex === THRESHOLD_SCALE_PERCENTAGE) {
 
         const amplitudeThresholdRatio = parseFloat(amplitudeThresholdValues.percentage) / 100.0;
-        offsetFromCentre = Math.round(amplitudeThresholdRatio * centre * getZoomY());
+        offsetFromCentre = amplitudeThresholdRatio * centre * getZoomY();
 
     } else if (thresholdScaleIndex === THRESHOLD_SCALE_16BIT) {
 
         const amplitudeThresholdRatio = amplitudeThresholdValues.amplitude / 32768.0;
-        offsetFromCentre = Math.round(amplitudeThresholdRatio * centre * getZoomY());
+        offsetFromCentre = amplitudeThresholdRatio * centre * getZoomY();
 
     } else if (thresholdScaleIndex === THRESHOLD_SCALE_DECIBEL) {
 
         const amplitudeThresholdRatio = Math.pow(10, amplitudeThresholdValues.decibels / 20);
-        offsetFromCentre = Math.round(amplitudeThresholdRatio * centre * getDecibelZoomY());
+        offsetFromCentre = amplitudeThresholdRatio * centre * getDecibelZoomY();
 
     }
+
+    return offsetFromCentre;
+
+}
+
+/**
+ * Draw amplitude threshold value to its overlay layer
+ */
+function drawAmplitudeThresholdLines () {
+
+    const w = waveformThresholdLineSVG.width.baseVal.value;
+    const h = waveformThresholdLineSVG.height.baseVal.value;
+
+    const centre = h / 2;
+
+    clearSVG(waveformThresholdLineSVG);
+
+    const offsetFromCentre = getAmplitudeThresholdLineOffset();
 
     const positiveY = centre - offsetFromCentre;
     const negativeY = centre + offsetFromCentre;
 
-    thresholdCtx.moveTo(0, positiveY);
-    thresholdCtx.lineTo(w, positiveY);
-    thresholdCtx.stroke();
-
-    thresholdCtx.moveTo(0, negativeY);
-    thresholdCtx.lineTo(w, negativeY);
-    thresholdCtx.stroke();
+    addSVGLine(waveformThresholdLineSVG, 0, positiveY, w, positiveY);
+    addSVGLine(waveformThresholdLineSVG, 0, negativeY, w, negativeY);
 
 }
 
@@ -1049,21 +1129,16 @@ function drawAmplitudeThresholdLines () {
  */
 function drawGoertzelThresholdLine () {
 
-    const thresholdCtx = goertzelThresholdLineCanvas.getContext('2d');
-    const w = goertzelThresholdLineCanvas.width;
-    const h = goertzelThresholdLineCanvas.height;
+    const w = goertzelThresholdLineSVG.width.baseVal.value;
+    const h = goertzelThresholdLineSVG.height.baseVal.value;
 
-    resetCanvas(goertzelThresholdLineCanvas);
-
-    thresholdCtx.strokeStyle = 'black';
+    clearSVG(goertzelThresholdLineSVG);
 
     const frequencyTrigger = getFrequencyTrigger() / 100.0;
 
     const thresholdY = h - (h * frequencyTrigger * getGoertzelZoomY());
 
-    thresholdCtx.moveTo(0, thresholdY);
-    thresholdCtx.lineTo(w, thresholdY);
-    thresholdCtx.stroke();
+    addSVGLine(goertzelThresholdLineSVG, 0, thresholdY, w, thresholdY);
 
 }
 
@@ -1073,13 +1148,12 @@ function drawGoertzelThresholdLine () {
 function drawGoertzelFilter () {
 
     const filterCtx = spectrogramGoertzelCanvas.getContext('2d');
+
     const w = spectrogramGoertzelCanvas.width;
     const h = spectrogramGoertzelCanvas.height;
 
     resetCanvas(spectrogramGoertzelCanvas);
-
-    filterCtx.lineWidth = 1;
-    filterCtx.strokeStyle = 'black';
+    clearSVG(spectrogramGoertzelLineSVG);
 
     const nyquist = sampleRate / 2.0;
 
@@ -1090,11 +1164,9 @@ function drawGoertzelFilter () {
     const bandwidth = 4.0 * sampleRate / windowLength;
     const bandwidthY = (h * bandwidth / nyquist) / 2;
 
-    // Draw central frequency
+    // Draw centre frequency
 
-    filterCtx.moveTo(0, freqY);
-    filterCtx.lineTo(w, freqY);
-    filterCtx.stroke();
+    addSVGLine(spectrogramGoertzelLineSVG, 0, freqY, w, freqY);
 
     // Shade thresholded frequency
 
@@ -1269,14 +1341,24 @@ function drawGoertzelThresholdedPeriods () {
  * Draw a loading message to the given canvas
  * @param {object} canvas The canvas to be cleared and display the loading message
  */
-function drawLoadingImage (svgCanvas) {
+function drawLoadingImage (svgCanvas, dotCount) {
 
     const w = svgCanvas.width.baseVal.value;
     const h = svgCanvas.height.baseVal.value;
 
     clearSVG(svgCanvas);
 
-    addSVGText(svgCanvas, 'Loading...', w / 2, h / 2, 'middle');
+    addSVGText(svgCanvas, 'Loading' + '.'.repeat(dotCount), w / 2 - 20, h / 2, 'start', 'middle');
+
+    setTimeout(() => {
+
+        if (loadingPlots) {
+
+            drawLoadingImage(svgCanvas, (dotCount + 1) % MAX_LOADING_DOTS);
+
+        }
+
+    }, 300);
 
 }
 
@@ -1285,10 +1367,11 @@ function drawLoadingImage (svgCanvas) {
  */
 function drawLoadingImages () {
 
+    loadingPlots = true;
     resetCanvas(spectrogramCanvas);
-    drawLoadingImage(spectrogramLoadingSVG);
+    drawLoadingImage(spectrogramLoadingSVG, 0);
     resetCanvas(waveformCanvas);
-    drawLoadingImage(waveformLoadingSVG);
+    drawLoadingImage(waveformLoadingSVG, 0);
 
 }
 
@@ -1307,6 +1390,7 @@ function reenableUI () {
 
     resetButton.disabled = false;
     exportButton.disabled = false;
+    exportModalButton.disabled = false;
 
     updateNavigationUI();
     updateYZoomUI();
@@ -1326,6 +1410,7 @@ function reenableUI () {
 
     resetButton.disabled = false;
     exportButton.disabled = false;
+    exportModalButton.disabled = false;
 
     playButton.disabled = false;
     enableSlider(playbackSpeedSlider, playbackSpeedDiv);
@@ -1363,8 +1448,9 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
         }
 
         resetCanvas(waveformThresholdCanvas);
-        resetCanvas(waveformThresholdLineCanvas);
+        clearSVG(waveformThresholdLineSVG);
 
+        loadingPlots = false;
         clearSVG(waveformLoadingSVG);
 
         if (thresholdTypeIndex === THRESHOLD_TYPE_AMPLITUDE) {
@@ -1386,7 +1472,7 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
 
             resetCanvas(goertzelCanvas);
             resetCanvas(goertzelThresholdCanvas);
-            resetCanvas(goertzelThresholdLineCanvas);
+            clearSVG(goertzelThresholdLineSVG);
             clearSVG(goertzelLoadingSVG);
 
             const windowLength = getFrequencyTriggerWindowLength();
@@ -1438,6 +1524,7 @@ function drawPlots (samples, isInitialRender) {
     drawSpectrogram(processedSpectrumFrames, spectrumMin, spectrumMax, async (completionTime) => {
 
         resetCanvas(spectrogramThresholdCanvas);
+        loadingPlots = false;
         clearSVG(spectrogramLoadingSVG);
 
         drawWaveformPlot(samples, isInitialRender, completionTime);
@@ -1467,6 +1554,7 @@ function disableUI (startUp) {
 
     resetButton.disabled = true;
     exportButton.disabled = true;
+    exportModalButton.disabled = true;
 
     zoomInButton.disabled = true;
     zoomOutButton.disabled = true;
@@ -1855,7 +1943,7 @@ function zoomInGoertzelY () {
 
             resetCanvas(goertzelCanvas);
             resetCanvas(goertzelThresholdCanvas);
-            resetCanvas(goertzelThresholdLineCanvas);
+            clearSVG(goertzelThresholdLineSVG);
             clearSVG(goertzelLoadingSVG);
 
             const windowLength = getFrequencyTriggerWindowLength();
@@ -1897,7 +1985,7 @@ function zoomOutGoertzelY () {
 
             resetCanvas(goertzelCanvas);
             resetCanvas(goertzelThresholdCanvas);
-            resetCanvas(goertzelThresholdLineCanvas);
+            clearSVG(goertzelThresholdLineSVG);
             clearSVG(goertzelLoadingSVG);
 
             const windowLength = getFrequencyTriggerWindowLength();
@@ -1935,7 +2023,7 @@ function resetGoertzelZoom () {
 
         resetCanvas(goertzelCanvas);
         resetCanvas(goertzelThresholdCanvas);
-        resetCanvas(goertzelThresholdLineCanvas);
+        clearSVG(goertzelThresholdLineSVG);
         clearSVG(goertzelLoadingSVG);
 
         const windowLength = getFrequencyTriggerWindowLength();
@@ -2198,7 +2286,7 @@ function showErrorDisplay (message) {
             duration: 1000,
             easing: 'linear',
             iterations: 1,
-            fill: 'both'
+            fill: 'backwards'
         }).onfinish = () => {
 
             errorDisplay.style.display = 'none';
@@ -2350,7 +2438,7 @@ function updateFileSizePanel () {
     } else {
 
         sizeInformationPanel.innerHTML = 'File size: ' + formatFileSize(totalFileSize) + '.<br>';
-        sizeInformationPanel.innerHTML += 'Enable thresholding to estimate file size reduction.';
+        sizeInformationPanel.innerHTML += 'Enable triggering to estimate file size reduction.';
 
     }
 
@@ -2448,7 +2536,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         resetTransformations();
 
-        resetCanvas(waveformThresholdLineCanvas);
+        clearSVG(waveformThresholdLineSVG);
 
         drawLoadingImages();
 
@@ -3115,6 +3203,9 @@ function reset () {
         updateThresholdTypePlaybackUI();
         updateThresholdUI();
 
+        setCentreObserved(false);
+        setPassFiltersObserved(false);
+
         playbackModeSelect.value = 0;
 
         updatePlots(false, true, true, false, false);
@@ -3539,6 +3630,7 @@ playButton.addEventListener('click', () => {
 
             resetButton.disabled = true;
             exportButton.disabled = true;
+            exportModalButton.disabled = true;
 
             disableSlider(playbackSpeedSlider, playbackSpeedDiv);
             playbackModeSelect.disabled = true;
@@ -3666,7 +3758,7 @@ errorDisplay.addEventListener('click', () => {
         duration: 1000,
         easing: 'linear',
         iterations: 1,
-        fill: 'both'
+        fill: 'backwards'
     }).onfinish = () => {
 
         errorDisplay.style.display = 'none';
@@ -3681,12 +3773,120 @@ browserErrorDisplay.addEventListener('click', () => {
         duration: 1000,
         easing: 'linear',
         iterations: 1,
-        fill: 'both'
+        fill: 'backwards'
     }).onfinish = () => {
 
         browserErrorDisplay.style.display = 'none';
 
     };
+
+});
+
+// Export UI
+
+function exportImage (exportFunction) {
+
+    let plot0yAxis = 'Amplitude';
+    const plot1yAxis = 'Frequency';
+
+    const canvas0array = [];
+    const canvas1array = [spectrogramCanvas];
+
+    let yAxis0svg = waveformLabelSVG;
+    const yAxis1svg = spectrogramLabelSVG;
+
+    let linesY0 = [-1];
+    let linesY1 = [-1];
+
+    let offsetFromCentre;
+    const centre = waveformThresholdLineSVG.height.baseVal.value / 2;
+
+    const goertzelH = goertzelThresholdLineSVG.height.baseVal.value;
+
+    const spectrogramH = spectrogramGoertzelCanvas.height;
+    const nyquist = sampleRate / 2.0;
+
+    // Each threshold mode has its own axis labels and combination of canvas layers
+
+    switch (getThresholdTypeIndex()) {
+
+    case THRESHOLD_TYPE_AMPLITUDE:
+
+        canvas0array.push(waveformCanvas);
+        canvas0array.push(waveformThresholdCanvas);
+
+        canvas1array.push(spectrogramThresholdCanvas);
+
+        offsetFromCentre = getAmplitudeThresholdLineOffset();
+
+        linesY0 = [centre - offsetFromCentre, centre + offsetFromCentre];
+
+        break;
+
+    case THRESHOLD_TYPE_GOERTZEL:
+
+        canvas0array.push(goertzelCanvas);
+        canvas0array.push(goertzelThresholdCanvas);
+
+        canvas1array.push(spectrogramThresholdCanvas);
+        canvas1array.push(spectrogramGoertzelCanvas);
+
+        plot0yAxis = 'Frequency Response';
+
+        yAxis0svg = goertzelLabelSVG;
+
+        linesY0 = [goertzelH - (goertzelH * getFrequencyTrigger() / 100.0 * getGoertzelZoomY())];
+        linesY1 = [spectrogramH - (spectrogramH * getFrequencyTriggerFilterFreq() / nyquist)];
+
+        break;
+
+    case THRESHOLD_TYPE_NONE:
+
+        canvas0array.push(waveformCanvas);
+
+        break;
+
+    }
+
+    let title = fileSpan.innerText;
+
+    for (let i = 0; i < exampleNames.length; i++) {
+
+        if (title.includes(exampleNames[i])) {
+
+            title += ' Example';
+            break;
+
+        }
+
+    }
+
+    exportFunction(canvas0array, canvas1array, timeLabelSVG, yAxis0svg, yAxis1svg, plot0yAxis, plot1yAxis, linesY0, linesY1, fileSpan.innerText, title);
+
+}
+
+exportPNGButton.addEventListener('click', () => {
+
+    exportImage(exportPNG);
+
+    exportCloseButton.click();
+
+});
+
+exportPDFButton.addEventListener('click', () => {
+
+    exportImage(exportPDF);
+
+    exportCloseButton.click();
+
+});
+
+exportBothButton.addEventListener('click', () => {
+
+    exportImage(exportPNG);
+    exportImage(exportPDF);
+
+    exportCloseButton.click();
 
 });
 
@@ -3698,6 +3898,7 @@ resetTransformations();
 
 drawAxisLabels();
 drawAxisHeadings();
+drawBorders();
 
 // Prepare threshold UI
 
@@ -3741,7 +3942,7 @@ if (!isChrome) {
             duration: 1000,
             easing: 'linear',
             iterations: 1,
-            fill: 'both'
+            fill: 'backwards'
         }).onfinish = () => {
 
             browserErrorDisplay.style.display = 'none';
