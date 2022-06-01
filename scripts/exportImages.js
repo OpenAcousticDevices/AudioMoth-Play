@@ -299,8 +299,6 @@ function exportPNG (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, 
 
         const labelText = xLabels[i].innerHTML;
 
-        console.log(labelText, x);
-
         ctx.beginPath();
         ctx.moveTo(x, yOffset0);
         ctx.lineTo(x, yOffset0 + 5);
