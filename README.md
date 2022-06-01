@@ -1,5 +1,5 @@
 # AudioMoth-Filter-Playground #
-A web-based analysis tool for experimenting with filter and amplitude threshold settings available in the [AudioMoth Configuration App](https://github.com/OpenAcousticDevices/AudioMoth-Configuration-App).
+A web-based analysis tool for experimenting with the filter and trigger settings available in the [AudioMoth Configuration App](https://github.com/OpenAcousticDevices/AudioMoth-Configuration-App).
 
 Available online at [playground.openacousticdevices.info](http://playground.openacousticdevices.info).
 
