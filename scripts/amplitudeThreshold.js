@@ -11,12 +11,13 @@ const AMPLITUDE_THRESHOLD_BUFFER_LENGTH = 16384;
 /**
  * Apply amplitude trheshold to given samples
  * @param {number[]} samples Samples to be processed
+ * @param {number} inputLength Number of samples in samples to process
  * @param {number} threshold Amplitude threshold value
  * @param {number} minTriggerDurationSamples Minimum trigger duration in samples
  * @param {boolean[]} output Whether or not each sample is above the given threshold
  * @returns Samples with amplitude threshold applied
  */
-function applyAmplitudeThreshold (samples, threshold, minTriggerDurationSamples, output) {
+function applyAmplitudeThreshold (samples, inputLength, threshold, minTriggerDurationSamples, output) {
 
     // Convert minimum trigger duration buffers
 
@@ -32,9 +33,9 @@ function applyAmplitudeThreshold (samples, threshold, minTriggerDurationSamples,
 
     let thresholdedSampleCount = 0;
 
-    while (index < samples.length) {
+    while (index < inputLength) {
 
-        const limit = Math.min(samples.length, index + AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
+        const limit = Math.min(inputLength, index + AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
 
         while (index < limit) {
 
@@ -76,7 +77,7 @@ function applyAmplitudeThreshold (samples, threshold, minTriggerDurationSamples,
 
     thresholdedSampleCount *= AMPLITUDE_THRESHOLD_BUFFER_LENGTH;
 
-    thresholdedSampleCount = Math.min(thresholdedSampleCount, samples.length);
+    thresholdedSampleCount = Math.min(thresholdedSampleCount, inputLength);
 
     return thresholdedSampleCount;
 

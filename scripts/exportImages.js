@@ -58,6 +58,8 @@ function exportPDF (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, 
         format: [w, h]
     });
 
+    pdfDoc.setFont('FreeSans', 'normal');
+
     // Draw plots to canvas
 
     for (let i = 0; i < canvas0array.length; i++) {
@@ -90,7 +92,6 @@ function exportPDF (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, 
     const yOffset0 = topSpacing + canvas0.height;
     const yOffset1 = topSpacing + canvas0.height + plotSpacing + canvas1.height;
 
-    pdfDoc.setFont('Helvetica');
     pdfDoc.setFontSize(8);
     pdfDoc.setTextColor('#000000');
 

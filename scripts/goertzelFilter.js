@@ -46,12 +46,13 @@ function generateHammingValues (N) {
 /**
  * Apply a Goertzel filter to a given set of samples
  * @param {number[]} samples Samples
+ * @param {number} sampleCount Number of samples to filter
  * @param {number} sampleRate Sample rate of the sample set
  * @param {number} freq Centre frequency
  * @param {number} N Filter length
  * @param {number[]} output Goertzel responses
  */
-function applyGoertzelFilter (samples, sampleRate, freq, N, output) {
+function applyGoertzelFilter (samples, sampleCount, sampleRate, freq, N, output) {
 
     console.log('Applying Goertzel filter at ' + freq + '.');
 
@@ -78,7 +79,7 @@ function applyGoertzelFilter (samples, sampleRate, freq, N, output) {
 
     let y;
 
-    while (i < samples.length) {
+    while (i < sampleCount) {
 
         y = hammingValues[i % N] * samples[i] + c * d1 - d2;
         d2 = d1;

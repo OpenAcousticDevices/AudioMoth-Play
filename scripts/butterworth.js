@@ -221,9 +221,7 @@ function designFilter (filterType, sampleRate, freq1, freq2) {
 
 }
 
-function applyLowPassFilter (input, output, sampleRate, freq) {
-
-    const length = input.length;
+function applyLowPassFilter (input, inputLength, output, sampleRate, freq) {
 
     const filterCoefficients = designFilter(BUTTERWORTH_FILTER_LOW, sampleRate, freq, 0);
 
@@ -232,7 +230,7 @@ function applyLowPassFilter (input, output, sampleRate, freq) {
         yv: [0.0, 0.0, 0.0]
     };
 
-    for (let i = 0; i < length; i += 1) {
+    for (let i = 0; i < inputLength; i += 1) {
 
         filter.xv[0] = filter.xv[1];
         filter.xv[1] = input[i] * filterCoefficients.gain;
@@ -246,13 +244,11 @@ function applyLowPassFilter (input, output, sampleRate, freq) {
 
 }
 
-function applyBandPassFilter (input, output, sampleRate, freq1, freq2) {
-
-    const length = input.length;
+function applyBandPassFilter (input, inputLength, output, sampleRate, freq1, freq2) {
 
     if (freq1 === freq2) {
 
-        for (let i = 0; i < length; i += 1) {
+        for (let i = 0; i < inputLength; i += 1) {
 
             output[i] = 0;
 
@@ -269,7 +265,7 @@ function applyBandPassFilter (input, output, sampleRate, freq1, freq2) {
         yv: [0.0, 0.0, 0.0]
     };
 
-    for (let i = 0; i < length; i += 1) {
+    for (let i = 0; i < inputLength; i += 1) {
 
         filter.xv[0] = filter.xv[1];
         filter.xv[1] = filter.xv[2];
@@ -285,9 +281,7 @@ function applyBandPassFilter (input, output, sampleRate, freq1, freq2) {
 
 }
 
-function applyHighPassFilter (input, output, sampleRate, freq) {
-
-    const length = input.length;
+function applyHighPassFilter (input, inputLength, output, sampleRate, freq) {
 
     const filterCoefficients = designFilter(BUTTERWORTH_FILTER_HIGH, sampleRate, freq, 0);
 
@@ -296,7 +290,7 @@ function applyHighPassFilter (input, output, sampleRate, freq) {
         yv: [0.0, 0.0, 0.0]
     };
 
-    for (let i = 0; i < length; i += 1) {
+    for (let i = 0; i < inputLength; i += 1) {
 
         filter.xv[0] = filter.xv[1];
         filter.xv[1] = input[i] * filterCoefficients.gain;

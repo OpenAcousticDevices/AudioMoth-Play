@@ -25,6 +25,10 @@
 
 /* global exportPNG, exportPDF */
 
+/* global enableSampleRateControl, disableSampleRateControl, updateSampleRateUI, getSampleRateSelection, addSampleRateUIListeners */
+
+/* global downsample */
+
 // Use these values to fill in the axis labels before samples have been loaded
 
 const FILLER_SAMPLE_RATE = 384000;
@@ -44,6 +48,7 @@ const fileButton = document.getElementById('file-button');
 const disabledFileButton = document.getElementById('disabled-file-button');
 const fileSpan = document.getElementById('file-span');
 const trimmedSpan = document.getElementById('trimmed-span');
+const loadingSpan = document.getElementById('loading-span');
 
 // Example file variables
 
@@ -130,23 +135,13 @@ const goertzelDragCanvas = document.getElementById('goertzel-drag-canvas'); // C
 const goertzelThresholdCanvas = document.getElementById('goertzel-threshold-canvas'); // Canvas layer where Goertzel thresholded periods are drawn
 const goertzelThresholdLineSVG = document.getElementById('goertzel-threshold-line-svg'); // SVG layer where Goertzel thresholded periods are drawn
 const goertzelCanvas = document.getElementById('goertzel-canvas'); // Canvas layer where Goertzel response is drawn
-const goertzelLoadingSVG = document.getElementById('goertzel-loading-svg');
 const goertzelBorderCanvas = document.getElementById('goertzel-border-canvas');
 
 const timeLabelSVG = document.getElementById('time-axis-label-svg');
 const timeAxisHeadingSVG = document.getElementById('time-axis-heading-svg');
 
-// Loading animation flag
-
-let loadingPlots = false;
-
-// How many dots appear after "Loading"
-
-const MAX_LOADING_DOTS = 5;
-
 // Y axis label canvases
 
-const Y_LABEL_COUNT = 4;
 const spectrogramLabelSVG = document.getElementById('spectrogram-label-svg');
 const waveformLabelSVG = document.getElementById('waveform-label-svg');
 const goertzelLabelSVG = document.getElementById('goertzel-label-svg');
@@ -157,10 +152,14 @@ let fileHandler;
 let unfilteredSamples;
 let filteredSamples;
 let sampleCount = 0;
-let sampleRate, processedSpectrumFrames;
+let trueSampleCount = 0;
+let sampleRate, trueSampleRate;
+let processedSpectrumFrames;
 let spectrumMin = 0;
 let spectrumMax = 0;
 let firstFile = true;
+
+let downsampledUnfilteredSamples;
 
 // Drawing/processing flag
 
@@ -383,6 +382,16 @@ function clearSVG (parent) {
  * Gets sample rate, returning a filler value if no samples have been loaded yet
  * @returns Sample rate
  */
+ function getTrueSampleRate () {
+
+    return (sampleCount !== 0) ? trueSampleRate : FILLER_SAMPLE_RATE;
+
+}
+
+/**
+ * Gets sample rate, returning a filler value if no samples have been loaded yet
+ * @returns Sample rate
+ */
 function getSampleRate () {
 
     return (sampleCount !== 0) ? sampleRate : FILLER_SAMPLE_RATE;
@@ -581,13 +590,27 @@ function drawAxisLabels () {
 
     clearSVG(spectrogramLabelSVG);
 
-    const ySpecLabelIncrement = getSampleRate() / 2 / Y_LABEL_COUNT;
-    const ySpecIncrement = spectrogramLabelSVG.height.baseVal.value / Y_LABEL_COUNT;
+    const yLabelCounts = {
+        8000: 4,
+        16000: 4,
+        32000: 4,
+        48000: 4,
+        96000: 4,
+        192000: 4,
+        250000: 5,
+        384000: 4
+    };
+
+    const yLabelCount = yLabelCounts[getSampleRate()];
+
+    const ySpecLabelIncrement = getSampleRate() / 2 / yLabelCount;
+
+    const ySpecIncrement = spectrogramLabelSVG.height.baseVal.value / yLabelCount;
 
     const specLabelX = spectrogramLabelSVG.width.baseVal.value - 7;
     const specMarkerX = spectrogramLabelSVG.width.baseVal.value - yMarkerLength;
 
-    for (let i = 0; i <= Y_LABEL_COUNT; i++) {
+    for (let i = 0; i <= yLabelCount; i++) {
 
         const labelText = (i * ySpecLabelIncrement / 1000) + 'kHz';
 
@@ -599,7 +622,7 @@ function drawAxisLabels () {
             const endLabelY = spectrogramLabelSVG.height.baseVal.value - 0.5;
             addSVGLine(spectrogramLabelSVG, specMarkerX, endLabelY, spectrogramLabelSVG.width.baseVal.value, endLabelY);
 
-        } else if (i === Y_LABEL_COUNT) {
+        } else if (i === yLabelCount) {
 
             addSVGText(spectrogramLabelSVG, labelText, specLabelX, y, 'end', 'hanging');
             addSVGLine(spectrogramLabelSVG, specMarkerX, 0.5, spectrogramLabelSVG.width.baseVal.value, 0.5);
@@ -1341,37 +1364,14 @@ function drawGoertzelThresholdedPeriods () {
  * Draw a loading message to the given canvas
  * @param {object} canvas The canvas to be cleared and display the loading message
  */
-function drawLoadingImage (svgCanvas, dotCount) {
+function drawLoadingImage (svgCanvas) {
 
     const w = svgCanvas.width.baseVal.value;
     const h = svgCanvas.height.baseVal.value;
 
     clearSVG(svgCanvas);
 
-    addSVGText(svgCanvas, 'Loading' + '.'.repeat(dotCount), w / 2 - 20, h / 2, 'start', 'middle');
-
-    setTimeout(() => {
-
-        if (loadingPlots) {
-
-            drawLoadingImage(svgCanvas, (dotCount + 1) % MAX_LOADING_DOTS);
-
-        }
-
-    }, 300);
-
-}
-
-/**
- * Draw loading message on spectrogram and waveform canvases
- */
-function drawLoadingImages () {
-
-    loadingPlots = true;
-    resetCanvas(spectrogramCanvas);
-    drawLoadingImage(spectrogramLoadingSVG, 0);
-    resetCanvas(waveformCanvas);
-    drawLoadingImage(waveformLoadingSVG, 0);
+    addSVGText(svgCanvas, 'Loading' + '.'.repeat(3), w / 2 - 20, h / 2, 'start', 'middle');
 
 }
 
@@ -1387,6 +1387,8 @@ function reenableUI () {
         exampleLinks[i].disabled = false;
 
     }
+
+    enableSampleRateControl();
 
     resetButton.disabled = false;
     exportButton.disabled = false;
@@ -1417,6 +1419,9 @@ function reenableUI () {
     playbackModeSelect.disabled = false;
 
     enableFilterUI();
+
+    fileSpan.style.display = '';
+    loadingSpan.style.display = 'none';
 
 }
 
@@ -1450,8 +1455,7 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
         resetCanvas(waveformThresholdCanvas);
         clearSVG(waveformThresholdLineSVG);
 
-        loadingPlots = false;
-        clearSVG(waveformLoadingSVG);
+        waveformLoadingSVG.style.display = 'none';
 
         if (thresholdTypeIndex === THRESHOLD_TYPE_AMPLITUDE) {
 
@@ -1473,7 +1477,6 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
             resetCanvas(goertzelCanvas);
             resetCanvas(goertzelThresholdCanvas);
             clearSVG(goertzelThresholdLineSVG);
-            clearSVG(goertzelLoadingSVG);
 
             const windowLength = getFrequencyTriggerWindowLength();
 
@@ -1524,8 +1527,7 @@ function drawPlots (samples, isInitialRender) {
     drawSpectrogram(processedSpectrumFrames, spectrumMin, spectrumMax, async (completionTime) => {
 
         resetCanvas(spectrogramThresholdCanvas);
-        loadingPlots = false;
-        clearSVG(spectrogramLoadingSVG);
+        spectrogramLoadingSVG.style.display = 'none';
 
         drawWaveformPlot(samples, isInitialRender, completionTime);
 
@@ -1551,6 +1553,8 @@ function disableUI (startUp) {
         }
 
     }
+
+    disableSampleRateControl();
 
     resetButton.disabled = true;
     exportButton.disabled = true;
@@ -1599,7 +1603,18 @@ function processContents (samples, isInitialRender, renderPlots) {
 
         // Process spectrogram frames
 
-        const result = calculateSpectrogramFrames(samples, offset, displayLength);
+        let result;
+
+        if (renderPlots) {
+
+            result = calculateSpectrogramFrames(samples, offset, displayLength);
+
+        } else {
+
+            result = calculateSpectrogramFrames(samples, 0, sampleCount);
+
+        }
+
         processedSpectrumFrames = result.frames;
 
         if (spectrumMin === 0.0 && spectrumMax === 0.0) {
@@ -1607,13 +1622,17 @@ function processContents (samples, isInitialRender, renderPlots) {
             spectrumMin = result.min;
             spectrumMax = result.max;
 
-            console.log('Resetting colour map. Min: ' + spectrumMin + ' Max: ' + spectrumMax);
+            console.log('Setting colour map. Min: ' + spectrumMin + ' Max: ' + spectrumMax);
 
         }
 
         if (renderPlots) {
 
             drawPlots(samples, isInitialRender);
+
+        } else {
+
+            drawing = false;
 
         }
 
@@ -1840,7 +1859,7 @@ function zoomInWaveformY () {
 
             if (filterIndex === FILTER_NONE) {
 
-                drawWaveformPlot(unfilteredSamples, false);
+                drawWaveformPlot(downsampledUnfilteredSamples, false);
 
             } else {
 
@@ -1877,7 +1896,7 @@ function zoomOutWaveformY () {
 
             if (filterIndex === FILTER_NONE) {
 
-                drawWaveformPlot(unfilteredSamples, false);
+                drawWaveformPlot(downsampledUnfilteredSamples, false);
 
             } else {
 
@@ -1910,7 +1929,7 @@ function resetWaveformZoom () {
 
         if (filterIndex === FILTER_NONE) {
 
-            drawWaveformPlot(unfilteredSamples, false);
+            drawWaveformPlot(downsampledUnfilteredSamples, false);
 
         } else {
 
@@ -1944,7 +1963,6 @@ function zoomInGoertzelY () {
             resetCanvas(goertzelCanvas);
             resetCanvas(goertzelThresholdCanvas);
             clearSVG(goertzelThresholdLineSVG);
-            clearSVG(goertzelLoadingSVG);
 
             const windowLength = getFrequencyTriggerWindowLength();
 
@@ -1986,7 +2004,6 @@ function zoomOutGoertzelY () {
             resetCanvas(goertzelCanvas);
             resetCanvas(goertzelThresholdCanvas);
             clearSVG(goertzelThresholdLineSVG);
-            clearSVG(goertzelLoadingSVG);
 
             const windowLength = getFrequencyTriggerWindowLength();
 
@@ -2024,7 +2041,6 @@ function resetGoertzelZoom () {
         resetCanvas(goertzelCanvas);
         resetCanvas(goertzelThresholdCanvas);
         clearSVG(goertzelThresholdLineSVG);
-        clearSVG(goertzelLoadingSVG);
 
         const windowLength = getFrequencyTriggerWindowLength();
 
@@ -2128,25 +2144,31 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
         case FILTER_LOW:
             lowPassFilterValue = lowPassFilterSlider.getValue();
             console.log('Applying low-pass filter at', lowPassFilterValue, 'Hz');
-            applyLowPassFilter(unfilteredSamples, filteredSamples, getSampleRate(), lowPassFilterValue);
+
+            applyLowPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), lowPassFilterValue);
+
             break;
         case FILTER_HIGH:
             highPassFilterValue = highPassFilterSlider.getValue();
             console.log('Applying high-pass filter at', highPassFilterValue, 'Hz');
-            applyHighPassFilter(unfilteredSamples, filteredSamples, getSampleRate(), highPassFilterValue);
+
+            applyHighPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), highPassFilterValue);
+
             break;
         case FILTER_BAND:
             bandPassFilterValue0 = Math.min(...bandPassFilterSlider.getValue());
             bandPassFilterValue1 = Math.max(...bandPassFilterSlider.getValue());
             console.log('Applying band-pass filter between', bandPassFilterValue0, 'and', bandPassFilterValue1, 'Hz');
-            applyBandPassFilter(unfilteredSamples, filteredSamples, getSampleRate(), bandPassFilterValue0, bandPassFilterValue1);
+
+            applyBandPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), bandPassFilterValue0, bandPassFilterValue1);
+
             break;
 
         }
 
     }
 
-    const renderSamples = (isFiltering && thresholdTypeIndex !== THRESHOLD_TYPE_GOERTZEL) ? filteredSamples : unfilteredSamples;
+    const renderSamples = (isFiltering && thresholdTypeIndex !== THRESHOLD_TYPE_GOERTZEL) ? filteredSamples : downsampledUnfilteredSamples;
 
     // Apply amplitude threshold
 
@@ -2177,7 +2199,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
         console.log('Threshold:', threshold);
         console.log('Minimum trigger duration: %i (%i samples)', minimumTriggerDurationSecs, minimumTriggerDurationSamples);
 
-        thresholdedValueCount = applyAmplitudeThreshold(renderSamples, threshold, minimumTriggerDurationSamples, samplesAboveThreshold);
+        thresholdedValueCount = applyAmplitudeThreshold(renderSamples, sampleCount, threshold, minimumTriggerDurationSamples, samplesAboveThreshold);
 
     }
 
@@ -2198,7 +2220,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
 
             // Apply filter to samples
 
-            applyGoertzelFilter(renderSamples, sampleRate, freq, windowLength, goertzelValues);
+            applyGoertzelFilter(renderSamples, sampleCount, sampleRate, freq, windowLength, goertzelValues);
 
         }
 
@@ -2240,6 +2262,7 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
 
     if (resetColourMap) {
 
+        console.log('Resetting colour map');
         spectrumMin = 0.0;
         spectrumMax = 0.0;
 
@@ -2251,7 +2274,7 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
 
     if (filterIndex === FILTER_NONE && thresholdTypeIndex === THRESHOLD_TYPE_NONE) {
 
-        processContents(unfilteredSamples, false, true);
+        processContents(downsampledUnfilteredSamples, false, true);
 
         return;
 
@@ -2325,11 +2348,15 @@ function processReadResult (result, callback) {
 
     errorDisplay.style.display = 'none';
 
-    sampleRate = result.header.wavFormat.samplesPerSecond;
-    sampleCount = result.samples.length;
+    trueSampleRate = result.header.wavFormat.samplesPerSecond;
+    trueSampleCount = result.samples.length;
+    sampleRate = trueSampleRate;
+    sampleCount = trueSampleCount;
 
     const lengthSecs = sampleCount / sampleRate;
 
+    const loadedFileName = fileHandler ? fileHandler.name : 'Example file';
+    console.log('------ ' + loadedFileName + ' ------');
     console.log('Loaded ' + sampleCount + ' samples at a sample rate of ' + sampleRate + ' Hz (' + lengthSecs + ' seconds)');
 
     callback(result);
@@ -2505,6 +2532,11 @@ async function loadFile (exampleFilePath, exampleName) {
 
     const prevSampleRate = sampleRate;
 
+    // Display loading text
+
+    fileSpan.style.display = 'none';
+    loadingSpan.style.display = '';
+
     // Read samples
 
     await readFromFile(exampleFilePath, (result) => {
@@ -2538,9 +2570,26 @@ async function loadFile (exampleFilePath, exampleName) {
 
         clearSVG(waveformThresholdLineSVG);
 
-        drawLoadingImages();
+        // Fill sample arrays
 
         unfilteredSamples = samples;
+
+        downsampledUnfilteredSamples = new Int16Array(sampleCount);
+
+        const downsampleResult = downsample(unfilteredSamples, getTrueSampleRate(), downsampledUnfilteredSamples, getSampleRate());
+
+        if (!downsampleResult.success) {
+
+            console.error(downsampleResult.error);
+            showErrorDisplay('Failed to downsample audio.');
+
+            // Reset sample rate selection
+
+            updateSampleRateUI(getTrueSampleRate());
+
+            return;
+
+        }
 
         // Update file name display
 
@@ -2552,6 +2601,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         // Reset values used to calculate colour map
 
+        console.log('Resetting colour map');
         spectrumMin = 0.0;
         spectrumMax = 0.0;
 
@@ -2563,6 +2613,7 @@ async function loadFile (exampleFilePath, exampleName) {
         const centreObserved = getCentreObserved();
 
         sampleRateChange(resetSliders || !passFiltersObserved, resetSliders || !centreObserved, getSampleRate());
+        updateSampleRateUI(getTrueSampleRate());
 
         if (resetSliders) {
 
@@ -2664,9 +2715,10 @@ async function loadExampleFiles (devMode) {
 
     console.log('Loading example files');
 
-    fileSpan.innerText = 'Loading example file...';
-
     drawing = true;
+
+    spectrogramLoadingSVG.style.display = '';
+    waveformLoadingSVG.style.display = '';
 
     for (let i = 0; i < exampleNames.length; i++) {
 
@@ -3016,7 +3068,7 @@ amplitudeThresholdScaleSelect.addEventListener('change', function () {
 
         if (filterIndex === FILTER_NONE) {
 
-            drawWaveformPlot(unfilteredSamples, false);
+            drawWaveformPlot(downsampledUnfilteredSamples, false);
 
         } else {
 
@@ -3195,9 +3247,29 @@ function reset () {
 
     if (sampleCount !== 0 && !drawing && !playing) {
 
+        sampleRate = getTrueSampleRate();
+
         resetElements();
 
         sampleRateChange(true, true, getSampleRate());
+        updateSampleRateUI(getTrueSampleRate());
+
+        const downsampleResult = downsample(unfilteredSamples, getTrueSampleRate(), downsampledUnfilteredSamples, sampleRate);
+
+        if (!downsampleResult.success) {
+
+            console.error(downsampleResult.error);
+            showErrorDisplay('Failed to downsample audio.');
+
+            // Reset sample rate selection
+
+            updateSampleRateUI(getTrueSampleRate());
+
+            return;
+
+        }
+
+        sampleCount = downsampleResult.length;
 
         updateFilterUI();
         updateThresholdTypePlaybackUI();
@@ -3208,13 +3280,67 @@ function reset () {
 
         playbackModeSelect.value = 0;
 
-        updatePlots(false, true, true, false, false);
+        updatePlots(true, true, true, true, true);
+
+        resetXTransformations();
 
     }
 
 }
 
 resetButton.addEventListener('click', reset);
+
+// Add sample rate UI listeners
+
+addSampleRateUIListeners(() => {
+
+    const oldSampleRate = sampleRate;
+    sampleRate = getSampleRateSelection();
+
+    const passFiltersObserved = getPassFiltersObserved();
+    const centreObserved = getCentreObserved();
+    sampleRateChange(!passFiltersObserved, !centreObserved, getSampleRate());
+
+    const downsampleResult = downsample(unfilteredSamples, trueSampleRate, downsampledUnfilteredSamples, sampleRate);
+
+    if (!downsampleResult.success) {
+
+        console.error(downsampleResult.error);
+        showErrorDisplay('Failed to downsample audio.');
+
+        // Reset sample rate selection
+
+        updateSampleRateUI(getTrueSampleRate());
+
+        return;
+
+    }
+
+    sampleCount = downsampleResult.length;
+
+    // Scale the offset and display length to take into account the new downsampled sample rate
+
+    const downsampleMultiplier = sampleRate / oldSampleRate;
+    offset = Math.floor(offset * downsampleMultiplier);
+    displayLength = Math.floor(displayLength * downsampleMultiplier);
+
+    // Reset colour map here, rather than as part of updatePlots() so the max and min don't use the possibly filtered values
+
+    console.log('Resetting colour map');
+    spectrumMin = 0.0;
+    spectrumMax = 0.0;
+
+    processContents(downsampledUnfilteredSamples, false, false);
+
+    drawing = false;
+
+    updateFilterUI();
+    updateThresholdTypePlaybackUI();
+    updateThresholdUI();
+
+    updatePlots(false, true, true, true, true);
+
+});
 
 // Add filter slider listeners which update the information label
 
@@ -3227,16 +3353,20 @@ highPassFilterSlider.on('change', updateFilterLabel);
  */
 function resetNavigation () {
 
-    if (sampleCount !== 0 && !drawing && !playing) {
-
-        resetXTransformations();
-        updatePlots(false, true, false, false, false);
-
-    }
+    resetXTransformations();
+    updatePlots(false, true, false, false, false);
 
 }
 
-homeButton.addEventListener('click', resetNavigation);
+homeButton.addEventListener('click', () => {
+
+    if (sampleCount !== 0 && !drawing && !playing) {
+
+        resetNavigation();
+
+    }
+
+});
 
 zoomInButton.addEventListener('click', zoomIn);
 zoomOutButton.addEventListener('click', zoomOut);
@@ -3628,6 +3758,8 @@ playButton.addEventListener('click', () => {
 
             }
 
+            disableSampleRateControl();
+
             resetButton.disabled = true;
             exportButton.disabled = true;
             exportModalButton.disabled = true;
@@ -3660,7 +3792,7 @@ playButton.addEventListener('click', () => {
 
         const filterIndex = getFilterRadioValue();
 
-        const samples = (filterIndex !== FILTER_NONE && playbackMode !== PLAYBACK_MODE_ALL) ? filteredSamples : unfilteredSamples;
+        const samples = (filterIndex !== FILTER_NONE && playbackMode !== PLAYBACK_MODE_ALL) ? filteredSamples : downsampledUnfilteredSamples;
 
         let playbackBufferLength = displayLength;
 
@@ -3906,6 +4038,7 @@ updateThresholdTypePlaybackUI();
 updateThresholdUI();
 
 // Prepare filter UI
+// First 2 arguments only used in Config app
 
 prepareUI(null, null, () => {
 
@@ -3913,10 +4046,9 @@ prepareUI(null, null, () => {
     const passFiltersObserved = getPassFiltersObserved();
     const centreObserved = getCentreObserved();
     sampleRateChange(!passFiltersObserved, !centreObserved, getSampleRate());
-
     handleFilterChange();
 
-}); // First 2 arguments only used in Config app
+});
 
 updateFilterUI();
 updateFilterLabel();
@@ -3924,6 +4056,11 @@ updateFilterLabel();
 // Disable controls until file is loaded
 
 disableUI(true);
+
+// Draw loading SVG texts
+
+drawLoadingImage(waveformLoadingSVG);
+drawLoadingImage(spectrogramLoadingSVG);
 
 // Display error if current browser is not Chrome
 

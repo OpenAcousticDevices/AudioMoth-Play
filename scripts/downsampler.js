@@ -10,7 +10,11 @@
 
 const DEBUG = false;
 
-/* File buffer constants */
+/* Downsample constants */
+
+const INT16_MIN = -32768;
+
+const INT16_MAX = 32767;
 
 const HERTZ_IN_KILOHERTZ = 1000;
 
@@ -20,14 +24,16 @@ const validSampleRates = [8000, 16000, 32000, 48000, 96000, 192000, 250000, 3840
 
 /* Greatest common divisor function */
 
-function greatestCommonDivider(a, b) {
+function greatestCommonDivider (a, b) {
 
-    var c;
+    let c;
 
-    while (a != 0) {
-        c = a; 
-        a = b % a;  
+    while (a !== 0) {
+
+        c = a;
+        a = b % a;
         b = c;
+
     }
 
     return b;
@@ -53,20 +59,22 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
 
     /* Return if there is a problem with the parameters */
 
-    let valid = originalSampleRateValid && requestedSampleRateValid && requestedSampleRate <= originalSampleRate;
+    const valid = originalSampleRateValid && requestedSampleRateValid && requestedSampleRate <= originalSampleRate;
 
     if (!valid) {
 
-        const message = !originalSampleRateValid ? "Original sample rate is not valid." :
-                        !requestedSampleRateValid ? "Requested sample rate is not valid." :
-                        "Requested sample rate is greater than original sample rate";
+        const message = !originalSampleRateValid
+            ? 'Original sample rate is not valid.'
+            : !requestedSampleRateValid
+                ? 'Requested sample rate is not valid.'
+                : 'Requested sample rate is greater than original sample rate';
 
         return {
             success: false,
             length: 0,
             error: message
         };
-    
+
     }
 
     /* Calculate the downsampling parameters */
@@ -91,15 +99,15 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
 
     if (DEBUG) {
 
-        console.log("Downsampler input: " + inputArray.length + " samples at " + originalSampleRate + " Hz");
+        console.log('Downsampler input: ' + inputArray.length + ' samples at ' + originalSampleRate + ' Hz');
 
-        console.log("Downsampler output: " + length + " samples at " + requestedSampleRate + " Hz");
+        console.log('Downsampler output: ' + length + ' samples at ' + requestedSampleRate + ' Hz');
 
     }
 
     /* Finish early if no data is to be written */
 
-    if (length == 0) {
+    if (length === 0) {
 
         return {
             success: true,
@@ -110,7 +118,7 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
     }
 
     /* Write the data */
-            
+
     let count = 0;
 
     let total = 0;
@@ -131,7 +139,7 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
 
         currentSample = nextSample;
 
-        nextSample = inputArray[inputIndex++];
+        if (inputIndex < inputArray.length) nextSample = inputArray[inputIndex++];
 
         /* Interpolate until a new sample is required */
 
@@ -145,9 +153,15 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
 
             /* Write a new output sample */
 
-            if (count == sampleRateDivider) {
+            if (count === sampleRateDivider) {
 
-                outputArray[outputIndex++] = Math.round(total / sampleRateDivider);
+                let value = total / sampleRateDivider;
+
+                value = Math.sign(value) * Math.round(Math.abs(value));
+
+                value = Math.max(INT16_MIN, Math.min(INT16_MAX, value));
+
+                outputArray[outputIndex++] = value;
 
                 total = 0;
 
@@ -172,7 +186,3 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
     };
 
 }
-
-/* Export downsample */
-
-exports.downsample = downsample;
