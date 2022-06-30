@@ -96,7 +96,7 @@ function STFT (pixelWidth, pixelHeight) {
 
 }
 
-STFT.prototype.calculate = function calculateSync (data, offset, length, out) {
+STFT.prototype.calculate = function calculateSync (data, dataLength, offset, length, out) {
 
     this._data = data;
 
@@ -110,7 +110,7 @@ STFT.prototype.calculate = function calculateSync (data, offset, length, out) {
 
             const start = Math.round(offset + (i + 0.5) * samplesPerPixel + (j - FFTCount / 2) * this._size);
 
-            const constrainedStart = Math.max(0, Math.min(data.length - this._size, start));
+            const constrainedStart = Math.max(0, Math.min(dataLength - this._size, start));
 
             this._start = constrainedStart;
 

@@ -46,11 +46,11 @@ function fastLog2 (n) {
  * @param {number} length Number of samples after offset to stop
  * @returns Object containing the spectrogram and its minimum and maximum values for use in colouring
  */
-function calculateSpectrogramFrames (sampleArray, offset, length) {
+function calculateSpectrogramFrames (sampleArray, sampleArrayLength, offset, length) {
 
     // const startTime = new Date();
 
-    stft.calculate(sampleArray, offset, length, spectrogram);
+    stft.calculate(sampleArray, sampleArrayLength, offset, length, spectrogram);
 
     // Calculate the max and min values in spectrogram so the colour map can be applied during rendering
 

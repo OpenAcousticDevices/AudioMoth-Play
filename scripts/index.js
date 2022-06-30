@@ -1603,17 +1603,7 @@ function processContents (samples, isInitialRender, renderPlots) {
 
         // Process spectrogram frames
 
-        let result;
-
-        if (renderPlots) {
-
-            result = calculateSpectrogramFrames(samples, offset, displayLength);
-
-        } else {
-
-            result = calculateSpectrogramFrames(samples, 0, sampleCount);
-
-        }
+        const result = calculateSpectrogramFrames(samples, sampleCount, renderPlots ? offset : 0, renderPlots ? displayLength : sampleCount);
 
         processedSpectrumFrames = result.frames;
 
