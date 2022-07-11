@@ -16,14 +16,14 @@
 /* global getFilterRadioValue, updateThresholdTypeUI, updateThresholdUI, updateFilterLabel, getFilterType */
 /* global getThresholdTypeIndex, THRESHOLD_TYPE_NONE, THRESHOLD_TYPE_AMPLITUDE, THRESHOLD_TYPE_GOERTZEL, getFrequencyTriggerFilterFreq, getFrequencyTriggerWindowLength, updateFilterUI, getFrequencyTrigger */
 /* global thresholdScaleIndex, THRESHOLD_SCALE_PERCENTAGE, THRESHOLD_SCALE_16BIT, THRESHOLD_SCALE_DECIBEL */
-/* global thresholdTypeLabel, thresholdTypeRadioButtons, lowPassFilterSlider, highPassFilterSlider, bandPassFilterSlider, amplitudeThresholdSlider, amplitudeThresholdDurationRadioButtons, goertzelFilterCentreSlider, goertzelFilterWindowRadioButtons, goertzelDurationRadioButtons, goertzelThresholdSlider, filterRadioButtons */
+/* global thresholdTypeLabel, thresholdTypeRadioButtons, lowPassFilterSlider, highPassFilterSlider, bandPassFilterSlider, amplitudeThresholdSlider, amplitudeThresholdDurationRadioButtons, goertzelFilterCentreSlider, goertzelFilterWindowRadioButtons, goertzelDurationRadioButtons, goertzelThresholdSlider */
 /* global getMinimumTriggerDurationAmp, getMinimumTriggerDurationGoertzel, getFilterSliderStep, setBandPass, setLowPassSliderValue, setHighPassSliderValue, roundToSliderStep, setFrequencyTriggerFilterFreq, getMinimumAmplitudeThresholdDuration, getAmplitudeThresholdValues, getFrequencyTriggerValues, setAmplitudeThresholdScaleIndex */
 /* global prevThresholdScaleIndex, resetElements, disableFilterUI, enableFilterUI */
 
 /* global enableSlider, disableSlider */
 /* global setCentreObserved, setPassFiltersObserved */
 
-/* global exportPNG, exportPDF */
+/* global exportPNG, exportPDF, exportAudio */
 
 /* global enableSampleRateControl, disableSampleRateControl, updateSampleRateUI, getSampleRateSelection, addSampleRateUIListeners */
 
@@ -36,9 +36,9 @@ const FILLER_SAMPLE_COUNT = FILLER_SAMPLE_RATE * 60;
 
 // Error display elements
 
-const browserErrorDisplay = document.getElementById('browser-error-display');
-const errorDisplay = document.getElementById('error-display');
-const errorText = document.getElementById('error-text');
+const errorSpan = document.getElementById('error-span');
+const fileSelectionTitleSpan = document.getElementById('file-selection-title-span');
+const browserErrorSpans = document.getElementById('browser-error-spans');
 const ERROR_DISPLAY_TIME = 3000;
 
 // File selection elements
@@ -148,6 +148,7 @@ const goertzelLabelSVG = document.getElementById('goertzel-label-svg');
 
 // File variables
 
+let currentHeader;
 let fileHandler;
 let unfilteredSamples;
 let filteredSamples;
@@ -235,6 +236,10 @@ const exportCloseButton = document.getElementById('export-close-button');
 const exportPNGButton = document.getElementById('export-png-button');
 const exportPDFButton = document.getElementById('export-pdf-button');
 const exportBothButton = document.getElementById('export-both-button');
+
+// Export audio button
+
+const exportAudioButton = document.getElementById('export-audio-button');
 
 /**
  * Update UI based on which threshold type is selected
@@ -382,7 +387,7 @@ function clearSVG (parent) {
  * Gets sample rate, returning a filler value if no samples have been loaded yet
  * @returns Sample rate
  */
- function getTrueSampleRate () {
+function getTrueSampleRate () {
 
     return (sampleCount !== 0) ? trueSampleRate : FILLER_SAMPLE_RATE;
 
@@ -1390,10 +1395,6 @@ function reenableUI () {
 
     enableSampleRateControl();
 
-    resetButton.disabled = false;
-    exportButton.disabled = false;
-    exportModalButton.disabled = false;
-
     updateNavigationUI();
     updateYZoomUI();
 
@@ -1413,6 +1414,7 @@ function reenableUI () {
     resetButton.disabled = false;
     exportButton.disabled = false;
     exportModalButton.disabled = false;
+    exportAudioButton.disabled = false;
 
     playButton.disabled = false;
     enableSlider(playbackSpeedSlider, playbackSpeedDiv);
@@ -1420,8 +1422,12 @@ function reenableUI () {
 
     enableFilterUI();
 
-    fileSpan.style.display = '';
-    loadingSpan.style.display = 'none';
+    if (errorSpan.style.display === 'none') {
+
+        fileSpan.style.display = '';
+        loadingSpan.style.display = 'none';
+
+    }
 
 }
 
@@ -1559,6 +1565,7 @@ function disableUI (startUp) {
     resetButton.disabled = true;
     exportButton.disabled = true;
     exportModalButton.disabled = true;
+    exportAudioButton.disbled = true;
 
     zoomInButton.disabled = true;
     zoomOutButton.disabled = true;
@@ -2287,22 +2294,26 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
 /**
  * Display an error and then fade out after ERROR_DISPLAY_TIME ms
  * @param {string} message Error message
+ * @param {string} title Optional title on error display
  */
 function showErrorDisplay (message) {
 
-    errorDisplay.style.display = '';
-    errorText.innerHTML = message;
+    fileSpan.style.display = 'none';
+    loadingSpan.style.display = 'none';
+    errorSpan.style.display = '';
+    errorSpan.innerHTML = message;
 
     setTimeout(() => {
 
-        errorDisplay.animate({opacity: 0}, {
+        errorSpan.animate({opacity: 0}, {
             duration: 1000,
             easing: 'linear',
             iterations: 1,
             fill: 'backwards'
         }).onfinish = () => {
 
-            errorDisplay.style.display = 'none';
+            errorSpan.style.display = 'none';
+            fileSpan.style.display = '';
 
         };
 
@@ -2332,11 +2343,13 @@ function processReadResult (result, callback) {
 
         showErrorDisplay(errorMessage);
 
+        reenableUI();
+
         return;
 
     }
 
-    errorDisplay.style.display = 'none';
+    currentHeader = result.header;
 
     trueSampleRate = result.header.wavFormat.samplesPerSecond;
     trueSampleCount = result.samples.length;
@@ -2524,8 +2537,12 @@ async function loadFile (exampleFilePath, exampleName) {
 
     // Display loading text
 
-    fileSpan.style.display = 'none';
-    loadingSpan.style.display = '';
+    if (errorSpan.style.display === 'none') {
+
+        fileSpan.style.display = 'none';
+        loadingSpan.style.display = '';
+
+    }
 
     // Read samples
 
@@ -3753,6 +3770,7 @@ playButton.addEventListener('click', () => {
             resetButton.disabled = true;
             exportButton.disabled = true;
             exportModalButton.disabled = true;
+            exportAudioButton.disabled = true;
 
             disableSlider(playbackSpeedSlider, playbackSpeedDiv);
             playbackModeSelect.disabled = true;
@@ -3872,38 +3890,6 @@ playButton.addEventListener('click', () => {
 
 });
 
-// Hide error boxes on click
-
-errorDisplay.addEventListener('click', () => {
-
-    errorDisplay.animate({opacity: 0}, {
-        duration: 1000,
-        easing: 'linear',
-        iterations: 1,
-        fill: 'backwards'
-    }).onfinish = () => {
-
-        errorDisplay.style.display = 'none';
-
-    };
-
-});
-
-browserErrorDisplay.addEventListener('click', () => {
-
-    browserErrorDisplay.animate({opacity: 0}, {
-        duration: 1000,
-        easing: 'linear',
-        iterations: 1,
-        fill: 'backwards'
-    }).onfinish = () => {
-
-        browserErrorDisplay.style.display = 'none';
-
-    };
-
-});
-
 // Export UI
 
 function exportImage (exportFunction) {
@@ -4012,6 +3998,115 @@ exportBothButton.addEventListener('click', () => {
 
 });
 
+function handleExportAudioResult (err) {
+
+    if (err) {
+
+        console.error(err);
+
+        showErrorDisplay(err);
+
+    }
+
+}
+
+exportAudioButton.addEventListener('click', () => {
+
+    // Get mode which dictates how amplitude thresholded periods are handled
+
+    const playbackMode = getPlaybackMode();
+
+    // Get currently displayed samples to play
+
+    const filterIndex = getFilterRadioValue();
+
+    const samples = (filterIndex !== FILTER_NONE && playbackMode !== PLAYBACK_MODE_ALL) ? filteredSamples : downsampledUnfilteredSamples;
+
+    let playbackBufferLength = displayLength;
+
+    const thresholdTypeIndex = getThresholdTypeIndex();
+
+    // If playback mode is to skip thresholded periods, build an array of X axis locations which map to playback progress
+
+    if (playbackMode === PLAYBACK_MODE_SKIP) {
+
+        // Create x coordinate map
+
+        skippingXCoords = new Array(displayLength).fill(0);
+
+        const waveformW = waveformPlaybackCanvas.width;
+
+        let n = 0;
+
+        const displayedTime = displayLength / getSampleRate();
+
+        // Create mapping from sample index to x coordinate
+
+        const start = Math.floor(offset / AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
+        const end = Math.floor((offset + displayLength - 1) / AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
+
+        for (let i = start; i <= end; i++) {
+
+            const sampleIndex = i * AMPLITUDE_THRESHOLD_BUFFER_LENGTH;
+
+            const sampleAboveThreshold = (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold[i] : samplesAboveThreshold[i];
+
+            if (sampleAboveThreshold) {
+
+                // Add an x coordinate for each sample within the period above the threshold
+
+                for (let j = 0; j < AMPLITUDE_THRESHOLD_BUFFER_LENGTH; j++) {
+
+                    const periodSample = sampleIndex + j - offset;
+
+                    if (periodSample >= 0 && periodSample < displayLength) {
+
+                        let xCoord = periodSample / getSampleRate() / displayedTime;
+                        xCoord *= waveformW;
+
+                        skippingXCoords[n] = xCoord;
+                        n++;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        // Reduce length to just unthresholded samples on screen
+
+        skippingXCoords.length = n;
+        playbackBufferLength = n;
+
+    }
+
+    // Export audio as WAV file
+
+    if (playbackBufferLength > 0) {
+
+        let fileName = fileSpan.innerText;
+        fileName = (fileName.toLowerCase().includes('.wav')) ? fileName : fileName + '.wav';
+
+        if (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) {
+
+            exportAudio(samples, samplesAboveGoertzelThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, fileName, handleExportAudioResult);
+
+        } else {
+
+            exportAudio(samples, samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, fileName, handleExportAudioResult);
+
+        }
+
+    } else {
+
+        showErrorDisplay('File was not written. File length would be 0 samples.');
+
+    }
+
+});
+
 // Start zoom and offset level on default values
 
 resetTransformations();
@@ -4059,24 +4154,10 @@ const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigat
 if (!isChrome) {
 
     fileSelectionTitleDiv.classList.add('grey');
-    browserErrorDisplay.style.display = '';
+    browserErrorSpans.style.display = '';
+    fileSelectionTitleSpan.style.display = 'none';
     disabledFileButton.style.display = '';
     fileButton.style.display = 'none';
-
-    setTimeout(() => {
-
-        browserErrorDisplay.animate({opacity: 0}, {
-            duration: 1000,
-            easing: 'linear',
-            iterations: 1,
-            fill: 'backwards'
-        }).onfinish = () => {
-
-            browserErrorDisplay.style.display = 'none';
-
-        };
-
-    }, 16000);
 
 }
 

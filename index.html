@@ -19,24 +19,14 @@
                 </div>
             </div>
 
-            <!-- Incorrect browser error -->
-
-            <div id="browser-error-display" class="row justify-content-md-center" style="display: none; margin-top: 10px;">
-                <div class="col total-width">
-                    <div class="card text-white bg-danger mb-3" style="width: 100%;">
-                        <div class="card-header" style="padding-top: 10px; padding-bottom: 10px;"><b>Current browser is not fully supported.</b></div>
-                        <div class="card-body" style="padding-top: 10px; padding-bottom: 10px;">
-                            <p class="card-text">Switch to Google Chrome to load your own recordings or select one of the <a href="#examples" style="text-decoration: underline; color: white; font-weight: bold;">example files</a>.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- File selection description -->
 
             <div id="file-selection-title-div" class="row justify-content-md-center" style="margin-top: 0px;">
                 <div class="col total-width">
-                    <span>Select an AudioMoth WAV file up to 60 seconds in length:</span>
+                    <span id="file-selection-title-span">Select an AudioMoth WAV file up to 60 seconds in length:</span>
+                    <div id="browser-error-spans" style="display: none;">
+                        <span style="color: red;">Switch to Google Chrome to load your own recordings or select one of the <a href="#examples" style="text-decoration: underline;">example files</a>.</span>
+                    </div>
                 </div>
             </div>
 
@@ -48,20 +38,8 @@
                     <button class="btn btn-primary" id="disabled-file-button" style="vertical-align: middle;" disabled>Select File</button>
                     <span id="file-span" style="margin-left: 10px; vertical-align: middle; display: none;"></span>
                     <span class="loading" id="loading-span" style="margin-left: 10px; vertical-align: middle;">Loading</span>
-                    <span id="trimmed-span" style="color: red; font-weight: bold; vertical-align: middle; margin-left: 10px; display: none;">File has been trimmed to initial 60 seconds.</span>
-                </div>
-            </div>
-
-            <!-- General error display -->
-
-            <div id="error-display" class="row justify-content-md-center" style="display: none; margin-top: 5px;">
-                <div class="col total-width">
-                    <div class="card text-white bg-danger mb-3" style="width: 100%;">
-                        <div class="card-header" style="padding-top: 10px; padding-bottom: 10px;"><b>An error has occurred.</b></div>
-                        <div class="card-body" style="padding-top: 10px; padding-bottom: 10px;">
-                            <p class="card-text" id="error-text">.</p>
-                        </div>
-                    </div>
+                    <span id="trimmed-span" style="color: blue; vertical-align: middle; margin-left: 10px; display: none;">File has been trimmed to initial 60 seconds.</span>
+                    <span id="error-span" style="color: red; vertical-align: middle; margin-left: 10px; display: none;">.</span>
                 </div>
             </div>
 
@@ -677,15 +655,18 @@
                     <div class="wrapper" style="width: 793px;">
                         <div class="row">
                             <div class="col-2" style="padding-right: 0px;">
-                                <button class="btn btn-warning nav-button" id="export-modal-button" data-toggle="modal" data-target="#export-modal" disabled style="margin-left: 15px;">
+                                <button id="export-audio-button" class="btn btn-warning nav-button" style="margin-left: 15px;" disabled>
+                                    <img id="download-icon" class="button-icon" src="./assets/download.svg" alt="Bootstrap">
+                                </button>
+                                <button class="btn btn-warning nav-button" id="export-modal-button" data-toggle="modal" data-target="#export-modal" disabled style="margin-left: 5px;">
                                     <img id="camera-icon" class="button-icon" src="./assets/camera.svg" alt="Bootstrap">
                                 </button>
-                                <button class="btn btn-success nav-button" id="play-button" disabled style="margin-left: 10px;">
+                            </div>
+                            <div class="col-4" style="padding: 0px; text-align: left;">
+                                <button class="btn btn-success nav-button" id="play-button" disabled style="margin-left: 0px; margin-right: 5px;">
                                     <img id="play-icon" class="button-icon" src="./assets/play.svg" alt="Bootstrap">
                                     <img id='stop-icon' class="button-icon" src="./assets/stop.svg" alt="Bootstrap" style="display: none;">
                                 </button>
-                            </div>
-                            <div class="col-3" style="padding: 0px; text-align: left;">
                                 <select class="custom-select" id="playback-mode-select" style="vertical-align: middle; width: 200px; height: 35px; font-size: 10pt;">
                                     <option id="playback-mode-option-all" value="0" selected="selected">Play original WAV file</option>
                                     <option id="playback-mode-option-mute" value="1">Play resulting T.WAV file</option>
@@ -857,6 +838,7 @@
 
         </div>
     </body>
+    <script src="scripts/constants.js"></script>
     <script src="scripts/external/jspdf.umd.min.js"></script>
     <script src="scripts/external/FreeSans-normal.js"></script>
     <script src="scripts/external/complex.min.js"></script>
@@ -875,6 +857,7 @@
     <script src="scripts/sampleRateControl.js"></script>
     <script src="scripts/uiFiltering.js"></script>
     <script src="scripts/exportImages.js"></script>
+    <script src="scripts/exportAudio.js"></script>
     <script src="scripts/downsampler.js"></script>
     <script src="scripts/index.js"></script>
 </html>

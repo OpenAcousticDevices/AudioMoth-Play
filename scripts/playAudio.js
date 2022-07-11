@@ -5,22 +5,13 @@
  *****************************************************************************/
 
 /* global AMPLITUDE_THRESHOLD_BUFFER_LENGTH */
+/* global MIN_SAMPLE_RATE, MAX_SAMPLE_RATE */
+/* global PLAYBACK_MODE_ALL, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_MUTE */
 
 let audioContext;
 let source;
 
 let startTime = 0.0;
-
-// Range of sample rates guaranteed to be supported by browsers
-
-const MIN_SAMPLE_RATE = 8000;
-const MAX_SAMPLE_RATE = 96000;
-
-// Modes which dictate how amplitude thresholded periods are handled
-
-const PLAYBACK_MODE_ALL = 0; // Play all samples, ignoring the threshold
-const PLAYBACK_MODE_SKIP = 1; // Skip over samples below the threshold, jumping to unthresholded periods
-const PLAYBACK_MODE_MUTE = 2; // Play silence when at a sample below the threshold
 
 /**
  * Scale a given value between a max and min

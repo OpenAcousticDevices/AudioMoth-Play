@@ -4,9 +4,7 @@
  * October 2021
  *****************************************************************************/
 
-// Number of samples compared to threshold before deciding if buffer is above or below the threshold
-
-const GOERTZEL_THRESHOLD_BUFFER_LENGTH = 16384;
+/* global TWO_PI, GOERTZEL_THRESHOLD_BUFFER_LENGTH */
 
 // Drawing canvas
 
@@ -14,8 +12,6 @@ const goertzelPlotCanvas = document.getElementById('goertzel-canvas');
 
 const GOERTZEL_PIXEL_WIDTH = goertzelPlotCanvas.width;
 const GOERTZEL_PIXEL_HEIGHT = goertzelPlotCanvas.height;
-
-const TWO_PI = 2.0 * Math.PI;
 
 let hammingValues;
 let hammingMean;

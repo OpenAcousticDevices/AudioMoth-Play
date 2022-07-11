@@ -4,14 +4,14 @@
  * May 2022
  *****************************************************************************/
 
+/* global VALID_SAMPLE_RATES */
+
 const sampleRateHolder = document.getElementById('sample-rate-holder');
 const disabledSampleRateHolder = document.getElementById('disabled-sample-rate-holder');
 
 const sampleRateLabels = document.getElementsByName('sample-rate-label');
 const sampleRateRadios = document.getElementsByName('sample-rate-radio');
 const disabledSampleRateRadios = document.getElementsByName('disabled-sample-rate-radio');
-
-const possibleSampleRates = [8000, 16000, 32000, 48000, 96000, 192000, 250000, 384000];
 
 /**
  * Swap disabled sample rate UI for enabled one
@@ -39,9 +39,9 @@ function disableSampleRateControl () {
  */
 function updateSampleRateUI (sampleRate) {
 
-    for (let i = 0; i < possibleSampleRates.length; i++) {
+    for (let i = 0; i < VALID_SAMPLE_RATES.length; i++) {
 
-        if (possibleSampleRates[i] > sampleRate) {
+        if (VALID_SAMPLE_RATES[i] > sampleRate) {
 
             sampleRateRadios[i].disabled = true;
             sampleRateLabels[i].classList.add('grey');
@@ -53,9 +53,9 @@ function updateSampleRateUI (sampleRate) {
 
         }
 
-        sampleRateRadios[i].checked = sampleRate === possibleSampleRates[i];
+        sampleRateRadios[i].checked = sampleRate === VALID_SAMPLE_RATES[i];
 
-        disabledSampleRateRadios[i].checked = sampleRate === possibleSampleRates[i];
+        disabledSampleRateRadios[i].checked = sampleRate === VALID_SAMPLE_RATES[i];
 
     }
 
@@ -66,7 +66,7 @@ function updateSampleRateUI (sampleRate) {
  */
 function getSampleRateSelection () {
 
-    return possibleSampleRates[parseInt(document.querySelector('input[name="sample-rate-radio"]:checked').value, 10)];
+    return VALID_SAMPLE_RATES[parseInt(document.querySelector('input[name="sample-rate-radio"]:checked').value, 10)];
 
 }
 

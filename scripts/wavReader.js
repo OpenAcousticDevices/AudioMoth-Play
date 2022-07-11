@@ -4,20 +4,16 @@
  * June 2021
  *****************************************************************************/
 
-const MAX_FILE_SIZE = 488 + 2 * 60 * 384000;
-
-/* WAV header constants */
-
-const UINT16_LENGTH = 2;
-const UINT32_LENGTH = 4;
-const RIFF_ID_LENGTH = 4;
-const LENGTH_OF_ARTIST = 32;
-const LENGTH_OF_COMMENT = 384;
-const LENGTH_OF_WAV_HEADER = 488;
+/* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH, LENGTH_OF_WAV_HEADER */
+/* global PCM_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE */
 
 /* WAV header component read functions */
 
+/* WAV header base component read functions */
+
 function readString (state, length) {
+
+    if (state.buffer.length - state.index < length) throw new Error('WAVE header exceeded buffer length.');
 
     const utf8decoder = new TextDecoder();
 
@@ -30,29 +26,9 @@ function readString (state, length) {
 
 }
 
-function readInt32LE (state) {
-
-    const bufferSplit = state.buffer.slice(state.index, state.index + UINT32_LENGTH);
-    const dataView = new DataView(bufferSplit);
-    const result = dataView.getInt32(0, true);
-
-    state.index += UINT32_LENGTH;
-    return result;
-
-}
-
-function readInt16LE (state) {
-
-    const bufferSplit = state.buffer.slice(state.index, state.index + UINT32_LENGTH);
-    const dataView = new DataView(bufferSplit);
-    const result = dataView.getInt16(0, true);
-
-    state.index += UINT16_LENGTH;
-    return result;
-
-}
-
 function readUInt32LE (state) {
+
+    if (state.buffer.length - state.index < UINT32_LENGTH) throw new Error('WAVE header exceeded buffer length.');
 
     const bufferSplit = state.buffer.slice(state.index, state.index + UINT32_LENGTH);
     const dataView = new DataView(bufferSplit);
@@ -65,7 +41,9 @@ function readUInt32LE (state) {
 
 function readUInt16LE (state) {
 
-    const bufferSplit = state.buffer.slice(state.index, state.index + UINT32_LENGTH);
+    if (state.buffer.length - state.index < UINT16_LENGTH) throw new Error('WAVE header exceeded buffer length.');
+
+    const bufferSplit = state.buffer.slice(state.index, state.index + UINT16_LENGTH);
     const dataView = new DataView(bufferSplit);
     const result = dataView.getUint16(0, true);
 
@@ -74,138 +52,146 @@ function readUInt16LE (state) {
 
 }
 
-function readChunk (state) {
+/* WAV header high-level component read functions */
+
+function readID (state, id) {
+
+    const result = readString(state, id.length);
+
+    if (result !== id) throw new Error('Could not find ' + id + ' ID.');
+
+    return result;
+
+}
+
+function readChunk (state, id) {
 
     const result = {};
+
     result.id = readString(state, RIFF_ID_LENGTH);
+
+    if (result.id !== id) throw new Error('Could not find ' + id.replace(' ', '') + ' chunk ID.');
+
     result.size = readUInt32LE(state);
+
     return result;
 
 }
 
 /* WAV header read and write functions */
 
-function readHeader (buffer) {
+function readHeader (buffer, fileSize) {
 
     const header = {};
 
     const state = {buffer: buffer, index: 0};
 
-    header.riff = readChunk(state);
+    try {
 
-    header.format = readString(state, RIFF_ID_LENGTH);
+        /* Read RIFF chunk */
 
-    header.fmt = readChunk(state);
+        header.riff = readChunk(state, 'RIFF');
 
-    header.wavFormat = {};
-    header.wavFormat.format = readUInt16LE(state);
-    header.wavFormat.numberOfChannels = readUInt16LE(state);
-    header.wavFormat.samplesPerSecond = readUInt32LE(state);
-    header.wavFormat.bytesPerSecond = readUInt32LE(state);
-    header.wavFormat.bytesPerCapture = readUInt16LE(state);
-    header.wavFormat.bitsPerSample = readUInt16LE(state);
+        if (header.riff.size + RIFF_ID_LENGTH + UINT32_LENGTH !== fileSize) {
 
-    header.list = readChunk(state);
+            return {
+                success: false,
+                error: 'RIFF chunk size does not match file size.'
+            };
 
-    header.info = readString(state, RIFF_ID_LENGTH);
+        }
 
-    header.icmt = readChunk(state);
-    header.icmt.comment = readString(state, LENGTH_OF_COMMENT);
+        /* Read WAVE ID */
 
-    header.iart = readChunk(state);
-    header.iart.artist = readString(state, LENGTH_OF_ARTIST);
+        header.format = readID(state, 'WAVE');
 
-    header.data = readChunk(state);
+        /* Read FMT chunk */
 
-    return header;
+        header.fmt = readChunk(state, 'fmt ');
 
-}
+        header.wavFormat = {};
+        header.wavFormat.format = readUInt16LE(state);
+        header.wavFormat.numberOfChannels = readUInt16LE(state);
+        header.wavFormat.samplesPerSecond = readUInt32LE(state);
+        header.wavFormat.bytesPerSecond = readUInt32LE(state);
+        header.wavFormat.bytesPerCapture = readUInt16LE(state);
+        header.wavFormat.bitsPerSample = readUInt16LE(state);
 
-/* Function to check header */
+        if (header.wavFormat.format !== PCM_FORMAT || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
 
-function checkHeader (header, fileSize) {
+            return {
+                success: false,
+                error: 'Unexpected WAVE format.'
+            };
 
-    if (header.riff.id !== 'RIFF') {
+        }
 
-        console.error('Could not find RIFF chunk in the input file.');
+        /* Read LIST chunk */
+
+        header.list = readChunk(state, 'LIST');
+
+        /* Read INFO ID */
+
+        header.info = readID(state, 'INFO');
+
+        /* Read ICMT chunk */
+
+        header.icmt = readChunk(state, 'ICMT');
+
+        header.icmt.comment = readString(state, header.icmt.size);
+
+        /* Read IART chunk */
+
+        header.iart = readChunk(state, 'IART');
+
+        header.iart.artist = readString(state, header.iart.size);
+
+        /* Check LIST chunk size */
+
+        if (header.list.size !== 3 * RIFF_ID_LENGTH + 2 * UINT32_LENGTH + header.iart.size + header.icmt.size) {
+
+            return {
+                success: false,
+                error: 'LIST chunk size does not match total size of INFO, ICMT and IART chunks.'
+            };
+
+        }
+
+        /* Read DATA chunk */
+
+        header.data = readChunk(state, 'data');
+
+        /* Set the header size and check DATA chunk size */
+
+        header.size = state.index;
+
+        if (header.data.size + header.size !== fileSize) {
+
+            return {
+                success: false,
+                error: 'DATA chunk size does not match file size.'
+            };
+
+        }
+
+        /* Success */
+
+        return {
+            header: header,
+            success: true,
+            error: null
+        };
+
+    } catch (e) {
+
+        /* Header has exceed file buffer length */
 
         return {
             success: false,
-            error: 'Could not read input file.'
+            error: e.message
         };
 
     }
-
-    if (header.riff.size + RIFF_ID_LENGTH + UINT32_LENGTH !== fileSize) {
-
-        console.error('RIFF chunk file size is incorrect.');
-
-        return {
-            success: false,
-            error: 'Could not read input file.'
-        };
-
-    }
-
-    if (header.format !== 'WAVE') {
-
-        console.error('Could not find WAVE format indicator in the input file.');
-
-        return {
-            success: false,
-            error: 'Could not read input file.'
-        };
-
-    }
-
-    if (header.fmt.id !== 'fmt ') {
-
-        console.error('Could not find fmt segment in the input file.');
-
-        return {
-            success: false,
-            error: 'Could not read input file.'
-        };
-
-    }
-
-    if (header.icmt.id !== 'ICMT') {
-
-        console.error('Could not find comment segment in the input file.');
-
-        return {
-            success: false,
-            error: 'Could not read input file.'
-        };
-
-    }
-
-    if (header.data.id !== 'data') {
-
-        console.error('Could not find data segment in the input file.');
-
-        return {
-            success: false,
-            error: 'Could not read input file.'
-        };
-
-    }
-
-    if (header.data.size + LENGTH_OF_WAV_HEADER !== fileSize) {
-
-        console.error('DATA chunk file size is incorrect.');
-
-        return {
-            success: false,
-            error: 'Could not read input file.'
-        };
-
-    }
-
-    return {
-        success: true,
-        error: null
-    };
 
 }
 
@@ -245,20 +231,20 @@ function readWavContents (contents) {
 
     /* Check the header */
 
-    const header = readHeader(headerBuffer);
+    const result = readHeader(headerBuffer, fileSize);
 
-    const headerCheck = checkHeader(header, fileSize);
-
-    if (headerCheck.success === false) {
+    if (result.success === false) {
 
         return {
             success: false,
-            error: headerCheck.error,
+            error: result.error,
             header: null,
             samples: null
         };
 
     }
+
+    const header = result.header;
 
     const maxSamples = header.wavFormat.samplesPerSecond * 60;
 
@@ -310,17 +296,6 @@ async function readWav (fileHandler) {
     try {
 
         file = await fileHandler.getFile();
-
-        if (file.size > MAX_FILE_SIZE) {
-
-            return {
-                success: false,
-                error: 'File is too large. Use the Split function in the AudioMoth Configuration App to split your recording into 60 second sections.',
-                header: null,
-                samples: null
-            };
-
-        }
 
         contents = await file.arrayBuffer();
 

@@ -4,9 +4,7 @@
  * July 2021
  *****************************************************************************/
 
-// 32 KB buffer, 16-bit samples
-
-const AMPLITUDE_THRESHOLD_BUFFER_LENGTH = 16384;
+/* global AMPLITUDE_THRESHOLD_BUFFER_LENGTH */
 
 /**
  * Apply amplitude trheshold to given samples

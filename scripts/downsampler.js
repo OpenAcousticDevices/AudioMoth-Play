@@ -8,19 +8,9 @@
 
 /* Debug constant */
 
+/* global INT16_MIN, INT16_MAX, HERTZ_IN_KILOHERTZ, VALID_SAMPLE_RATES */
+
 const DEBUG = false;
-
-/* Downsample constants */
-
-const INT16_MIN = -32768;
-
-const INT16_MAX = 32767;
-
-const HERTZ_IN_KILOHERTZ = 1000;
-
-/* Valid sample rate */
-
-const validSampleRates = [8000, 16000, 32000, 48000, 96000, 192000, 250000, 384000];
 
 /* Greatest common divisor function */
 
@@ -49,11 +39,11 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
     let originalSampleRateValid = false;
     let requestedSampleRateValid = false;
 
-    for (let i = 0; i < validSampleRates.length; i += 1) {
+    for (let i = 0; i < VALID_SAMPLE_RATES.length; i += 1) {
 
-        if (originalSampleRate === validSampleRates[i]) originalSampleRateValid = true;
+        if (originalSampleRate === VALID_SAMPLE_RATES[i]) originalSampleRateValid = true;
 
-        if (requestedSampleRate === validSampleRates[i]) requestedSampleRateValid = true;
+        if (requestedSampleRate === VALID_SAMPLE_RATES[i]) requestedSampleRateValid = true;
 
     }
 
