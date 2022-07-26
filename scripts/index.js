@@ -5,7 +5,6 @@
  *****************************************************************************/
 
 /* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readWavContents */
-/* global Slider */
 /* global applyLowPassFilter, applyHighPassFilter, applyBandPassFilter, FILTER_NONE, FILTER_LOW, FILTER_BAND, FILTER_HIGH, applyAmplitudeThreshold */
 /* global playAudio, stopAudio, getTimestamp, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_ALL, AMPLITUDE_THRESHOLD_BUFFER_LENGTH, createAudioContext */
 /* global XMLHttpRequest */
@@ -20,10 +19,9 @@
 /* global getMinimumTriggerDurationAmp, getMinimumTriggerDurationGoertzel, getFilterSliderStep, setBandPass, setLowPassSliderValue, setHighPassSliderValue, roundToSliderStep, setFrequencyTriggerFilterFreq, getMinimumAmplitudeThresholdDuration, getAmplitudeThresholdValues, getFrequencyTriggerValues, setAmplitudeThresholdScaleIndex */
 /* global prevThresholdScaleIndex, resetElements, disableFilterUI, enableFilterUI */
 
-/* global enableSlider, disableSlider */
 /* global setCentreObserved, setPassFiltersObserved */
 
-/* global exportPNG, exportPDF, exportAudio */
+/* global exportPNG, exportJPG, exportPDF, createImageCanvas, exportAudio, createAudioArray, exportVideo */
 
 /* global enableSampleRateControl, disableSampleRateControl, updateSampleRateUI, getSampleRateSelection, addSampleRateUIListeners */
 
@@ -38,7 +36,7 @@ const FILLER_SAMPLE_COUNT = FILLER_SAMPLE_RATE * 60;
 
 const errorSpan = document.getElementById('error-span');
 const fileSelectionTitleSpan = document.getElementById('file-selection-title-span');
-const browserErrorSpans = document.getElementById('browser-error-spans');
+const browserErrorSpan = document.getElementById('browser-error-span');
 const ERROR_DISPLAY_TIME = 3000;
 
 // File selection elements
@@ -159,6 +157,7 @@ let processedSpectrumFrames;
 let spectrumMin = 0;
 let spectrumMax = 0;
 let firstFile = true;
+let trimmedFile = false;
 
 let downsampledUnfilteredSamples;
 
@@ -191,13 +190,9 @@ const playButton = document.getElementById('play-button');
 const playIcon = document.getElementById('play-icon');
 const stopIcon = document.getElementById('stop-icon');
 
-const playbackSpeedDiv = document.getElementById('playback-speed-div');
-const playbackSpeedSlider = new Slider('#playback-speed-slider', {
-    ticks_labels: ['x1/16', 'x1/8', 'x1/4', 'x1/2', 'x1', 'x2'],
-    ticks: [0, 1, 2, 3, 4, 5],
-    value: 4
-});
-const playbackRates = [0.0625, 0.125, 0.25, 0.5, 1.0, 2.0];
+const playbackSpeedSelect = document.getElementById('playback-speed-select');
+
+const volumeSelect = document.getElementById('volume-select');
 
 const playbackModeSelect = document.getElementById('playback-mode-select');
 const playbackModeOptionAll = document.getElementById('playback-mode-option-all');
@@ -234,12 +229,51 @@ const exportModalButton = document.getElementById('export-modal-button');
 const exportCloseButton = document.getElementById('export-close-button');
 
 const exportPNGButton = document.getElementById('export-png-button');
+const exportJPGButton = document.getElementById('export-jpg-button');
 const exportPDFButton = document.getElementById('export-pdf-button');
-const exportBothButton = document.getElementById('export-both-button');
+const exportAllButton = document.getElementById('export-all-button');
 
-// Export audio button
+// Export audio/video buttons
 
 const exportAudioButton = document.getElementById('export-audio-button');
+const exportVideoButton = document.getElementById('export-video-button');
+const exportVideoIcon = document.getElementById('video-icon');
+const exportVideoSpinner = document.getElementById('video-spinner');
+
+/**
+ * 0 - Default (display trimmed message if appropriate)
+ * 1 - Loading
+ * 2 - Error
+ * @param {int} index Which span to show
+ */
+function displaySpans (index) {
+
+    switch (index) {
+
+    case 0:
+        fileSpan.style.display = '';
+        trimmedSpan.style.display = trimmedFile ? '' : 'none';
+        loadingSpan.style.display = 'none';
+        errorSpan.style.display = 'none';
+        break;
+
+    case 1:
+        loadingSpan.style.display = '';
+        fileSpan.style.display = 'none';
+        trimmedSpan.style.display = 'none';
+        errorSpan.style.display = 'none';
+        break;
+
+    case 2:
+        errorSpan.style.display = '';
+        fileSpan.style.display = 'none';
+        loadingSpan.style.display = 'none';
+        trimmedSpan.style.display = 'none';
+        break;
+
+    }
+
+}
 
 /**
  * Update UI based on which threshold type is selected
@@ -1415,17 +1449,18 @@ function reenableUI () {
     exportButton.disabled = false;
     exportModalButton.disabled = false;
     exportAudioButton.disabled = false;
+    exportVideoButton.disabled = false;
 
     playButton.disabled = false;
-    enableSlider(playbackSpeedSlider, playbackSpeedDiv);
+    playbackSpeedSelect.disabled = false;
+    volumeSelect.disabled = false;
     playbackModeSelect.disabled = false;
 
     enableFilterUI();
 
     if (errorSpan.style.display === 'none') {
 
-        fileSpan.style.display = '';
-        loadingSpan.style.display = 'none';
+        displaySpans(0);
 
     }
 
@@ -1565,10 +1600,13 @@ function disableUI (startUp) {
     resetButton.disabled = true;
     exportButton.disabled = true;
     exportModalButton.disabled = true;
-    exportAudioButton.disbled = true;
+    exportAudioButton.disabled = true;
+    exportVideoButton.disabled = true;
 
     zoomInButton.disabled = true;
     zoomOutButton.disabled = true;
+    panLeftButton.disabled = true;
+    panRightButton.disabled = true;
     homeButton.disabled = true;
 
     waveformHomeButton.disabled = true;
@@ -1586,7 +1624,8 @@ function disableUI (startUp) {
     playbackModeOptionSkip.disabled = true;
 
     playButton.disabled = true;
-    disableSlider(playbackSpeedSlider, playbackSpeedDiv);
+    playbackSpeedSelect.disabled = true;
+    volumeSelect.disabled = true;
     playbackModeSelect.disabled = true;
 
     disableFilterUI();
@@ -2298,9 +2337,8 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
  */
 function showErrorDisplay (message) {
 
-    fileSpan.style.display = 'none';
-    loadingSpan.style.display = 'none';
-    errorSpan.style.display = '';
+    displaySpans(2);
+
     errorSpan.innerHTML = message;
 
     setTimeout(() => {
@@ -2312,8 +2350,7 @@ function showErrorDisplay (message) {
             fill: 'backwards'
         }).onfinish = () => {
 
-            errorSpan.style.display = 'none';
-            fileSpan.style.display = '';
+            displaySpans(0);
 
         };
 
@@ -2539,8 +2576,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
     if (errorSpan.style.display === 'none') {
 
-        fileSpan.style.display = 'none';
-        loadingSpan.style.display = '';
+        displaySpans(1);
 
     }
 
@@ -2562,7 +2598,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         // If file has been trimmed, display warning
 
-        trimmedSpan.style.display = result.trimmed ? '' : 'none';
+        trimmedFile = result.trimmed;
 
         // Reset threshold arrays
 
@@ -3522,7 +3558,17 @@ exportButton.addEventListener('click', exportConfig);
  */
 function getPlaybackRate () {
 
-    return playbackRates[playbackSpeedSlider.getValue()];
+    return parseFloat(playbackSpeedSelect.value);
+
+}
+
+/**
+ * Get playback/export volume
+ * @returns Volume to play and export audio in video and audio output
+ */
+function getVolume () {
+
+    return parseFloat(volumeSelect.value);
 
 }
 
@@ -3771,8 +3817,10 @@ playButton.addEventListener('click', () => {
             exportButton.disabled = true;
             exportModalButton.disabled = true;
             exportAudioButton.disabled = true;
+            exportVideoButton.disabled = true;
 
-            disableSlider(playbackSpeedSlider, playbackSpeedDiv);
+            playbackSpeedSelect.disabled = true;
+            volumeSelect.disabled = true;
             playbackModeSelect.disabled = true;
 
         }
@@ -3800,7 +3848,7 @@ playButton.addEventListener('click', () => {
 
         const filterIndex = getFilterRadioValue();
 
-        const samples = (filterIndex !== FILTER_NONE && playbackMode !== PLAYBACK_MODE_ALL) ? filteredSamples : downsampledUnfilteredSamples;
+        const samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
 
         let playbackBufferLength = displayLength;
 
@@ -3868,11 +3916,11 @@ playButton.addEventListener('click', () => {
 
             if (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) {
 
-                playAudio(samples, samplesAboveGoertzelThreshold, offset, displayLength, getSampleRate(), playbackRate, playbackMode, playbackBufferLength, stopEvent);
+                playAudio(samples, samplesAboveGoertzelThreshold, offset, displayLength, getSampleRate(), playbackRate, playbackMode, playbackBufferLength, getVolume(), stopEvent);
 
             } else {
 
-                playAudio(samples, samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackRate, playbackMode, playbackBufferLength, stopEvent);
+                playAudio(samples, samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackRate, playbackMode, playbackBufferLength, getVolume(), stopEvent);
 
             }
 
@@ -3892,7 +3940,7 @@ playButton.addEventListener('click', () => {
 
 // Export UI
 
-function exportImage (exportFunction) {
+function createExportCanvas (exportFunction) {
 
     let plot0yAxis = 'Amplitude';
     const plot1yAxis = 'Frequency';
@@ -3969,13 +4017,23 @@ function exportImage (exportFunction) {
 
     }
 
-    exportFunction(canvas0array, canvas1array, timeLabelSVG, yAxis0svg, yAxis1svg, plot0yAxis, plot1yAxis, linesY0, linesY1, fileSpan.innerText, title);
+    const fileName = fileSpan.innerText.replace(/\.[^/.]+$/, '');
+
+    return exportFunction(canvas0array, canvas1array, timeLabelSVG, yAxis0svg, yAxis1svg, plot0yAxis, plot1yAxis, linesY0, linesY1, fileName, title);
 
 }
 
 exportPNGButton.addEventListener('click', () => {
 
-    exportImage(exportPNG);
+    createExportCanvas(exportPNG);
+
+    exportCloseButton.click();
+
+});
+
+exportJPGButton.addEventListener('click', () => {
+
+    createExportCanvas(exportJPG);
 
     exportCloseButton.click();
 
@@ -3983,16 +4041,17 @@ exportPNGButton.addEventListener('click', () => {
 
 exportPDFButton.addEventListener('click', () => {
 
-    exportImage(exportPDF);
+    createExportCanvas(exportPDF);
 
     exportCloseButton.click();
 
 });
 
-exportBothButton.addEventListener('click', () => {
+exportAllButton.addEventListener('click', () => {
 
-    exportImage(exportPNG);
-    exportImage(exportPDF);
+    createExportCanvas(exportPNG);
+    createExportCanvas(exportJPG);
+    createExportCanvas(exportPDF);
 
     exportCloseButton.click();
 
@@ -4010,7 +4069,7 @@ function handleExportAudioResult (err) {
 
 }
 
-exportAudioButton.addEventListener('click', () => {
+function getAudioForExport () {
 
     // Get mode which dictates how amplitude thresholded periods are handled
 
@@ -4020,7 +4079,7 @@ exportAudioButton.addEventListener('click', () => {
 
     const filterIndex = getFilterRadioValue();
 
-    const samples = (filterIndex !== FILTER_NONE && playbackMode !== PLAYBACK_MODE_ALL) ? filteredSamples : downsampledUnfilteredSamples;
+    const samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
 
     let playbackBufferLength = displayLength;
 
@@ -4082,6 +4141,24 @@ exportAudioButton.addEventListener('click', () => {
 
     }
 
+    return {
+        samples: samples,
+        thresholdTypeIndex: thresholdTypeIndex,
+        playbackBufferLength: playbackBufferLength,
+        playbackMode: playbackMode
+    };
+
+}
+
+exportAudioButton.addEventListener('click', () => {
+
+    const audioData = getAudioForExport();
+
+    const playbackBufferLength = audioData.playbackBufferLength;
+    const thresholdTypeIndex = audioData.thresholdTypeIndex;
+    const samples = audioData.samples;
+    const playbackMode = audioData.playbackMode;
+
     // Export audio as WAV file
 
     if (playbackBufferLength > 0) {
@@ -4089,21 +4166,96 @@ exportAudioButton.addEventListener('click', () => {
         let fileName = fileSpan.innerText;
         fileName = (fileName.toLowerCase().includes('.wav')) ? fileName : fileName + '.wav';
 
-        if (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) {
-
-            exportAudio(samples, samplesAboveGoertzelThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, fileName, handleExportAudioResult);
-
-        } else {
-
-            exportAudio(samples, samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, fileName, handleExportAudioResult);
-
-        }
+        exportAudio(samples, (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, fileName, handleExportAudioResult);
 
     } else {
 
         showErrorDisplay('File was not written. File length would be 0 samples.');
 
     }
+
+});
+
+exportVideoButton.addEventListener('click', () => {
+
+    disableUI();
+
+    // Replace video icon with spinner
+
+    exportVideoIcon.style.display = 'none';
+    exportVideoSpinner.style.display = '';
+
+    // Create audio blob
+
+    const audioData = getAudioForExport();
+
+    const playbackBufferLength = audioData.playbackBufferLength;
+    const thresholdTypeIndex = audioData.thresholdTypeIndex;
+    const samples = audioData.samples;
+    const playbackMode = audioData.playbackMode;
+
+    if (playbackBufferLength <= 0) {
+
+        showErrorDisplay('File was not written. File length would be 0 samples.');
+
+        reenableUI();
+
+        exportVideoIcon.style.display = '';
+        exportVideoSpinner.style.display = 'none';
+
+        return;
+
+    }
+
+    // Prepare audio data
+
+    const audioArray = createAudioArray(samples, (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, getVolume(), getPlaybackRate());
+
+    const header = new Uint8Array(audioArray[0]);
+    const audioSamples = new Uint8Array(audioArray[1].buffer);
+
+    // Build audio data object
+
+    const audioFileArray = new Uint8Array(header.length + audioSamples.length);
+    audioFileArray.set(header);
+    audioFileArray.set(audioSamples, header.length);
+
+    // Prepare image data
+
+    const imageCanvas = createExportCanvas(createImageCanvas);
+
+    // Get video length in ms
+
+    const videoLength = displayLength / sampleRate * 1000 / getPlaybackRate();
+
+    // Prepare name for exported video
+
+    const fileName = fileSpan.innerText.replace(/\.[^/.]+$/, '');
+
+    // Process audio and image into video file
+
+    exportVideo(imageCanvas, audioFileArray, videoLength, fileName, (succeeded) => {
+
+        exportVideoIcon.style.display = '';
+        exportVideoSpinner.style.display = 'none';
+
+        console.log('-------');
+
+        if (succeeded) {
+
+            console.log('Finished exporting video file');
+
+        } else {
+
+            console.log('Failed to export video file');
+
+            showErrorDisplay('Failed to export video file');
+
+        }
+
+        reenableUI();
+
+    });
 
 });
 
@@ -4154,7 +4306,7 @@ const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigat
 if (!isChrome) {
 
     fileSelectionTitleDiv.classList.add('grey');
-    browserErrorSpans.style.display = '';
+    browserErrorSpan.style.display = '';
     fileSelectionTitleSpan.style.display = 'none';
     disabledFileButton.style.display = '';
     fileButton.style.display = 'none';

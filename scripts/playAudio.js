@@ -55,7 +55,7 @@ function createAudioContext () {
  * @param {number} playbackBufferLength Length of buffer holding samples to be played
  * @param {function} endEvent Callback for when playback ends or is manually stopped
  */
-function playAudio (samples, unthresholdedSamples, start, length, sampleRate, playbackRate, mode, playbackBufferLength, endEvent) {
+function playAudio (samples, unthresholdedSamples, start, length, sampleRate, playbackRate, mode, playbackBufferLength, volumeModifier, endEvent) {
 
     startTime = audioContext.currentTime;
 
@@ -88,6 +88,10 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
         const index = start + i;
 
+        let sample = samples[index] * volumeModifier;
+        sample = Math.min(32767, sample);
+        sample = Math.max(-32768, sample);
+
         // Check if sample is in a thresholded period
 
         let thresholded = false;
@@ -110,7 +114,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                     for (let j = 0; j < powMultiplier; j++) {
 
-                        nowBuffering[unthresholdedSampleIndex] = scaleValue(samples[index], -32768, 32767);
+                        nowBuffering[unthresholdedSampleIndex] = scaleValue(sample, -32768, 32767);
 
                         unthresholdedSampleIndex++;
 
@@ -122,7 +126,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                 for (let j = 0; j < powMultiplier; j++) {
 
-                    nowBuffering[(i * powMultiplier) + j] = thresholded ? 0 : scaleValue(samples[index], -32768, 32767);
+                    nowBuffering[(i * powMultiplier) + j] = thresholded ? 0 : scaleValue(sample, -32768, 32767);
 
                 }
 
@@ -134,7 +138,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                 if (!thresholded) {
 
-                    total += scaleValue(samples[index], -32768, 32767);
+                    total += scaleValue(sample, -32768, 32767);
 
                     if (unthresholdedSampleIndex % positivePowMultiplier === 0) {
 
@@ -152,7 +156,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
             } else {
 
-                total += thresholded ? 0 : scaleValue(samples[index], -32768, 32767);
+                total += thresholded ? 0 : scaleValue(sample, -32768, 32767);
 
                 if (i % positivePowMultiplier === 0) {
 
@@ -170,7 +174,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                 if (!thresholded) {
 
-                    nowBuffering[unthresholdedSampleIndex] = scaleValue(samples[index], -32768, 32767);
+                    nowBuffering[unthresholdedSampleIndex] = scaleValue(sample, -32768, 32767);
 
                     unthresholdedSampleIndex++;
 
@@ -178,7 +182,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
             } else {
 
-                nowBuffering[i] = thresholded ? 0 : scaleValue(samples[index], -32768, 32767);
+                nowBuffering[i] = thresholded ? 0 : scaleValue(sample, -32768, 32767);
 
             }
 

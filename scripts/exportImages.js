@@ -196,12 +196,12 @@ function exportPDF (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, 
     pdfDoc.setFontSize(11);
     pdfDoc.text(title, yAxisW + (canvas0.width / 2), edgeSpacingH + 2, {align: 'center', baseline: 'top'});
 
-    pdfDoc.save(fileName + '.pdf');
+    pdfDoc.save(fileName + '_EXPORT.pdf');
 
 }
 
 /**
- * Save both visible plots as "fileName.png"
+ * Create a canvas object which can be saved
  * @param {canvas[]} canvas0array Ordered array of canvas layers for top plot
  * @param {canvas[]} canvas1array Ordered array of canvas layers for bottom plot
  * @param {canvas} xAxisSVG SVG canvas containing x axis labels
@@ -214,9 +214,7 @@ function exportPDF (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, 
  * @param {string} fileName Name of file being drawn
  * @param {string} title Title to be drawn at the top of the file(s)
  */
-function exportPNG (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, yAxisTitle0, yAxisTitle1, linesY0, linesY1, fileName, title) {
-
-    console.log('Exporting to PNG');
+function createImageCanvas (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, yAxisTitle0, yAxisTitle1, linesY0, linesY1, fileName, title) {
 
     // Calculate size of overall canvas
 
@@ -426,11 +424,65 @@ function exportPNG (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, 
     ctx.font = '13px Helvetica';
     ctx.fillText(title, yAxisW + (canvas0.width / 2), edgeSpacingH + 8);
 
+    return canvas;
+
+}
+
+/**
+ * Save both visible plots as "fileName.png"
+ * @param {canvas[]} canvas0array Ordered array of canvas layers for top plot
+ * @param {canvas[]} canvas1array Ordered array of canvas layers for bottom plot
+ * @param {canvas} xAxisSVG SVG canvas containing x axis labels
+ * @param {canvas} yAxis0SVG SVG canvas containing y axis labels of top plot
+ * @param {canvas} yAxis1SVG SVG canvas containing y axis labels of bottom plot
+ * @param {string} yAxisTitle0 Title of top plot's y axis
+ * @param {string} yAxisTitle1 Title of bottom plot's y axis
+ * @param {int[]} linesY0 Y co-ordinates of threshold lines on plot 0 (-1 = don't draw)
+ * @param {int[]} linesY1 Y co-ordinates of threshold lines on plot 1 (-1 = don't draw)
+ * @param {string} fileName Name of file being drawn
+ * @param {string} title Title to be drawn at the top of the file(s)
+ */
+function exportPNG (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, yAxisTitle0, yAxisTitle1, linesY0, linesY1, fileName, title) {
+
+    console.log('Exporting to PNG');
+
+    const imageCanvas = createImageCanvas(canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, yAxisTitle0, yAxisTitle1, linesY0, linesY1, fileName, title);
+
     // Save image
 
     const link = document.createElement('a');
-    link.download = fileName + '.png';
-    link.href = canvas.toDataURL();
+    link.download = fileName + '_EXPORT.png';
+    link.href = imageCanvas.toDataURL();
+    link.click();
+    link.remove();
+
+}
+
+/**
+ * Save both visible plots as "fileName.jpg"
+ * @param {canvas[]} canvas0array Ordered array of canvas layers for top plot
+ * @param {canvas[]} canvas1array Ordered array of canvas layers for bottom plot
+ * @param {canvas} xAxisSVG SVG canvas containing x axis labels
+ * @param {canvas} yAxis0SVG SVG canvas containing y axis labels of top plot
+ * @param {canvas} yAxis1SVG SVG canvas containing y axis labels of bottom plot
+ * @param {string} yAxisTitle0 Title of top plot's y axis
+ * @param {string} yAxisTitle1 Title of bottom plot's y axis
+ * @param {int[]} linesY0 Y co-ordinates of threshold lines on plot 0 (-1 = don't draw)
+ * @param {int[]} linesY1 Y co-ordinates of threshold lines on plot 1 (-1 = don't draw)
+ * @param {string} fileName Name of file being drawn
+ * @param {string} title Title to be drawn at the top of the file(s)
+ */
+function exportJPG (canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, yAxisTitle0, yAxisTitle1, linesY0, linesY1, fileName, title) {
+
+    console.log('Exporting to JPG');
+
+    const imageCanvas = createImageCanvas(canvas0array, canvas1array, xAxisSVG, yAxis0SVG, yAxis1SVG, yAxisTitle0, yAxisTitle1, linesY0, linesY1, fileName, title);
+
+    // Save image
+
+    const link = document.createElement('a');
+    link.download = fileName + '_EXPORT.jpg';
+    link.href = imageCanvas.toDataURL('image/jpeg');
     link.click();
     link.remove();
 

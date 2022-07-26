@@ -24,9 +24,7 @@
             <div id="file-selection-title-div" class="row justify-content-md-center" style="margin-top: 0px;">
                 <div class="col total-width">
                     <span id="file-selection-title-span">Select an AudioMoth WAV file up to 60 seconds in length:</span>
-                    <div id="browser-error-spans" style="display: none;">
-                        <span style="color: red;">Switch to Google Chrome to load your own recordings or select one of the <a href="#examples" style="text-decoration: underline;">example files</a>.</span>
-                    </div>
+                    <span id="browser-error-span" style="color: red; display: none;">Switch to Google Chrome to load your own recordings or select one of the <a href="#examples" style="text-decoration: underline;">example files</a>.</span>
                 </div>
             </div>
 
@@ -650,33 +648,62 @@
                 </div>
             </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
+            <div class="row justify-content-md-center" style="margin-top: 10px;">
                 <div class="col plot-width" style="padding: 0px;">
                     <div class="wrapper" style="width: 793px;">
                         <div class="row">
-                            <div class="col-2" style="padding-right: 0px;">
-                                <button id="export-audio-button" class="btn btn-warning nav-button" style="margin-left: 15px;" disabled>
-                                    <img id="download-icon" class="button-icon" src="./assets/download.svg" alt="Bootstrap">
-                                </button>
-                                <button class="btn btn-warning nav-button" id="export-modal-button" data-toggle="modal" data-target="#export-modal" disabled style="margin-left: 5px;">
-                                    <img id="camera-icon" class="button-icon" src="./assets/camera.svg" alt="Bootstrap">
-                                </button>
-                            </div>
-                            <div class="col-4" style="padding: 0px; text-align: left;">
-                                <button class="btn btn-success nav-button" id="play-button" disabled style="margin-left: 0px; margin-right: 5px;">
+
+                            <div class="col-12">
+
+                                <button class="btn btn-success nav-button" id="play-button" disabled style="margin-left: 0px;">
                                     <img id="play-icon" class="button-icon" src="./assets/play.svg" alt="Bootstrap">
                                     <img id='stop-icon' class="button-icon" src="./assets/stop.svg" alt="Bootstrap" style="display: none;">
                                 </button>
-                                <select class="custom-select" id="playback-mode-select" style="vertical-align: middle; width: 200px; height: 35px; font-size: 10pt;">
-                                    <option id="playback-mode-option-all" value="0" selected="selected">Play original WAV file</option>
-                                    <option id="playback-mode-option-mute" value="1">Play resulting T.WAV file</option>
-                                    <option id="playback-mode-option-skip" value="2">Play expanded T.WAV file</option>
+
+                                <button id="export-video-button" class="btn btn-success nav-button" disabled>
+                                    <img id="video-icon" class="button-icon" src="./assets/camera-video.svg" alt="Bootstrap">
+                                    <div class="d-flex justify-content-center">
+                                        <div id="video-spinner" class="spinner-border spinner-border-sm" role="status" style="display: none;">
+                                            <span class="sr-only">Loading...</spa>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <select class="playback-speed-select" id="playback-speed-select" style="vertical-align: middle; width: 105px; height: 35px; font-size: 10pt;">
+                                    <option id="playback-speed-option-2" value="2">Speed: &times;2</option>
+                                    <option id="playback-speed-option-1" value="1" selected="selected">Speed: &times;1</option>
+                                    <option id="playback-speed-option-1-2" value="0.5">Speed: &divide;2</option>
+                                    <option id="playback-speed-option-1-4" value="0.25">Speed: &divide;4</option>
+                                    <option id="playback-speed-option-1-8" value="0.125">Speed: &divide;8</option>
+                                    <option id="playback-speed-option-1-16" value="0.0625">Speed: &divide;16</option>
                                 </select>
+
+                                <select class="volume-select" id="volume-select" style="vertical-align: middle; width: 105px; height: 35px; font-size: 10pt;">
+                                    <option id="volume-option-1-2" value="1/2">Volume: &divide;2</option>
+                                    <option id="volume-option-1" value="1" selected="selected">Volume: &times;1</option>
+                                    <option id="volume-option-2" value="2">Volume: &times;2</option>
+                                    <option id="volume-option-4" value="4">Volume: &times;4</option>
+                                    <option id="volume-option-8" value="8">Volume: &times;8</option>
+                                    <option id="volume-option-16" value="16">Volume: &times;16</option>
+                                </select>
+
+
+                                <button id="export-audio-button" class="btn btn-warning nav-button" style="margin-left: 20px;" disabled>
+                                    <img id="download-icon" class="button-icon" src="./assets/download.svg" alt="Bootstrap">
+                                </button>
+                                
+                                <button class="btn btn-warning nav-button" id="export-modal-button" data-toggle="modal" data-target="#export-modal" disabled>
+                                    <img id="camera-icon" class="button-icon" src="./assets/camera.svg" alt="Bootstrap">
+                                </button>
+
+                                <select class="custom-select" id="playback-mode-select" style="vertical-align: middle; width: 170px; height: 35px; font-size: 10pt; margin-left: 20px;">
+                                    <option id="playback-mode-option-all" value="0" selected="selected">Regular WAV file</option>
+                                    <option id="playback-mode-option-mute" value="1">Triggered T.WAV file</option>
+                                    <option id="playback-mode-option-skip" value="2">Expanded T.WAV file</option>
+                                </select>
+
                             </div>
-                            <div id='playback-speed-div' class="col-4 playback-slider" style="padding-top: 5px;">
-                                <input id="playback-speed-slider" data-slider-id="playback-speed-slider" type="text" class="span2" value="1" style="width: 100%;">
-                            </div>
-                            <div class="col-3" style="padding-left: 0px;"></div>
+
                         </div>
                     </div>
                 </div>
@@ -697,8 +724,9 @@
                         </div>
                         <div class="modal-footer">
                             <button id="export-png-button" type="button" class="btn btn-success">PNG</button>
+                            <button id="export-jpg-button" type="button" class="btn btn-success">JPG</button>
                             <button id="export-pdf-button" type="button" class="btn btn-success">PDF</button>
-                            <button id="export-both-button" type="button" class="btn btn-primary">Both</button>
+                            <button id="export-all-button" type="button" class="btn btn-primary">All</button>
                             <button id="export-close-button" type="button" class="btn btn-secondary" data-dismiss="modal" style="display: none;">Close</button>
                         </div>
                     </div>
@@ -725,6 +753,8 @@
                     <p>Selecting either the amplitude threshold or no threshold will allow you to add a low, high, or band pass filter; tick the checkbox to enable the filter and then drag the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
                     
                     <p>Once you are happy with the filter and amplitude threshold settings, click <b>Export Configuration</b> to download a .config which can be loaded in the AudioMoth Configuration App (version 1.6.0 onwards).</p>
+
+                    <p>You can use the controls beneath the plots to export WAV sound files, PNG, JPG, and PDF images, and MP4 videos of your AudioMoth recordings.</p> 
                 </div>
             </div>
 
@@ -839,6 +869,7 @@
         </div>
     </body>
     <script src="scripts/constants.js"></script>
+    <script src="scripts/external/ffmpeg-worker-mp4.js"></script>
     <script src="scripts/external/jspdf.umd.min.js"></script>
     <script src="scripts/external/FreeSans-normal.js"></script>
     <script src="scripts/external/complex.min.js"></script>
@@ -858,6 +889,7 @@
     <script src="scripts/uiFiltering.js"></script>
     <script src="scripts/exportImages.js"></script>
     <script src="scripts/exportAudio.js"></script>
+    <script src="scripts/exportVideo.js"></script>
     <script src="scripts/downsampler.js"></script>
     <script src="scripts/index.js"></script>
 </html>
