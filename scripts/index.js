@@ -90,6 +90,10 @@ let offset = 0;
 let isDragging = false;
 let dragStartX = 0;
 
+// Is UI disabled?
+
+let uiDisabled = false;
+
 // Waveform y axis navigation buttons
 
 const waveformHomeButton = document.getElementById('waveform-home-button');
@@ -1419,6 +1423,8 @@ function drawLoadingImage (svgCanvas) {
  */
 function reenableUI () {
 
+    uiDisabled = false;
+
     fileButton.disabled = false;
 
     for (let i = 0; i < exampleLinks.length; i++) {
@@ -1594,6 +1600,8 @@ function disableUI (startUp) {
         }
 
     }
+
+    uiDisabled = true;
 
     disableSampleRateControl();
 
@@ -2819,9 +2827,9 @@ for (let i = 0; i < examplePaths.length; i++) {
  */
 function handleMouseDown (e) {
 
-    // If it's not a left click, ignore it
+    // If it's not a left click or if the UI is disabled, ignore it
 
-    if (e.button !== 0) {
+    if (e.button !== 0 || uiDisabled) {
 
         return;
 
@@ -3027,9 +3035,9 @@ document.addEventListener('mousemove', (e) => {
  */
 function handleDoubleClick (e) {
 
-    // If it's not a left click, ignore it
+    // If it's not a left click or if the UI is disabled, ignore it
 
-    if (e.button !== 0) {
+    if (e.button !== 0 || uiDisabled) {
 
         return;
 
