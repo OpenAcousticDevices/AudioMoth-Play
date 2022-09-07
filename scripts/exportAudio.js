@@ -9,108 +9,15 @@
 /* global AMPLITUDE_THRESHOLD_BUFFER_LENGTH */
 /* global PLAYBACK_MODE_ALL, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_MUTE */
 
-/* global UINT32_LENGTH, RIFF_ID_LENGTH, NUMBER_OF_BYTES_IN_SAMPLE, UINT16_LENGTH */
+/* global NUMBER_OF_BYTES_IN_SAMPLE */
 /* global MIN_SAMPLE_RATE */
 
-/* WAV header component write functions */
+/* global updateDataSize, updateSampleRate, writeHeader */
 
-function writeString (state, string, length, zeroTerminated) {
-
-    const maximumWriteLength = zeroTerminated ? Math.min(string.length, length - 1) : Math.min(string.length, length);
-
-    const utf8Encoder = new TextEncoder();
-    const stringBytes = utf8Encoder.encode(string);
-
-    const view = new DataView(state.buffer);
-
-    for (let i = 0; i < maximumWriteLength; i++) {
-
-        view.setUint8(state.index + i, stringBytes[i]);
-
-    }
-
-    state.index += length;
-
-}
-
-function writeUInt32LE (state, value) {
-
-    const view = new DataView(state.buffer);
-    view.setUint32(state.index, value, true);
-
-    state.index += UINT32_LENGTH;
-
-}
-
-function writeUInt16LE (state, value) {
-
-    const view = new DataView(state.buffer);
-    view.setUint16(state.index, value, true);
-
-    state.index += UINT16_LENGTH;
-
-}
-
-function writeChunk (state, chunk) {
-
-    writeString(state, chunk.id, RIFF_ID_LENGTH, false);
-    writeUInt32LE(state, chunk.size);
-
-}
-
-/* Functions to update header */
-
-function updateDataSize (header, size) {
-
-    header.riff.size = header.size + size - UINT32_LENGTH - RIFF_ID_LENGTH;
-    header.data.size = size;
-
-}
-
-function updateSampleRate (header, sampleRate) {
-
-    header.wavFormat.samplesPerSecond = sampleRate;
-    header.wavFormat.bytesPerSecond = sampleRate * NUMBER_OF_BYTES_IN_SAMPLE;
-
-}
-
-function writeHeader (buffer, header) {
-
-    const state = {buffer: buffer, index: 0};
-
-    writeChunk(state, header.riff);
-
-    writeString(state, header.format, RIFF_ID_LENGTH, false);
-
-    writeChunk(state, header.fmt);
-
-    writeUInt16LE(state, header.wavFormat.format);
-    writeUInt16LE(state, header.wavFormat.numberOfChannels);
-    writeUInt32LE(state, header.wavFormat.samplesPerSecond);
-    writeUInt32LE(state, header.wavFormat.bytesPerSecond);
-    writeUInt16LE(state, header.wavFormat.bytesPerCapture);
-    writeUInt16LE(state, header.wavFormat.bitsPerSample);
-
-    writeChunk(state, header.list);
-
-    writeString(state, header.info, RIFF_ID_LENGTH, false);
-
-    writeChunk(state, header.icmt);
-    writeString(state, 'Audio clip exported from the AudioMoth Filter Playground.', header.icmt.size, true);
-
-    writeChunk(state, header.iart);
-    writeString(state, header.iart.artist, header.iart.size, true);
-
-    writeChunk(state, header.data);
-
-    return buffer;
-
-}
-
-function createAudioArray (samples, unthresholdedSamples, start, length, sampleRate, mode, playbackBufferLength, header, volumeModifier, playbackRate) {
+function createAudioArray (samples, unthresholdedSamples, start, length, sampleRate, mode, playbackBufferLength, volumeModifier, playbackRate) {
 
     /**
-     * Get array of samples like playAudio uses - DONE
+     * Get array of samples like playAudio uses
      * Copy header of original file to get artist information
      * Update file size
      * Update sample rate
@@ -150,8 +57,9 @@ function createAudioArray (samples, unthresholdedSamples, start, length, sampleR
         const index = start + i;
 
         let sample = samples[index] * volumeModifier;
-        sample = Math.min(32767, sample);
-        sample = Math.max(-32768, sample);
+
+        if (sample > INT16_MAX) sample = INT16_MAX;
+        if (sample < INT16_MIN) sample = INT16_MIN;
 
         // Check if sample is in a thresholded period
 
@@ -209,15 +117,13 @@ function createAudioArray (samples, unthresholdedSamples, start, length, sampleR
 
     // Rewrite header
 
-    const newHeader = structuredClone(header);
+    const numberOfSamples = playbackBufferLength * powMultiplier;
 
-    const headerBuffer = new ArrayBuffer(newHeader.size);
+    const header = createAudioMothHeader(numberOfSamples, acceptedSampleRate, 'Audio clip exported from the AudioMoth Filter Playground.');
+    
+    const headerBuffer = new ArrayBuffer(header.size);
 
-    updateDataSize(newHeader, playbackBufferLength * NUMBER_OF_BYTES_IN_SAMPLE * powMultiplier);
-
-    updateSampleRate(newHeader, acceptedSampleRate);
-
-    writeHeader(headerBuffer, newHeader);
+    writeAudioMothHeader(headerBuffer, header);
 
     return [headerBuffer, sampleArray];
 
@@ -226,6 +132,7 @@ function createAudioArray (samples, unthresholdedSamples, start, length, sampleR
 function writeFile (audioArray, fileName, callback) {
 
     const blob = new Blob(audioArray, {type: 'audio/wav'});
+
     const url = URL.createObjectURL(blob);
 
     const newFileName = fileName.substring(0, fileName.length - 4) + '_EXPORT.wav';
@@ -240,9 +147,9 @@ function writeFile (audioArray, fileName, callback) {
 
 }
 
-function exportAudio (samples, unthresholdedSamples, start, length, sampleRate, mode, playbackBufferLength, header, fileName, callback) {
+function exportAudio (samples, unthresholdedSamples, start, length, sampleRate, mode, playbackBufferLength, fileName, callback) {
 
-    const audioArray = createAudioArray(samples, unthresholdedSamples, start, length, sampleRate, mode, playbackBufferLength, header, 1.0, 1.0);
+    const audioArray = createAudioArray(samples, unthresholdedSamples, start, length, sampleRate, mode, playbackBufferLength, 1.0, 1.0);
 
     writeFile(audioArray, fileName, callback);
 

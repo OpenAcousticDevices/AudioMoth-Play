@@ -4172,9 +4172,10 @@ exportAudioButton.addEventListener('click', () => {
     if (playbackBufferLength > 0) {
 
         let fileName = fileSpan.innerText;
+
         fileName = (fileName.toLowerCase().includes('.wav')) ? fileName : fileName + '.wav';
 
-        exportAudio(samples, (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, fileName, handleExportAudioResult);
+        exportAudio(samples, (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, fileName, handleExportAudioResult);
 
     } else {
 
@@ -4217,9 +4218,10 @@ exportVideoButton.addEventListener('click', () => {
 
     // Prepare audio data
 
-    const audioArray = createAudioArray(samples, (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, currentHeader, getVolume(), getPlaybackRate());
+    const audioArray = createAudioArray(samples, (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, getVolume(), getPlaybackRate());
 
     const header = new Uint8Array(audioArray[0]);
+
     const audioSamples = new Uint8Array(audioArray[1].buffer);
 
     // Build audio data object
