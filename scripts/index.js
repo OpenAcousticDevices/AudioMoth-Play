@@ -45,7 +45,7 @@ const fileSelectionTitleDiv = document.getElementById('file-selection-title-div'
 const fileButton = document.getElementById('file-button');
 const disabledFileButton = document.getElementById('disabled-file-button');
 const fileSpan = document.getElementById('file-span');
-const trimmedSpan = document.getElementById('trimmed-span');
+const trimmedResampledSpan = document.getElementById('trimmed-resampled-span');
 const loadingSpan = document.getElementById('loading-span');
 
 // Example file variables
@@ -150,7 +150,6 @@ const goertzelLabelSVG = document.getElementById('goertzel-label-svg');
 
 // File variables
 
-let currentHeader;
 let fileHandler;
 let unfilteredSamples;
 let filteredSamples;
@@ -161,7 +160,9 @@ let processedSpectrumFrames;
 let spectrumMin = 0;
 let spectrumMax = 0;
 let firstFile = true;
+
 let trimmedFile = false;
+let resampledFile = false;
 
 let downsampledUnfilteredSamples;
 
@@ -252,11 +253,29 @@ const exportVideoSpinner = document.getElementById('video-spinner');
  */
 function displaySpans (index) {
 
+    if (trimmedFile && resampledFile) {
+
+        trimmedResampledSpan.textContent = 'File has been trimmed to the initial 60 seconds and resampled to 48 kHz.';
+
+    } else if (trimmedFile) {
+
+        trimmedResampledSpan.textContent = 'File has been trimmed to the initial 60 seconds.';
+
+    } else if (resampledFile) {
+
+        trimmedResampledSpan.textContent = 'File has been resampled to 48 kHz.';
+
+    } else {
+
+        trimmedResampledSpan.textContent = '';
+
+    }
+
     switch (index) {
 
     case 0:
         fileSpan.style.display = '';
-        trimmedSpan.style.display = trimmedFile ? '' : 'none';
+        trimmedResampledSpan.style.display = trimmedFile || resampledFile ? '' : 'none';
         loadingSpan.style.display = 'none';
         errorSpan.style.display = 'none';
         break;
@@ -264,7 +283,7 @@ function displaySpans (index) {
     case 1:
         loadingSpan.style.display = '';
         fileSpan.style.display = 'none';
-        trimmedSpan.style.display = 'none';
+        trimmedResampledSpan.style.display = 'none';
         errorSpan.style.display = 'none';
         break;
 
@@ -272,7 +291,7 @@ function displaySpans (index) {
         errorSpan.style.display = '';
         fileSpan.style.display = 'none';
         loadingSpan.style.display = 'none';
-        trimmedSpan.style.display = 'none';
+        trimmedResampledSpan.style.display = 'none';
         break;
 
     }
@@ -1666,7 +1685,7 @@ function processContents (samples, isInitialRender, renderPlots) {
             spectrumMin = result.min;
             spectrumMax = result.max;
 
-            console.log('Setting colour map. Min: ' + spectrumMin + ' Max: ' + spectrumMax);
+            console.log('Setting colour map. Min: ' + spectrumMin.toFixed(2) + ' Max: ' + spectrumMax.toFixed(2));
 
         }
 
@@ -2394,18 +2413,19 @@ function processReadResult (result, callback) {
 
     }
 
-    currentHeader = result.header;
-
-    trueSampleRate = result.header.wavFormat.samplesPerSecond;
+    trueSampleRate = result.sampleRate;
     trueSampleCount = result.samples.length;
+
     sampleRate = trueSampleRate;
     sampleCount = trueSampleCount;
 
-    const lengthSecs = sampleCount / sampleRate;
+    const duration = sampleCount / sampleRate;
 
     const loadedFileName = fileHandler ? fileHandler.name : 'Example file';
+
     console.log('------ ' + loadedFileName + ' ------');
-    console.log('Loaded ' + sampleCount + ' samples at a sample rate of ' + sampleRate + ' Hz (' + lengthSecs + ' seconds)');
+
+    console.log('Loaded ' + sampleCount + ' samples at a sample rate of ' + sampleRate + ' Hz (' + duration.toFixed(2) + ' seconds)');
 
     callback(result);
 
@@ -2432,7 +2452,8 @@ async function readFromFile (exampleFilePath, callback) {
 
             req.onload = () => {
 
-                const arrayBuffer = req.response; // Note: not oReq.responseText
+                const arrayBuffer = req.response;
+
                 result = readWavContents(arrayBuffer);
 
                 processReadResult(result, callback);
@@ -2604,9 +2625,11 @@ async function loadFile (exampleFilePath, exampleName) {
 
         filteredSamples = new Array(sampleCount);
 
-        // If file has been trimmed, display warning
+        // If file has been trimmed or resampled, display warning
 
         trimmedFile = result.trimmed;
+
+        resampledFile = result.resampled;
 
         // Reset threshold arrays
 

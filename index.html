@@ -36,7 +36,7 @@
                     <button class="btn btn-primary" id="disabled-file-button" style="vertical-align: middle;" disabled>Select File</button>
                     <span id="file-span" style="margin-left: 10px; vertical-align: middle; display: none;"></span>
                     <span class="loading" id="loading-span" style="margin-left: 10px; vertical-align: middle;">Loading</span>
-                    <span id="trimmed-span" style="color: blue; vertical-align: middle; margin-left: 10px; display: none;">File has been trimmed to initial 60 seconds.</span>
+                    <span id="trimmed-resampled-span" style="color: blue; vertical-align: middle; margin-left: 10px; display: none;"></span>
                     <span id="error-span" style="color: red; vertical-align: middle; margin-left: 10px; display: none;">.</span>
                 </div>
             </div>
@@ -787,7 +787,7 @@
             </div>
             <div class="row justify-content-md-center" style="margin-top: 5px;">
                 <div class="col total-width">
-                    In order to be certain that any filtering and threshold settings directly correlate to how they'd function on your AudioMoth device, the app only accepts WAV files recorded on an AudioMoth.
+                    Currently, the AudioMoth Filter Playground will only load 16-bit PCM WAV files, recorded at either 44100 Hz (a standard sample rate supported by most microphones), or one of the sample rates supported by AudioMoth (8, 16, 32, 48, 96, 192, 250, and 384 kHz). If you load a file at 44100 Hz it will be automatically resampled to 48 kHz.
                 </div>
             </div>
 
@@ -874,6 +874,7 @@
     <script src="scripts/external/FreeSans-normal.js"></script>
     <script src="scripts/external/complex.min.js"></script>
     <script src="scripts/butterworth.js"></script>
+    <script src="scripts/resampler.js"></script>
     <script src="scripts/wavReader.js"></script>
     <script src="scripts/wavWriter.js"></script>
     <script src="scripts/external/jquery-3.6.0.slim.min.js"></script>

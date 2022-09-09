@@ -4,7 +4,7 @@
  * May 2022
  *****************************************************************************/
 
-/* global VALID_SAMPLE_RATES */
+/* global VALID_AUDIOMOTH_SAMPLE_RATES */
 
 const sampleRateHolder = document.getElementById('sample-rate-holder');
 const disabledSampleRateHolder = document.getElementById('disabled-sample-rate-holder');
@@ -39,9 +39,9 @@ function disableSampleRateControl () {
  */
 function updateSampleRateUI (sampleRate) {
 
-    for (let i = 0; i < VALID_SAMPLE_RATES.length; i++) {
+    for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i++) {
 
-        if (VALID_SAMPLE_RATES[i] > sampleRate) {
+        if (VALID_AUDIOMOTH_SAMPLE_RATES[i] > sampleRate) {
 
             sampleRateRadios[i].disabled = true;
             sampleRateLabels[i].classList.add('grey');
@@ -53,9 +53,9 @@ function updateSampleRateUI (sampleRate) {
 
         }
 
-        sampleRateRadios[i].checked = sampleRate === VALID_SAMPLE_RATES[i];
+        sampleRateRadios[i].checked = sampleRate === VALID_AUDIOMOTH_SAMPLE_RATES[i];
 
-        disabledSampleRateRadios[i].checked = sampleRate === VALID_SAMPLE_RATES[i];
+        disabledSampleRateRadios[i].checked = sampleRate === VALID_AUDIOMOTH_SAMPLE_RATES[i];
 
     }
 
@@ -66,7 +66,7 @@ function updateSampleRateUI (sampleRate) {
  */
 function getSampleRateSelection () {
 
-    return VALID_SAMPLE_RATES[parseInt(document.querySelector('input[name="sample-rate-radio"]:checked').value, 10)];
+    return VALID_AUDIOMOTH_SAMPLE_RATES[parseInt(document.querySelector('input[name="sample-rate-radio"]:checked').value, 10)];
 
 }
 

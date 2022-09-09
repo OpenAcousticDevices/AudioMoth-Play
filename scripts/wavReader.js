@@ -4,8 +4,9 @@
  * June 2021
  *****************************************************************************/
 
-/* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH, LENGTH_OF_WAV_HEADER */
-/* global PCM_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE */
+/* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH */
+/* global PCM_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE, VALID_GENERAL_SAMPLE_RATES, VALID_AUDIOMOTH_SAMPLE_RATES, CD_SAMPLE_RATE, RESAMPLED_CD_SAMPLE_RATE */
+/* global resampleOutputLength, resample */
 
 /* WAV header component read functions */
 
@@ -111,13 +112,13 @@ function readGeneralHeader (buffer, fileSize) {
             const size = readUInt32LE(state);
 
             if (id === 'fmt ') {
-                
+
                 header.fmt = {id: 'fmt ', size: size};
 
                 break;
 
             }
-            
+
             state.index += size;
 
         }
@@ -140,18 +141,16 @@ function readGeneralHeader (buffer, fileSize) {
             };
 
         }
- 
+
         let sampleRateAcceptable = false;
 
-        const acceptableSampleRates = [8000, 16000, 32000, 48000, 96000, 192000, 250000, 384000];
-
-        for (let i = 0; i < acceptableSampleRates.length; i += 1) sampleRateAcceptable |= (header.wavFormat.samplesPerSecond === acceptableSampleRates[i]);
+        for (let i = 0; i < VALID_GENERAL_SAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_GENERAL_SAMPLE_RATES[i]);
 
         if (sampleRateAcceptable === false) {
 
             return {
                 success: false,
-                error: 'Sample rate is not acceptable.'
+                error: 'Sample rate is not supported.'
             };
 
         }
@@ -175,7 +174,7 @@ function readGeneralHeader (buffer, fileSize) {
                     console.log('WAVE READER: DATA chunk size exceeds file size.');
 
                     header.data.size = NUMBER_OF_BYTES_IN_SAMPLE * Math.floor((fileSize - header.size) / NUMBER_OF_BYTES_IN_SAMPLE);
-        
+
                 }
 
                 return {
@@ -183,30 +182,23 @@ function readGeneralHeader (buffer, fileSize) {
                     header: header
                 };
 
-            } 
-            
+            }
+
             state.index += size;
 
         }
 
-        /* Run out of file */
-
-        return {
-            success: false,
-            error: 'Could not find DATA ID.'
-        };   
-
     } catch (e) {
 
         /* An error has occurred */
-        
+
         return {
             success: false,
             error: e.message
         };
-        
+
     }
-         
+
 }
 
 function readAudioMothHeader (buffer, fileSize) {
@@ -251,6 +243,19 @@ function readAudioMothHeader (buffer, fileSize) {
             return {
                 success: false,
                 error: 'Unexpected WAVE format.'
+            };
+
+        }
+
+        let sampleRateAcceptable = false;
+
+        for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_GENERAL_SAMPLE_RATES[i]);
+
+        if (sampleRateAcceptable === false) {
+
+            return {
+                success: false,
+                error: 'Sample rate is not acceptable.'
             };
 
         }
@@ -331,9 +336,7 @@ function readWavContents (contents) {
 
         return {
             success: false,
-            error: 'Input file has zero size.',
-            header: null,
-            samples: null
+            error: 'Input file has zero size.'
         };
 
     }
@@ -346,9 +349,7 @@ function readWavContents (contents) {
 
         return {
             success: false,
-            error: result.error,
-            header: null,
-            samples: null
+            error: result.error
         };
 
     }
@@ -356,45 +357,55 @@ function readWavContents (contents) {
     const header = result.header;
 
     /* Check for samples */
- 
-    const sampleCount = header.data.size / NUMBER_OF_BYTES_IN_SAMPLE;
+
+    let sampleCount = Math.floor(header.data.size / NUMBER_OF_BYTES_IN_SAMPLE);
 
     if (sampleCount === 0) {
 
         return {
             success: false,
-            error: 'Input file has no audio samples.',
-            header: null,
-            samples: null
+            error: 'Input file has no audio samples.'
         };
 
     }
-    
+
+    /* Check if resampling is necessary */
+
+    const sampleRate = header.wavFormat.samplesPerSecond;
+
+    const resampled = (sampleRate === CD_SAMPLE_RATE);
+
+    /* Check if trimming is necessary */
+
+    const MAXIMUM_FILE_DURATION = 60;
+
+    const maximumSampleCount = sampleRate * MAXIMUM_FILE_DURATION;
+
+    const trimmed = (sampleCount > maximumSampleCount);
+
     /* Read the samples */
 
-    const maxSamples = header.wavFormat.samplesPerSecond * 60;
+    if (trimmed) sampleCount = maximumSampleCount;
 
-    const trimmed = sampleCount > maxSamples;
+    const samples = new Int16Array(contents, header.size, sampleCount);
 
-    let samples;
+    let resampledSamples;
 
-    if (trimmed) {
+    if (resampled) {
 
-        console.log('WAVE READER: Trimming to initial 60 seconds of recording');
+        const resampledSampleCount = resampleOutputLength(sampleCount, CD_SAMPLE_RATE, RESAMPLED_CD_SAMPLE_RATE);
 
-        samples = new Int16Array(contents, header.size, maxSamples);
+        resampledSamples = new Int16Array(resampledSampleCount);
 
-    } else {
-
-        samples = new Int16Array(contents, header.size, sampleCount);
+        resample(samples, CD_SAMPLE_RATE, resampledSamples, RESAMPLED_CD_SAMPLE_RATE);
 
     }
 
     return {
         success: true,
-        error: null,
-        header: header,
-        samples: samples,
+        samples: resampled ? resampledSamples : samples,
+        sampleRate: resampled ? RESAMPLED_CD_SAMPLE_RATE : sampleRate,
+        resampled: resampled,
         trimmed: trimmed
     };
 
@@ -416,9 +427,7 @@ async function readWav (fileHandler) {
 
         return {
             success: false,
-            error: 'Could not read input file.',
-            header: null,
-            samples: null
+            error: 'Could not read input file.'
         };
 
     }

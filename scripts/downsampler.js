@@ -8,7 +8,7 @@
 
 /* Debug constant */
 
-/* global INT16_MIN, INT16_MAX, HERTZ_IN_KILOHERTZ, VALID_SAMPLE_RATES */
+/* global INT16_MIN, INT16_MAX, HERTZ_IN_KILOHERTZ, VALID_AUDIOMOTH_SAMPLE_RATES */
 
 const DEBUG = false;
 
@@ -39,11 +39,11 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
     let originalSampleRateValid = false;
     let requestedSampleRateValid = false;
 
-    for (let i = 0; i < VALID_SAMPLE_RATES.length; i += 1) {
+    for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) {
 
-        if (originalSampleRate === VALID_SAMPLE_RATES[i]) originalSampleRateValid = true;
+        if (originalSampleRate === VALID_AUDIOMOTH_SAMPLE_RATES[i]) originalSampleRateValid = true;
 
-        if (requestedSampleRate === VALID_SAMPLE_RATES[i]) requestedSampleRateValid = true;
+        if (requestedSampleRate === VALID_AUDIOMOTH_SAMPLE_RATES[i]) requestedSampleRateValid = true;
 
     }
 
@@ -54,9 +54,9 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
     if (!valid) {
 
         const message = !originalSampleRateValid
-            ? 'Original sample rate is not valid.'
+            ? 'Original sample rate is not supported.'
             : !requestedSampleRateValid
-                ? 'Requested sample rate is not valid.'
+                ? 'Requested sample rate is not supported.'
                 : 'Requested sample rate is greater than original sample rate';
 
         return {

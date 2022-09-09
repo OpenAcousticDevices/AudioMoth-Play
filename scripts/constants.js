@@ -44,12 +44,17 @@ const LENGTH_OF_WAV_FORMAT = 16;
 
 const TWO_PI = 2.0 * Math.PI;
 
-/* Number of samples compared to threshold before deciding if buffer is above or below the threshold */
-/* 32 KB buffer, 16-bit samples */
+/* Number of samples compared to threshold before deciding if buffer is above or below the threshold - 32 KB buffer, 16-bit samples */
 
 const GOERTZEL_THRESHOLD_BUFFER_LENGTH = 16384;
 const AMPLITUDE_THRESHOLD_BUFFER_LENGTH = 16384;
 
 /* Valid sample rate */
 
-const VALID_SAMPLE_RATES = [8000, 16000, 32000, 48000, 96000, 192000, 250000, 384000];
+const CD_SAMPLE_RATE = 44100;
+
+const RESAMPLED_CD_SAMPLE_RATE = 48000;
+
+const VALID_AUDIOMOTH_SAMPLE_RATES = [8000, 16000, 32000, 48000, 96000, 192000, 250000, 384000];
+
+const VALID_GENERAL_SAMPLE_RATES = [8000, 16000, 32000, CD_SAMPLE_RATE, 48000, 96000, 192000, 250000, 384000];
