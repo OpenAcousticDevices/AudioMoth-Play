@@ -84,6 +84,12 @@ function overwriteComment (header, comment) {
 
 }
 
+function updateArtist (header, artist) {
+
+    header.iart.artist = artist;
+
+}
+
 function writeAudioMothHeader (buffer, header) {
 
     const state = {buffer: buffer, index: 0};
@@ -115,7 +121,7 @@ function writeAudioMothHeader (buffer, header) {
 
 }
 
-function createAudioMothHeader (numberOfSamples, sampleRate, comment) {
+function createAudioMothHeader (numberOfSamples, sampleRate, comment, artist) {
 
     const header = {
         riff: {id: 'RIFF', size: 0},
@@ -135,6 +141,8 @@ function createAudioMothHeader (numberOfSamples, sampleRate, comment) {
     updateSampleRate(header, sampleRate);
 
     updateComment(header, comment);
+
+    updateArtist(header, artist);
  
     return header;
 
