@@ -45,8 +45,14 @@ const fileSelectionTitleDiv = document.getElementById('file-selection-title-div'
 const fileButton = document.getElementById('file-button');
 const disabledFileButton = document.getElementById('disabled-file-button');
 const fileSpan = document.getElementById('file-span');
+const fileInformationLink = document.getElementById('file-information-link');
 const trimmedResampledSpan = document.getElementById('trimmed-resampled-span');
 const loadingSpan = document.getElementById('loading-span');
+let isExampleFile = true;
+
+// File information modal
+const artistSpan = document.getElementById('artist-span');
+const commentSpan = document.getElementById('comment-span');
 
 // Example file variables
 
@@ -278,11 +284,26 @@ function displaySpans (index) {
         trimmedResampledSpan.style.display = trimmedFile || resampledFile ? '' : 'none';
         loadingSpan.style.display = 'none';
         errorSpan.style.display = 'none';
+
+        if (isExampleFile) {
+
+            fileInformationLink.style.display = 'none';
+
+        } else {
+
+            artistSpan.innerText = artist;
+            commentSpan.innerText = comment;
+
+            if (artist !== '' || comment !== '') fileInformationLink.style.display = '';
+
+        }
+
         break;
 
     case 1:
         loadingSpan.style.display = '';
         fileSpan.style.display = 'none';
+        fileInformationLink.style.display = 'none';
         trimmedResampledSpan.style.display = 'none';
         errorSpan.style.display = 'none';
         break;
@@ -290,6 +311,7 @@ function displaySpans (index) {
     case 2:
         errorSpan.style.display = '';
         fileSpan.style.display = 'none';
+        fileInformationLink.style.display = 'none';
         loadingSpan.style.display = 'none';
         trimmedResampledSpan.style.display = 'none';
         break;
@@ -2554,6 +2576,7 @@ async function loadFile (exampleFilePath, exampleName) {
         console.log('Loading example file');
 
         fileName = exampleName;
+        isExampleFile = true;
 
     } else {
 
@@ -2589,6 +2612,8 @@ async function loadFile (exampleFilePath, exampleName) {
         if (!fileHandler) {
 
             fileSpan.innerText = 'No WAV files selected.';
+            artistSpan.innerText = 'AudioMoth';
+            commentSpan.innerText = '-';
             return;
 
         }
@@ -2596,6 +2621,8 @@ async function loadFile (exampleFilePath, exampleName) {
         fileHandler = fileHandler[0];
 
         fileName = fileHandler.name;
+
+        isExampleFile = false;
 
     }
 
@@ -2630,6 +2657,12 @@ async function loadFile (exampleFilePath, exampleName) {
         trimmedFile = result.trimmed;
 
         resampledFile = result.resampled;
+
+        // Collect the header information
+
+        artist = result.artist;
+
+        comment = result.comment;
 
         // Reset threshold arrays
 

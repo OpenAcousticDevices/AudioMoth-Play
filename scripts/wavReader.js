@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH */
-/* global PCM_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE, VALID_GENERAL_SAMPLE_RATES, VALID_AUDIOMOTH_SAMPLE_RATES, CD_SAMPLE_RATE, RESAMPLED_CD_SAMPLE_RATE */
+/* global PCM_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE, VALID_RESAMPLE_RATES, VALID_AUDIOMOTH_SAMPLE_RATES */
 /* global resampleOutputLength, resample */
 
 /* WAV header component read functions */
@@ -144,7 +144,9 @@ function readGeneralHeader (buffer, fileSize) {
 
         let sampleRateAcceptable = false;
 
-        for (let i = 0; i < VALID_GENERAL_SAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_GENERAL_SAMPLE_RATES[i]);
+        for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_AUDIOMOTH_SAMPLE_RATES[i]);
+
+        for (let i = 0; i < VALID_RESAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_RESAMPLE_RATES[i]);
 
         if (sampleRateAcceptable === false) {
 
@@ -161,11 +163,25 @@ function readGeneralHeader (buffer, fileSize) {
 
             const id = readString(state, RIFF_ID_LENGTH);
 
+            if (id === 'INFO') continue;
+                
             const size = readUInt32LE(state);
 
-            if (id === 'data') {
+            if (id === 'ICMT') {
 
-                header.data = {id: 'data', size: size};
+                header.icmt = {id: id, size: size};
+
+                header.icmt.comment = readString(state, size);
+                        
+            } else if (id === 'IART') {
+
+                header.iart = {id: id, size: size};
+
+                header.iart.artist = readString(state, size);
+
+            } else if (id === 'data') {
+
+                header.data = {id: id, size: size};
 
                 header.size = state.index;
 
@@ -182,9 +198,11 @@ function readGeneralHeader (buffer, fileSize) {
                     header: header
                 };
 
-            }
+            } else if (id !== 'LIST') {
 
-            state.index += size;
+                state.index += size;
+
+            }
 
         }
 
@@ -249,7 +267,7 @@ function readAudioMothHeader (buffer, fileSize) {
 
         let sampleRateAcceptable = false;
 
-        for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_GENERAL_SAMPLE_RATES[i]);
+        for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_AUDIOMOTH_SAMPLE_RATES[i]);
 
         if (sampleRateAcceptable === false) {
 
@@ -373,7 +391,11 @@ function readWavContents (contents) {
 
     const sampleRate = header.wavFormat.samplesPerSecond;
 
-    const resampled = (sampleRate === CD_SAMPLE_RATE);
+    let resampled = false;
+    
+    for (let i = 0; i < VALID_RESAMPLE_RATES.length; i += 1) resampled ||= (sampleRate === VALID_RESAMPLE_RATES[i]);
+
+    console.log("Resampled: " + resampled);
 
     /* Check if trimming is necessary */
 
@@ -389,23 +411,36 @@ function readWavContents (contents) {
 
     const samples = new Int16Array(contents, header.size, sampleCount);
 
+    let resampleRate;
+
     let resampledSamples;
 
     if (resampled) {
 
-        const resampledSampleCount = resampleOutputLength(sampleCount, CD_SAMPLE_RATE, RESAMPLED_CD_SAMPLE_RATE);
+        for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) {
+
+            resampleRate = VALID_AUDIOMOTH_SAMPLE_RATES[i];
+
+            if (resampleRate > sampleRate) break;
+
+        }
+
+        const resampledSampleCount = resampleOutputLength(sampleCount, sampleRate, resampleRate);
 
         resampledSamples = new Int16Array(resampledSampleCount);
 
-        resample(samples, CD_SAMPLE_RATE, resampledSamples, RESAMPLED_CD_SAMPLE_RATE);
+        resample(samples, sampleRate, resampledSamples, resampleRate);
 
     }
 
     return {
         success: true,
         samples: resampled ? resampledSamples : samples,
-        sampleRate: resampled ? RESAMPLED_CD_SAMPLE_RATE : sampleRate,
+        sampleRate: resampled ? resampleRate : sampleRate,
         resampled: resampled,
+        comment: header.icmt ? header.icmt.comment : "",
+        artist: header.iart ? header.iart.artist : "",
+        originalSampleRate: sampleRate,
         trimmed: trimmed
     };
 
