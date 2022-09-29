@@ -747,17 +747,17 @@
             </div>
             <div class="row justify-content-md-center" style="margin-top: 15px;">
                 <div class="col total-width">
-                    <p>The AudioMoth Filter Playground allows you to explore filtering and thresholding on existing AudioMoth WAV files before applying them in the files.</p>
+                    <p>The AudioMoth Filter Playground allows you to explore filter and trigger settings on existing AudioMoth WAV files before applying them in the files.</p>
                     
                     <p>Select a file recorded on an AudioMoth which is up to 60 seconds in length. Longer files, up to 43.9 MB, will still load but will be truncated. Once the file has loaded, you can navigate through your recording using the buttons above the plot, or by clicking and dragging to select the area you wish to see in detail. You can also double click on either plot to zoom in and centre on specific features of interest.</p>
                     
                     <p>Add a low, high, or band pass filter using the controls on the right; selecting a radio button besides "None" to add a filter and then dragging the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
 
-                    <p>Apply an amplitude threshold or frequency trigger by clicking the corresponding radio button on the right and then dragging the slider to set the threshold. The threshold will be drawn onto the waveform plot to show you which parts of the signal will trigger. You can change the units used to display this threshold using the drop-down menu at the top left of the plots. Once a threshold has been set, the plot will automatically grey out parts of the recording which fall below the threshold.</p>
+                    <p>Apply an amplitude threshold trigger by clicking the corresponding radio button on the right and then dragging the slider to set the threshold. The threshold will be drawn onto the waveform plot to show you which parts of the signal will trigger. You can change the units used to display this threshold using the drop-down menu at the top left of the plots. Once a threshold has been set, the plot will automatically grey out parts of the recording which fall below the threshold.</p>
                     
                     <p>Selecting the frequency trigger will change the waveform to a frequency response plot. Use the radio buttons and slider to set the frequency band shown on this plot. Once you've chosen a band, drag the lower slider to set the frequency response threshold.</p>
 
-                    <p>Selecting either the amplitude threshold or no threshold will allow you to add a low, high, or band pass filter; tick the checkbox to enable the filter and then drag the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
+                    <p>Selecting either the amplitude trigger or no trigger will allow you to add a low, high, or band pass filter; tick the checkbox to enable the filter and then drag the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
                     
                     <p>Once you are happy with the filter and amplitude threshold settings, click <b>Export Configuration</b> to download a .config which can be loaded in the AudioMoth Configuration App (version 1.6.0 onwards).</p>
 
@@ -794,7 +794,7 @@
             </div>
             <div class="row justify-content-md-center" style="margin-top: 5px;">
                 <div class="col total-width">
-                    Currently, the AudioMoth Filter Playground will only load 16-bit PCM WAV files, recorded at either 44100 Hz (a standard sample rate supported by most microphones), or one of the sample rates supported by AudioMoth (8, 16, 32, 48, 96, 192, 250, and 384 kHz). If you load a file at 44100 Hz it will be automatically resampled to 48 kHz.
+                    The AudioMoth Filter Playground will open any 16-bit PCM WAV files recorded at a sample rate supported by AudioMoth (8, 16, 32, 48, 96, 192, 250, and 384 kHz). Files recorded at 44.1 and 312.5 kHz will be automatically resampled to 48 and 384 kHz respectively.
                 </div>
             </div>
 
@@ -805,7 +805,7 @@
             </div>
             <div class="row justify-content-md-center" style="margin-top: 5px;">
                 <div class="col total-width">
-                    Recordings can be no longer than 60 seconds and must be split into shorter files if they exceed this limit. In order to remain readable by the AudioMoth Filter Playground, recordings must be split using the Split function found in the AudioMoth Configuration App. Select "<b>File</b>" and then "<b>Split AudioMoth WAV Recordings</b>" to access it.
+                    The AudioMoth Filter Playground will read the first 60 seconds of any file. If you file is longer than 60 seconds, you can split it in any audio software, or use the AudioMoth Configuration App to split AudioMoth recordings into shorter length files. Select "<b>File</b>" and then "<b>Split AudioMoth WAV Recordings</b>" to access it.
                 </div>
             </div>
 
