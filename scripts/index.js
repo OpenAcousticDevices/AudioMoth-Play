@@ -1691,6 +1691,8 @@ function disableUI (startUp) {
 
     disableFilterUI();
 
+    sizeInformationPanel.classList.add('grey');
+
 }
 
 /**
@@ -2547,6 +2549,8 @@ function formatFileSize (fileSize) {
  * Update panel with estimate of file size
  */
 function updateFileSizePanel () {
+
+    sizeInformationPanel.classList.remove('grey');
 
     const totalSeconds = unfilteredSamples.length / getSampleRate();
     const totalFileSize = getSampleRate() * 2 * totalSeconds;
