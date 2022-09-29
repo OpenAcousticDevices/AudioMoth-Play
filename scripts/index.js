@@ -169,6 +169,10 @@ let firstFile = true;
 
 let trimmedFile = false;
 let resampledFile = false;
+let originalSampleRate = 0;
+
+let artist = "";
+let comment = "";
 
 let downsampledUnfilteredSamples;
 
@@ -261,7 +265,15 @@ function displaySpans (index) {
 
     if (trimmedFile && resampledFile) {
 
-        trimmedResampledSpan.textContent = 'File has been trimmed to the initial 60 seconds and resampled to 48 kHz.';
+        if (comment !== '' || artist !== '') {
+
+            trimmedResampledSpan.textContent = 'File trimmed to 60s and resampled from ' + originalSampleRate / 1000 + ' to ' + trueSampleRate / 1000 + ' kHz.';
+
+        } else {
+
+            trimmedResampledSpan.textContent = 'File has been trimmed to the initial 60 seconds and resampled from ' + originalSampleRate / 1000 + ' to ' + trueSampleRate / 1000 + ' kHz.';
+
+        }
 
     } else if (trimmedFile) {
 
@@ -269,7 +281,7 @@ function displaySpans (index) {
 
     } else if (resampledFile) {
 
-        trimmedResampledSpan.textContent = 'File has been resampled to 48 kHz.';
+        trimmedResampledSpan.textContent = 'File has been resampled from ' + originalSampleRate / 1000 + ' to ' + trueSampleRate / 1000 + ' kHz.';
 
     } else {
 
@@ -2657,6 +2669,8 @@ async function loadFile (exampleFilePath, exampleName) {
         trimmedFile = result.trimmed;
 
         resampledFile = result.resampled;
+
+        originalSampleRate = result.originalSampleRate;
 
         // Collect the header information
 
