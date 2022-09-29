@@ -8,6 +8,15 @@ html, body {
   user-select: none;
 }
 
+.modal {
+  overflow-y: auto;
+}
+
+.modal-open {
+  overflow: auto;
+  padding-right: 0px !important;
+}
+
 .table>tbody>tr>td,
 .table>tbody>tr>th {
   border: none;
