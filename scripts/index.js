@@ -4630,7 +4630,11 @@ if (urlParams.get('dev')) {
 
 launchAppLink.addEventListener('click', () => {
 
-    const features = 'directories=no,menubar=no,status=no,titlebar=no,toolbar=no,width=1420,height=790';
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    const windowHeight = isSafari ? 1460 : 1420;
+
+    const features = 'directories=no,menubar=no,status=no,titlebar=no,toolbar=no,width=1420,height=' + windowHeight;
 
     if (urlParams.get('dev')) {
 
