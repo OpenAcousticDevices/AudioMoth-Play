@@ -4632,7 +4632,7 @@ launchAppLink.addEventListener('click', () => {
 
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-    const windowHeight = isSafari ? 1460 : 1420;
+    const windowHeight = isSafari ? 816 : 790;
 
     const features = 'directories=no,menubar=no,status=no,titlebar=no,toolbar=no,width=1420,height=' + windowHeight;
 
