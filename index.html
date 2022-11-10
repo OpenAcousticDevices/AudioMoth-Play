@@ -22,7 +22,8 @@
 
             <div class="row justify-content-md-center">
                 <div class="col total-width">
-                    <h3 style="margin-bottom: 5px;">AudioMoth Filter Playground</h3>
+                    <h3 style="margin-bottom: 5px; display: inline-block;">AudioMoth Filter Playground</h3>
+                    <a href="#" id="launch-app-link" style="margin-left: 10px;">Launch as app</a>
                 </div>
             </div>
 
@@ -30,7 +31,7 @@
 
             <div id="file-selection-title-div" class="row justify-content-md-center" style="margin-top: 0px;">
                 <div class="col total-width">
-                    <span id="file-selection-title-span">Select an AudioMoth WAV file up to 60 seconds in length:</span>
+                    <span id="file-selection-title-span">Select an AudioMoth WAV file:</span>
                     <span id="browser-error-span" style="color: red; display: none;">Switch to Google Chrome or Microsoft Edge to load your own recordings or select one of the <a href="#examples" style="text-decoration: underline;">example</a> files.</span>
                 </div>
             </div>
@@ -42,10 +43,11 @@
                     <button class="btn btn-primary" id="file-button" style="vertical-align: middle; display: none;">Select File</button>
                     <button class="btn btn-primary" id="disabled-file-button" style="vertical-align: middle;" disabled>Select File</button>
                     <span id="file-span" style="margin-left: 10px; vertical-align: middle; display: none;"></span>
+                    <span id="slice-reselect-span" style="margin-left: 2px; vertical-align: middle; display: none;">(<a href="#" id="slice-reselect-link">00:00:00 - 00:00:00</a>)</span>
                     <a href="#" id="file-information-link" style="margin-left: 10px; vertical-align: middle; display: none;" data-toggle="modal" data-target="#comment-modal">Show file information</a>
                     <span class="loading" id="loading-span" style="margin-left: 10px; vertical-align: middle;">Loading</span>
-                    <span id="trimmed-resampled-span" style="color: blue; vertical-align: middle; margin-left: 10px; display: none;"></span>
-                    <span id="error-span" style="color: red; vertical-align: middle; margin-left: 10px; display: none;">.</span>
+                    <span id="resampled-span" style="color: blue; vertical-align: middle; margin-left: 10px; display: none;"></span>
+                    <span id="error-span" style="color: red; vertical-align: middle; margin-left: 10px; display: none;"></span>
                 </div>
             </div>
 
@@ -109,7 +111,7 @@
                             <svg class="plot-canvas" id="waveform-threshold-line-svg" width="748" height="238"></svg>
                             <canvas class="plot-canvas" id="waveform-playback-canvas" width="748" height="238"></canvas>
                             <svg class="plot-canvas" id="waveform-loading-svg" width="750" height="238"></svg>
-                            <canvas class="plot-canvas" id="waveform-border-canvas" width="748" height="238" style="padding: 0%;"></canvas>
+                            <svg class="plot-canvas" id="waveform-border-svg" width="748" height="238" style="padding: 0%;"></svg>
                             <!-- Drag canvas must be on top or it's not draggable -->
                             <canvas class="plot-canvas" id="waveform-drag-canvas" width="748" height="238"></canvas>
                         </div>
@@ -125,7 +127,7 @@
                             <svg class="plot-canvas" id="goertzel-threshold-line-svg" width="748" height="238"></svg>
                             <canvas class="plot-canvas" id="goertzel-playback-canvas" width="748" height="238"></canvas>
                             <svg class="plot-canvas" id="goertzel-loading-svg" width="750" height="238"></svg>
-                            <canvas class="plot-canvas" id="goertzel-border-canvas" width="748" height="238" style="padding: 0%;"></canvas>
+                            <svg class="plot-canvas" id="goertzel-border-svg" width="748" height="238" style="padding: 0%;"></svg>
                             <!-- Drag canvas must be on top or it's not draggable -->
                             <canvas class="plot-canvas" id="goertzel-drag-canvas" width="748" height="238"></canvas>
                         </div>
@@ -142,7 +144,7 @@
                             <svg class="plot-canvas" id="spectrogram-goertzel-line-svg" width="748" height="255" style="display: none;"></svg>
                             <canvas class="plot-canvas" id="spectrogram-playback-canvas" width="748" height="255"></canvas>
                             <svg class="plot-canvas" id="spectrogram-loading-svg" width="750" height="255"></svg>
-                            <canvas class="plot-canvas" id="spectrogram-border-canvas" width="748" height="255" style="padding: 0%;"></canvas>
+                            <svg class="plot-canvas" id="spectrogram-border-svg" width="748" height="255" style="padding: 0%;"></svg>
                             <!-- Drag canvas must be on top or it's not draggable -->
                             <canvas class="plot-canvas" id="spectrogram-drag-canvas" width="748" height="255"></canvas>
                         </div>
@@ -661,7 +663,7 @@
                     <div class="wrapper" style="width: 793px;">
                         <div class="row">
 
-                            <div class="col-12">
+                            <div class="col-11">
 
                                 <button class="btn btn-success nav-button" id="play-button" disabled style="margin-left: 0px;">
                                     <img id="play-icon" class="button-icon" src="./assets/play.svg" alt="Bootstrap">
@@ -712,10 +714,37 @@
 
                             </div>
 
+                            <div class="col-1">
+                                <button class="btn btn-secondary nav-button" id="settings-modal-button">
+                                    <img id="gear-icon" class="button-icon" src="./assets/gear.svg" alt="Bootstrap">
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 </div>
                 <div class="col control-width control-margin" style="padding-left: 0px;"></div>
+            </div>
+
+            <div class="modal fade" id="settings-modal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="checkbox" id="settings-file-time-checkbox" style="vertical-align: middle;">
+                            <label for="settings-file-time-checkbox" id="settings-file-time-label">Display real time on x axis</label>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="settings-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button id="settings-apply-button" type="button" class="btn btn-success">Apply</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="modal fade" id="export-modal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
@@ -723,7 +752,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                         <h5 class="modal-title" id="exportModalLabel">Export Image</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="export-close-button">
                             <span aria-hidden="true">&times;</span>
                         </button>
                         </div>
@@ -735,7 +764,6 @@
                             <button id="export-jpg-button" type="button" class="btn btn-success">JPG</button>
                             <button id="export-pdf-button" type="button" class="btn btn-success">PDF</button>
                             <button id="export-all-button" type="button" class="btn btn-primary">All</button>
-                            <button id="export-close-button" type="button" class="btn btn-secondary" data-dismiss="modal" style="display: none;">Close</button>
                         </div>
                     </div>
                 </div>
@@ -758,142 +786,232 @@
                 </div>
             </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h3 id="instructions">Instructions</h3>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <p>The AudioMoth Filter Playground allows you to explore filter and trigger settings on existing AudioMoth WAV files before applying them in the files.</p>
-                    
-                    <p>Select a file recorded on an AudioMoth which is up to 60 seconds in length. Longer files, up to 43.9 MB, will still load but will be truncated. Once the file has loaded, you can navigate through your recording using the buttons above the plot, or by clicking and dragging to select the area you wish to see in detail. You can also double click on either plot to zoom in and centre on specific features of interest.</p>
-                    
-                    <p>Add a low, high, or band pass filter using the controls on the right; selecting a radio button besides "None" to add a filter and then dragging the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
+            <div class="modal fade" id="slice-modal" tabindex="-1" role="dialog" aria-labelledby="slice-modal-label" aria-hidden="true">
+                <div class="modal-dialog" role="document" style="max-width: 820px;">
 
-                    <p>Apply an amplitude threshold trigger by clicking the corresponding radio button on the right and then dragging the slider to set the threshold. The threshold will be drawn onto the waveform plot to show you which parts of the signal will trigger. You can change the units used to display this threshold using the drop-down menu at the top left of the plots. Once a threshold has been set, the plot will automatically grey out parts of the recording which fall below the threshold.</p>
-                    
-                    <p>Selecting the frequency trigger will change the waveform to a frequency response plot. Use the radio buttons and slider to set the frequency band shown on this plot. Once you've chosen a band, drag the lower slider to set the frequency response threshold.</p>
+                    <!-- Loading UI -->
 
-                    <p>Selecting either the amplitude trigger or no trigger will allow you to add a low, high, or band pass filter; tick the checkbox to enable the filter and then drag the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
-                    
-                    <p>Once you are happy with the filter and amplitude threshold settings, click <b>Export Configuration</b> to download a .config which can be loaded in the AudioMoth Configuration App (version 1.6.0 onwards).</p>
+                    <div class="modal-content" id="slice-loading-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title">Select part of chosen file</h5>
+                        </div>
+                        <div class="modal-body">
+                            File length exceeds 60 seconds. Loading interval selection.
+                        </div>
 
-                    <p>You can use the controls beneath the plots to export WAV sound files, PNG, JPG, and PDF images, and MP4 videos of your AudioMoth recordings.</p> 
-                </div>
-            </div>
+                        <div class="modal-body" id="slice-text" style="padding: 0px; height: 210px;">
+                            <div class="wrapper" style="width: 100%; height: 170px;">
+                                <svg class="slice-canvas" id="slice-loading-border-svg" width="720" height="170" style="padding: 0%;"></svg>
+                                <svg class="slice-canvas" id="slice-loading-SVG" width="720" height="170" style="padding: 0%; z-index: 1;"></svg>
+                                <svg class="slice-canvas" id="slice-loading-fill-SVG" width="720" height="170" style="padding: 0%; z-index: 0;"></svg>
+                            </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 10px;">
-                <div class="col total-width">
-                    <h3>Example files</h3>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div id="examples" class="col total-width">
-                    <p>You can use these example files to explore settings if you do not currently have an AudioMoth file to use.</p>
-                    <ul>
-                        <li><a href="#" id="example-link1">Example 1</a> - Bat</li>
-                        <li><a href="#" id="example-link2">Example 2</a> - Frequency sweep</li>
-                        <li><a href="#" id="example-link3">Example 3</a> - Metronome</li>
-                    </ul> 
-                </div>
-            </div>
+                        </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 10px;">
-                <div class="col total-width">
-                    <h3 id="faqs">FAQs</h3>
-                </div>
-            </div>
+                        <div class="modal-body" style="padding-left: 0px; padding-right: 0px;">
+                            <div class="row">
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-secondary" style="margin-left: 50px;" disabled><</button>
+                                    <button type="button" class="btn btn-secondary" style="margin-right: 5px;" disabled>></button>
+                                </div>
+                                <div class="col-6" style="text-align: right;">
+                                    <button type="button" class="btn btn-secondary" style="margin-left: 5px;" disabled><</button>
+                                    <button type="button" class="btn btn-secondary" style="margin-right: 50px;" disabled>></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" id="slice-loading-cancel-button">Cancel</button>
+                            <button type="button" class="btn btn-primary" disabled>Select</button>
+                        </div>
+                    </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h5>Why won't my file load?</h5>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div class="col total-width">
-                    The AudioMoth Filter Playground will open any 16-bit PCM WAV files recorded at a sample rate supported by AudioMoth (8, 16, 32, 48, 96, 192, 250, and 384 kHz). Files recorded at 44.1 and 312.5 kHz will be automatically resampled to 48 and 384 kHz respectively.
-                </div>
-            </div>
+                    <!-- Preview UI -->
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h5>How do I reduce the size of my recordings?</h5>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div class="col total-width">
-                    The AudioMoth Filter Playground will read the first 60 seconds of any file. If you file is longer than 60 seconds, you can split it in any audio software, or use the AudioMoth Configuration App to split AudioMoth recordings into shorter length files. Select "<b>File</b>" and then "<b>Split AudioMoth WAV Recordings</b>" to access it.
-                </div>
-            </div>
+                    <div class="modal-content" style="display: none;" id="slice-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="slice-modal-label">Select part of chosen file</h5>
+                        </div>
+                        <div class="modal-body">
+                            File length exceeds 60 seconds. Select a 60 second interval.
+                        </div>
+                        <div class="modal-body" id="slice-text" style="padding: 0px;">
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h5>What is "amplitude threshold triggered recording"?</h5>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div class="col total-width">
-                    Amplitude threshold triggered recording is a recording mode where an AudioMoth will only collect samples when their amplitude exceeds a certain value. Once a threshold has been selected, these samples are saved to SD card, as well as the lengths of the gaps between each acoustic event.
-                </div>
-            </div>
+                            <div class="wrapper" style="width: 100%; height: 170px;">
+                                <canvas class="slice-canvas" id="slice-canvas" width="720" height="170" style="padding: 0%;"></canvas>
+                                <svg class="slice-canvas" id="slice-border-svg" width="720" height="170" style="padding: 0%;"></svg>
+                                <canvas class="slice-canvas" id="slice-hover-canvas" width="720" height="170" style="padding: 0%;"></canvas>
+                                <canvas class="slice-canvas" id="slice-selection-canvas" width="720" height="170" style="padding: 0%;"></canvas>
+                            </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h5>What is "frequency triggered recording"?</h5>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div class="col total-width">
-                    Frequency triggered recording is a recording mode where an AudioMoth will only collect samples when the response of a chosen frequency band exceeds a certain value. Once a threshold has been selected, these samples are saved to SD card, as well as the lengths of the gaps between each acoustic event.
-                </div>
-            </div>
+                            <div class="wrapper" style="width: 100%; height: 20px;">
+                                <!-- Time axis -->
+                                <div class="row" style="margin-top: 0%; text-align: center;">
+                                    <svg class="slice-axis" id="slice-time-axis-svg" width="760px" height="20px"></svg>
+                                </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h5>What does "window length" change when configuring a frequency trigger?</h5>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div class="col total-width">
-                    The window length controls the width of the frequency band which the threshold is applied to. The lower the window length, the wider the band. The size and position of the band is displayed on the spectrogram plot when the frequency trigger is selected.
+                            </div>
+
+                            <div class="wrapper" style="width: 100%; height: 20px;">
+                                <!-- Time axis heading -->
+                                <div class="row" style="margin-top: 0%; text-align: center;">
+                                    <svg class="slice-axis" id="slice-time-axis-label-svg" width="760px" height="20px"></svg>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="modal-body" style="padding-left: 0px; padding-right: 0px;">
+                            <div class="row">
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-secondary" id="slice-selection-left-button" style="margin-left: 50px;" disabled><</button>
+                                    <button type="button" class="btn btn-secondary" id="slice-selection-right-button" style="margin-right: 5px;">></button>
+                                    <span id="slice-selection-span">00:00:00 - 00:01:00</span>
+                                </div>
+                                <div class="col-6" style="text-align: right;">
+                                    <span id="slice-page-span">Page 1 of 1</span>
+                                    <button type="button" class="btn btn-secondary" id="slice-page-left-button" style="margin-left: 5px;" disabled><</button>
+                                    <button type="button" class="btn btn-secondary" id="slice-page-right-button" style="margin-right: 50px;" disabled>></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" id="slice-close-button">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="slice-select-button">Select</button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h5>What changes when I set a minimum trigger duration?</h5>
-                </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div class="col total-width">
-                    Selecting a minimum trigger duration will make sure that all triggered recordings are at least this length, continuing to collect samples even after a triggered event has ended. This is useful for situations such as detecting bat calls, where the initial impulse can trigger a recording and the quieter tail of the sound is also required.
-                </div>
-            </div>
+            <div id="instructions-content" style="display: none;">
 
-            <div class="row justify-content-md-center" style="margin-top: 15px;">
-                <div class="col total-width">
-                    <h5>How do I zoom into a specific section of my recording?</h5>
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <h3 id="instructions">Instructions</h3>
+                    </div>
                 </div>
-            </div>
-            <div class="row justify-content-md-center" style="margin-top: 5px;">
-                <div class="col total-width">
-                    You can navigate through your recording using the buttons above the plot, or move to a specific part by clicking and dragging or double clicking on either plot to highlight the area you wish to see in detail.
-                </div>
-            </div>
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <p>The AudioMoth Filter Playground allows you to explore filter and trigger settings on existing AudioMoth WAV files before applying them in the files.</p>
 
-            <div class="row justify-content-md-center" style="margin-top: 25px;">
-                <div class="col total-width" style="text-align: center;">
-                    <a href="https://github.com/OpenAcousticDevices/AudioMoth-Filter-Playground"><img src="./assets/GitHub-Mark-32px.png"></a>
-                    <a href="https://openacousticdevices.info" style="margin-left: 5px;"><img src="./assets/icon.png"></a>
-                </div>
-            </div>
+                        <p>Select a file recorded on an AudioMoth. Files longer than 60 seconds will open as a preview, allowing you to select a 60 second section to load. Once the file has loaded, you can navigate through your recording using the buttons above the plot, or by clicking and dragging to select the area you wish to see in detail. You can also double click on either plot to zoom in and centre on specific features of interest.</p>
 
-            <div style="margin-bottom: 20px;"></div>
+                        <p>Add a low, high, or band pass filter using the controls on the right; selecting a radio button besides "None" to add a filter and then dragging the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
+                        
+                        <p>Apply an amplitude threshold trigger by clicking the corresponding radio button on the right and then dragging the slider to set the threshold. The threshold will be drawn onto the waveform plot to show you which parts of the signal will trigger. You can change the units used to display this threshold using the drop-down menu at the top left of the plots. Once a threshold has been set, the plot will automatically grey out parts of the recording which fall below the threshold.</p>
+
+                        <p>Selecting the frequency trigger will change the waveform to a frequency response plot. Use the radio buttons and slider to set the frequency band shown on this plot. Once you've chosen a band, drag the lower slider to set the frequency response threshold.</p>
+                        
+                        <p>Selecting either the amplitude trigger or no trigger will allow you to add a low, high, or band pass filter; tick the checkbox to enable the filter and then drag the sliders to set the required filter frequency. The plots update in real time to show the effect of the filter.</p>
+
+                        <p>Once you are happy with the filter and amplitude threshold settings, click <b>Export Configuration</b> to download a .config which can be loaded in the AudioMoth Configuration App (version 1.6.0 onwards).</p>
+                        
+                        <p>You can use the controls beneath the plots to export WAV sound files, PNG, JPG, and PDF images, and MP4 videos of your AudioMoth recordings.</p>
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 10px;">
+                    <div class="col total-width">
+                        <h3>Example files</h3>
+                    </div>
+                </div>
+                <div class="row justify-content-md-center" style="margin-top: 5px;">
+                    <div id="examples" class="col total-width">
+                        <p>You can use these example files to explore settings if you do not currently have an AudioMoth file to use.</p>
+                        <ul>
+                            <li><a href="#" id="example-link1">Example 1</a> - Bat</li>
+                            <li><a href="#" id="example-link2">Example 2</a> - Frequency sweep</li>
+                            <li><a href="#" id="example-link3">Example 3</a> - Metronome</li>
+                        </ul> 
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 10px;">
+                    <div class="col total-width">
+                        <h3 id="faqs">FAQs</h3>
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <h5>Why won't my file load?</h5>
+                    </div>
+                </div>
+                <div class="row justify-content-md-center" style="margin-top: 5px;">
+                    <div class="col total-width">
+                        The AudioMoth Filter Playground will open any 16-bit PCM WAV files recorded at a sample rate supported by AudioMoth (8, 16, 32, 48, 96, 192, 250, and 384 kHz). Files recorded at 44.1 and 312.5 kHz will be automatically resampled to 48 and 384 kHz respectively.
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <h5>What is "amplitude threshold triggered recording"?</h5>
+                    </div>
+                </div>
+                <div class="row justify-content-md-center" style="margin-top: 5px;">
+                    <div class="col total-width">
+                        Amplitude threshold triggered recording is a recording mode where an AudioMoth will only collect samples when their amplitude exceeds a certain value. Once a threshold has been selected, these samples are saved to SD card, as well as the lengths of the gaps between each acoustic event.
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <h5>What is "frequency triggered recording"?</h5>
+                    </div>
+                </div>
+                <div class="row justify-content-md-center" style="margin-top: 5px;">
+                    <div class="col total-width">
+                        Frequency triggered recording is a recording mode where an AudioMoth will only collect samples when the response of a chosen frequency band exceeds a certain value. Once a threshold has been selected, these samples are saved to SD card, as well as the lengths of the gaps between each acoustic event.
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <h5>What does "window length" change when configuring a frequency trigger?</h5>
+                    </div>
+                </div>
+                <div class="row justify-content-md-center" style="margin-top: 5px;">
+                    <div class="col total-width">
+                        The window length controls the width of the frequency band which the threshold is applied to. The lower the window length, the wider the band. The size and position of the band is displayed on the spectrogram plot when the frequency trigger is selected.
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <h5>What changes when I set a minimum trigger duration?</h5>
+                    </div>
+                </div>
+                <div class="row justify-content-md-center" style="margin-top: 5px;">
+                    <div class="col total-width">
+                        Selecting a minimum trigger duration will make sure that all triggered recordings are at least this length, continuing to collect samples even after a triggered event has ended. This is useful for situations such as detecting bat calls, where the initial impulse can trigger a recording and the quieter tail of the sound is also required.
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 15px;">
+                    <div class="col total-width">
+                        <h5>How do I zoom into a specific section of my recording?</h5>
+                    </div>
+                </div>
+                <div class="row justify-content-md-center" style="margin-top: 5px;">
+                    <div class="col total-width">
+                        You can navigate through your recording using the buttons above the plot, or move to a specific part by clicking and dragging or double clicking on either plot to highlight the area you wish to see in detail.
+                    </div>
+                </div>
+
+                <div class="row justify-content-md-center" style="margin-top: 25px; margin-bottom: 20px;">
+                    <div class="col total-width" style="text-align: center;">
+                        <a href="https://github.com/OpenAcousticDevices/AudioMoth-Filter-Playground"><img src="./assets/GitHub-Mark-32px.png"></a>
+                        <a href="https://openacousticdevices.info" style="margin-left: 5px;"><img src="./assets/icon.png"></a>
+                    </div>
+                </div>
+
+            </div>
 
         </div>
     </body>
     <script src="scripts/constants.js"></script>
+    <script src="scripts/labelBuilding.js"></script>
+    <script src="scripts/drawSVG.js"></script>
     <script src="scripts/butterworth.js"></script>
     <script src="scripts/resampler.js"></script>
     <script src="scripts/wavReader.js"></script>
@@ -901,6 +1019,7 @@
     <script src="scripts/stft.js"></script>
     <script src="scripts/spectrogram.js"></script>
     <script src="scripts/waveform.js"></script>
+    <script src="scripts/wavPreviewer.js"></script>
     <script src="scripts/amplitudeThreshold.js"></script>
     <script src="scripts/goertzelFilter.js"></script>
     <script src="scripts/playAudio.js"></script>

@@ -4,15 +4,15 @@
  * June 2022
  *****************************************************************************/
 
-/* global structuredClone, Blob */
+/* global Blob */
+
+/* global createAudioMothHeader, writeAudioMothHeader */
 
 /* global AMPLITUDE_THRESHOLD_BUFFER_LENGTH */
-/* global PLAYBACK_MODE_ALL, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_MUTE */
+/* global PLAYBACK_MODE_SKIP, PLAYBACK_MODE_MUTE */
 
-/* global NUMBER_OF_BYTES_IN_SAMPLE */
 /* global MIN_SAMPLE_RATE */
-
-/* global updateDataSize, updateSampleRate, writeHeader */
+/* global INT16_MAX, INT16_MIN */
 
 function createAudioArray (samples, unthresholdedSamples, start, length, sampleRate, mode, playbackBufferLength, volumeModifier, playbackRate) {
 
@@ -120,7 +120,7 @@ function createAudioArray (samples, unthresholdedSamples, start, length, sampleR
     const numberOfSamples = playbackBufferLength * powMultiplier;
 
     const header = createAudioMothHeader(numberOfSamples, acceptedSampleRate, 'Audio clip exported from the AudioMoth Filter Playground.', 'AudioMoth Filter Playground');
-    
+
     const headerBuffer = new ArrayBuffer(header.size);
 
     writeAudioMothHeader(headerBuffer, header);

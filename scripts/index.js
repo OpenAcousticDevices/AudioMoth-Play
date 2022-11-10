@@ -4,11 +4,17 @@
  * June 2021
  *****************************************************************************/
 
-/* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readWavContents */
+/* global XMLHttpRequest, bootstrap */
+/* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, SECONDS_IN_DAY */
+
+/* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader */
+/* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler */
 /* global applyLowPassFilter, applyHighPassFilter, applyBandPassFilter, FILTER_NONE, FILTER_LOW, FILTER_BAND, FILTER_HIGH, applyAmplitudeThreshold */
 /* global playAudio, stopAudio, getTimestamp, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_ALL, AMPLITUDE_THRESHOLD_BUFFER_LENGTH, createAudioContext */
-/* global XMLHttpRequest */
 /* global applyGoertzelFilter, drawGoertzelPlot, applyGoertzelThreshold, GOERTZEL_THRESHOLD_BUFFER_LENGTH, generateHammingValues */
+/* global formatAxisUnits, getIncrementAndPrecision, formatTimeLabel */
+
+/* global addSVGText, addSVGLine, clearSVG, addSVGRect, checkSVGLabelCutOff */
 
 /* global prepareUI, sampleRateChange */
 /* global getPassFiltersObserved, getCentreObserved */
@@ -26,6 +32,10 @@
 /* global enableSampleRateControl, disableSampleRateControl, updateSampleRateUI, getSampleRateSelection, addSampleRateUIListeners */
 
 /* global downsample */
+
+// Launch page as app without instructions
+
+const launchAppLink = document.getElementById('launch-app-link');
 
 // Use these values to fill in the axis labels before samples have been loaded
 
@@ -46,13 +56,30 @@ const fileButton = document.getElementById('file-button');
 const disabledFileButton = document.getElementById('disabled-file-button');
 const fileSpan = document.getElementById('file-span');
 const fileInformationLink = document.getElementById('file-information-link');
-const trimmedResampledSpan = document.getElementById('trimmed-resampled-span');
+const resampledSpan = document.getElementById('resampled-span');
 const loadingSpan = document.getElementById('loading-span');
 let isExampleFile = true;
 
 // File information modal
 const artistSpan = document.getElementById('artist-span');
 const commentSpan = document.getElementById('comment-span');
+
+// Recording slice UI
+const sliceLoadingBorderSVG = document.getElementById('slice-loading-border-svg');
+const sliceBorderSVG = document.getElementById('slice-border-svg');
+const sliceCloseButton = document.getElementById('slice-close-button');
+const sliceReselectSpan = document.getElementById('slice-reselect-span');
+const sliceReselectLink = document.getElementById('slice-reselect-link');
+let showReselectLink = false;
+let sliceSelectionCallback;
+
+// Settings UI
+
+const settingsModalButton = document.getElementById('settings-modal-button');
+const settingsApplyButton = document.getElementById('settings-apply-button');
+const settingsModal = new bootstrap.Modal(document.getElementById('settings-modal'));
+const settingsFileTimeCheckbox = document.getElementById('settings-file-time-checkbox');
+const settingsFileTimeLabel = document.getElementById('settings-file-time-label');
 
 // Example file variables
 
@@ -126,7 +153,7 @@ const spectrogramGoertzelLineSVG = document.getElementById('spectrogram-goertzel
 const spectrogramThresholdCanvas = document.getElementById('spectrogram-threshold-canvas'); // Canvas layer where amplitude thresholded periods are drawn
 const spectrogramCanvas = document.getElementById('spectrogram-canvas'); // Canvas layer where spectrogram is drawn
 const spectrogramLoadingSVG = document.getElementById('spectrogram-loading-svg');
-const spectrogramBorderCanvas = document.getElementById('spectrogram-border-canvas');
+const spectrogramBorderSVG = document.getElementById('spectrogram-border-svg');
 
 const waveformHolder = document.getElementById('waveform-holder');
 const waveformPlaybackCanvas = document.getElementById('waveform-playback-canvas'); // Canvas layer where playback progress
@@ -135,7 +162,7 @@ const waveformThresholdCanvas = document.getElementById('waveform-threshold-canv
 const waveformThresholdLineSVG = document.getElementById('waveform-threshold-line-svg'); // SVG layer where amplitude threshold value lines are drawn
 const waveformCanvas = document.getElementById('waveform-canvas'); // Canvas layer where waveform is drawn
 const waveformLoadingSVG = document.getElementById('waveform-loading-svg');
-const waveformBorderCanvas = document.getElementById('waveform-border-canvas');
+const waveformBorderSVG = document.getElementById('waveform-border-svg');
 
 const goertzelCanvasHolder = document.getElementById('goertzel-canvas-holder');
 const goertzelPlaybackCanvas = document.getElementById('goertzel-playback-canvas'); // Canvas layer where playback progress
@@ -143,7 +170,7 @@ const goertzelDragCanvas = document.getElementById('goertzel-drag-canvas'); // C
 const goertzelThresholdCanvas = document.getElementById('goertzel-threshold-canvas'); // Canvas layer where Goertzel thresholded periods are drawn
 const goertzelThresholdLineSVG = document.getElementById('goertzel-threshold-line-svg'); // SVG layer where Goertzel thresholded periods are drawn
 const goertzelCanvas = document.getElementById('goertzel-canvas'); // Canvas layer where Goertzel response is drawn
-const goertzelBorderCanvas = document.getElementById('goertzel-border-canvas');
+const goertzelBorderSVG = document.getElementById('goertzel-border-svg');
 
 const timeLabelSVG = document.getElementById('time-axis-label-svg');
 const timeAxisHeadingSVG = document.getElementById('time-axis-heading-svg');
@@ -153,6 +180,10 @@ const timeAxisHeadingSVG = document.getElementById('time-axis-heading-svg');
 const spectrogramLabelSVG = document.getElementById('spectrogram-label-svg');
 const waveformLabelSVG = document.getElementById('waveform-label-svg');
 const goertzelLabelSVG = document.getElementById('goertzel-label-svg');
+
+// Heading used on the X axis ("Time (x)")
+
+let xAxisHeading = 'Time (S)';
 
 // File variables
 
@@ -167,14 +198,30 @@ let spectrumMin = 0;
 let spectrumMax = 0;
 let firstFile = true;
 
-let trimmedFile = false;
+let artist = '';
+let comment = '';
+
 let resampledFile = false;
+
+let originalDataSize = 0;
 let originalSampleRate = 0;
 
-let artist = "";
-let comment = "";
-
 let downsampledUnfilteredSamples;
+
+// If a slice is selected, the amount all x labels should be offset by
+
+let timeLabelOffset = 0;
+
+// If file is sliced, the original size of the file in samples
+
+let previewFileLengthSamples;
+let originalFileLength = 0;
+
+// Timestamp when file was recorded
+
+let fileTimestamp = -1;
+let fileTimezone = 'UTC';
+let useFileTime = false;
 
 // Drawing/processing flag
 
@@ -255,37 +302,25 @@ const exportVideoButton = document.getElementById('export-video-button');
 const exportVideoIcon = document.getElementById('video-icon');
 const exportVideoSpinner = document.getElementById('video-spinner');
 
+// Instruction UI
+
+const instructionsContent = document.getElementById('instructions-content');
+
 /**
- * 0 - Default (display trimmed message if appropriate)
+ * 0 - Default
  * 1 - Loading
  * 2 - Error
- * @param {int} index Which span to show
+ * @param {number} index Which span to show
  */
 function displaySpans (index) {
 
-    if (trimmedFile && resampledFile) {
+    if (resampledFile) {
 
-        if (comment !== '' || artist !== '') {
-
-            trimmedResampledSpan.textContent = 'File trimmed to 60s and resampled from ' + originalSampleRate / 1000 + ' to ' + trueSampleRate / 1000 + ' kHz.';
-
-        } else {
-
-            trimmedResampledSpan.textContent = 'File has been trimmed to the initial 60 seconds and resampled from ' + originalSampleRate / 1000 + ' to ' + trueSampleRate / 1000 + ' kHz.';
-
-        }
-
-    } else if (trimmedFile) {
-
-        trimmedResampledSpan.textContent = 'File has been trimmed to the initial 60 seconds.';
-
-    } else if (resampledFile) {
-
-        trimmedResampledSpan.textContent = 'File has been resampled from ' + originalSampleRate / 1000 + ' to ' + trueSampleRate / 1000 + ' kHz.';
+        resampledSpan.textContent = 'File has been resampled from ' + originalSampleRate / 1000 + ' to ' + trueSampleRate / 1000 + ' kHz.';
 
     } else {
 
-        trimmedResampledSpan.textContent = '';
+        resampledSpan.textContent = '';
 
     }
 
@@ -293,7 +328,7 @@ function displaySpans (index) {
 
     case 0:
         fileSpan.style.display = '';
-        trimmedResampledSpan.style.display = trimmedFile || resampledFile ? '' : 'none';
+        resampledSpan.style.display = resampledFile ? '' : 'none';
         loadingSpan.style.display = 'none';
         errorSpan.style.display = 'none';
 
@@ -308,7 +343,12 @@ function displaySpans (index) {
 
             if (artist !== '' || comment !== '') fileInformationLink.style.display = '';
 
+            artistSpan.style.display = (artist === '') ? 'none' : '';
+            commentSpan.style.display = (comment === '') ? 'none' : '';
+
         }
+
+        sliceReselectSpan.style.display = showReselectLink ? '' : 'none';
 
         break;
 
@@ -316,8 +356,9 @@ function displaySpans (index) {
         loadingSpan.style.display = '';
         fileSpan.style.display = 'none';
         fileInformationLink.style.display = 'none';
-        trimmedResampledSpan.style.display = 'none';
+        resampledSpan.style.display = 'none';
         errorSpan.style.display = 'none';
+        sliceReselectSpan.style.display = 'none';
         break;
 
     case 2:
@@ -325,7 +366,8 @@ function displaySpans (index) {
         fileSpan.style.display = 'none';
         fileInformationLink.style.display = 'none';
         loadingSpan.style.display = 'none';
-        trimmedResampledSpan.style.display = 'none';
+        resampledSpan.style.display = 'none';
+        sliceReselectSpan.style.display = 'none';
         break;
 
     }
@@ -411,69 +453,6 @@ function samplesToPixels (samples) {
 
 }
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-/**
- * Draw text to an SVG holder
- * @param {Element} parent SVG element to be drawn to
- * @param {string} content Text to be written
- * @param {number} x x coordinate
- * @param {number} y y coordinate
- * @param {string} anchor What end of the text it should be anchored to. Possible values: start/middle/end
- * @param {string} baseline What end of the text it should be anchored to. Possible values: text-top/middle/text-bottom
- */
-function addSVGText (parent, content, x, y, anchor, baseline) {
-
-    const textElement = document.createElementNS(SVG_NS, 'text');
-
-    textElement.setAttributeNS(null, 'x', x);
-    textElement.setAttributeNS(null, 'y', y);
-    textElement.setAttributeNS(null, 'dominant-baseline', baseline);
-    textElement.setAttributeNS(null, 'text-anchor', anchor);
-    textElement.setAttributeNS(null, 'font-size', '10px');
-
-    textElement.textContent = content;
-
-    parent.appendChild(textElement);
-
-}
-
-/**
- * Draw line to an SVG holder
- * @param {Element} parent SVG element to be drawn to
- * @param {number} x1 X coordinate of line start
- * @param {number} y1 Y coordinate of line start
- * @param {number} x2 X coordinate of line end
- * @param {number} y2 Y coordinate of line end
- */
-function addSVGLine (parent, x1, y1, x2, y2) {
-
-    const lineElement = document.createElementNS(SVG_NS, 'line');
-
-    lineElement.setAttributeNS(null, 'x1', x1);
-    lineElement.setAttributeNS(null, 'y1', y1);
-    lineElement.setAttributeNS(null, 'x2', x2);
-    lineElement.setAttributeNS(null, 'y2', y2);
-    lineElement.setAttributeNS(null, 'stroke', 'black');
-
-    parent.appendChild(lineElement);
-
-}
-
-/**
- * Remove all SVG drawing elements from an SVG holder
- * @param {Element} parent SVG element containing labels to be cleared
- */
-function clearSVG (parent) {
-
-    while (parent.firstChild) {
-
-        parent.removeChild(parent.lastChild);
-
-    }
-
-}
-
 /**
  * Gets sample rate, returning a filler value if no samples have been loaded yet
  * @returns Sample rate
@@ -529,14 +508,14 @@ function getGoertzelZoomY () {
  */
 function drawBorders () {
 
-    const canvases = [spectrogramBorderCanvas, waveformBorderCanvas, goertzelBorderCanvas];
+    const canvases = [spectrogramBorderSVG, waveformBorderSVG, goertzelBorderSVG, sliceLoadingBorderSVG, sliceBorderSVG];
 
     for (let i = 0; i < canvases.length; i++) {
 
-        const ctx = canvases[i].getContext('2d');
+        const w = canvases[i].width.baseVal.value;
+        const h = canvases[i].height.baseVal.value;
 
-        ctx.strokeStyle = 'black';
-        ctx.strokeRect(0, 0, canvases[i].width, canvases[i].height);
+        addSVGRect(canvases[i], 0, 0, w, h, 'black', 2, false);
 
     }
 
@@ -559,101 +538,41 @@ function drawAxisLabels () {
     // If no file has been loaded, use a filler sample count/rate
 
     const currentSampleRate = getSampleRate();
-    const currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
+
+    let currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
+    currentSampleCount = Math.max(currentSampleCount, originalFileLength);
 
     let label = 0;
 
-    const displayedTimeAmounts = [
-        {
-            amount: 30,
-            labelIncrement: 5,
-            precision: 0
-        },
-        {
-            amount: 10,
-            labelIncrement: 2,
-            precision: 0
-        },
-        {
-            amount: 5,
-            labelIncrement: 1,
-            precision: 0
-        },
-        {
-            amount: 2,
-            labelIncrement: 0.5,
-            precision: 1
-        },
-        {
-            amount: 1,
-            labelIncrement: 0.2,
-            precision: 1
-        },
-        {
-            amount: 0.5,
-            labelIncrement: 0.1,
-            precision: 1
-        },
-        {
-            amount: 0.2,
-            labelIncrement: 0.05,
-            precision: 2
-        },
-        {
-            amount: 0.1,
-            labelIncrement: 0.02,
-            precision: 2
-        },
-        {
-            amount: 0.05,
-            labelIncrement: 0.01,
-            precision: 2
-        },
-        {
-            amount: 0.02,
-            labelIncrement: 0.005,
-            precision: 3
-        },
-        {
-            amount: 0.01,
-            labelIncrement: 0.002,
-            precision: 3
-        },
-        {
-            amount: 0.005,
-            labelIncrement: 0.001,
-            precision: 3
-        }
-    ];
+    // Get the label increment amount and label decimal precision
 
-    let xLabelIncrementSecs = displayedTimeAmounts[0].labelIncrement;
-    let xLabelDecimalPlaces = displayedTimeAmounts[0].precision;
-
-    for (let i = 0; i < displayedTimeAmounts.length; i++) {
-
-        const displayedTimeSamples = displayedTimeAmounts[i].amount * currentSampleRate;
-
-        xLabelIncrementSecs = displayedTimeAmounts[i].labelIncrement;
-        xLabelDecimalPlaces = displayedTimeAmounts[i].precision;
-
-        if (displayLength > displayedTimeSamples) {
-
-            break;
-
-        }
-
-    }
+    const incrementPrecision = getIncrementAndPrecision(displayLength, currentSampleRate);
+    const xLabelIncrementSecs = incrementPrecision.xLabelIncrementSecs;
+    const xLabelDecimalPlaces = incrementPrecision.xLabelDecimalPlaces;
 
     const xLabelIncrementSamples = xLabelIncrementSecs * currentSampleRate;
 
     // So the centre of the text can be the label location, there's a small amount of padding around the label canvas
     const xLabelPadding = spectrogramLabelSVG.width.baseVal.value;
 
+    let currentDisplayTime = Math.max(displayLength, originalFileLength) / currentSampleRate;
+    currentDisplayTime += timeLabelOffset;
+
+    if (useFileTime && fileTimestamp > 0) {
+
+        currentDisplayTime += fileTimestamp;
+
+    }
+
+    currentDisplayTime = (currentDisplayTime + (offset / currentSampleRate)) % SECONDS_IN_DAY;
+
+    const overallLengthSeconds = currentSampleCount / currentSampleRate;
+
     while (label <= currentSampleCount) {
 
         // Convert the time to a pixel value, then take into account the label width and the padding to position correctly
 
-        let x = samplesToPixels(label) - samplesToPixels(offset);
+        const x = samplesToPixels(label) - samplesToPixels(offset);
 
         if (x < 0) {
 
@@ -668,15 +587,44 @@ function drawAxisLabels () {
 
         }
 
-        x = (x === 0) ? x + 1 : x;
-        x = (x === waveformCanvas.width) ? x - 0.5 : x;
+        let labelX = x;
+        let tickX = x + xLabelPadding;
 
-        x += xLabelPadding;
+        // If the label format includes milliseconds and hours, the offset at the ends must be bigger
 
-        const labelText = (label / currentSampleRate).toFixed(xLabelDecimalPlaces);
+        let xLabelEdgeOffset = 2;
 
-        addSVGText(timeLabelSVG, labelText, x, 10, 'middle', 'middle');
-        addSVGLine(timeLabelSVG, x, 0, x, xMarkerLength);
+        xLabelEdgeOffset = (currentDisplayTime > 3600) ? xLabelEdgeOffset + 3 : xLabelEdgeOffset;
+        xLabelEdgeOffset = (xLabelDecimalPlaces >= 2) ? xLabelEdgeOffset + 4 : xLabelEdgeOffset;
+        xLabelEdgeOffset = (xLabelDecimalPlaces >= 3) ? xLabelEdgeOffset + 4 : xLabelEdgeOffset;
+
+        labelX = (labelX === 0) ? labelX + xLabelEdgeOffset : labelX;
+        labelX = (labelX === waveformCanvas.width) ? labelX - xLabelEdgeOffset : labelX;
+
+        labelX += xLabelPadding;
+
+        let labelValue = label / currentSampleRate;
+        labelValue += timeLabelOffset;
+
+        if (useFileTime && fileTimestamp > 0) {
+
+            labelValue += fileTimestamp;
+
+        }
+
+        labelValue = labelValue % SECONDS_IN_DAY;
+
+        const labelText = formatTimeLabel(labelValue, overallLengthSeconds, xLabelDecimalPlaces, useFileTime && fileTimestamp > 0);
+
+        // Ticks must be offset to 0.5, end tick must align with end of plot
+
+        tickX = (tickX >= waveformCanvas.width) ? tickX - 0.5 : tickX;
+        tickX = Math.floor(tickX) + 0.5;
+
+        const labelTextElem = addSVGText(timeLabelSVG, labelText, labelX, 12, 'middle', 'middle');
+        addSVGLine(timeLabelSVG, tickX, 0, tickX, xMarkerLength);
+
+        checkSVGLabelCutOff(labelTextElem);
 
         label += xLabelIncrementSamples;
 
@@ -726,7 +674,8 @@ function drawAxisLabels () {
         } else {
 
             addSVGText(spectrogramLabelSVG, labelText, specLabelX, y, 'end', 'middle');
-            addSVGLine(spectrogramLabelSVG, specMarkerX, y, spectrogramLabelSVG.width.baseVal.value, y);
+            const endLabelY = Math.floor(y) + 0.5;
+            addSVGLine(spectrogramLabelSVG, specMarkerX, endLabelY, spectrogramLabelSVG.width.baseVal.value, endLabelY);
 
         }
 
@@ -803,7 +752,7 @@ function drawAxisLabels () {
     ];
 
     const z = getZoomY();
-    const waveformMax = 32768 / z;
+    const waveformMax = (INT16_MAX + 1) / z;
     const waveformMaxPercentage = 100.0 / z;
 
     const waveformCanvasH = waveformLabelSVG.height.baseVal.value;
@@ -929,10 +878,21 @@ function drawAxisLabels () {
 
         addSVGText(waveformLabelSVG, waveformLabelTexts[i], wavLabelX, labelY, 'end', baseline);
 
-        // Nudge markers slightly onto canvas so they're not cut off
+        // Nudge markers slightly onto canvas so they're not cut off and align with 0.5
 
-        markerY = (markerY === 0) ? markerY + 0.5 : markerY;
-        markerY = (markerY === waveformCanvasH) ? markerY - 0.5 : markerY;
+        if (markerY === 0) {
+
+            markerY = markerY + 0.5;
+
+        } else if (markerY === waveformCanvasH) {
+
+            markerY = markerY - 0.5;
+
+        } else {
+
+            markerY = Math.floor(markerY) + 0.5;
+
+        }
 
         addSVGLine(waveformLabelSVG, wavMarkerX, markerY, waveformLabelSVG.width.baseVal.value, markerY);
 
@@ -1073,7 +1033,41 @@ function drawAxisHeadings () {
 
     clearSVG(timeAxisHeadingSVG);
 
-    addSVGText(timeAxisHeadingSVG, 'Time (seconds)', timeAxisHeadingSVG.width.baseVal.value / 2, 10, 'middle', 'middle');
+    const currentSampleRate = getSampleRate();
+
+    let format;
+
+    const incrementPrecision = getIncrementAndPrecision(displayLength, currentSampleRate);
+    const xLabelDecimalPlaces = incrementPrecision.xLabelDecimalPlaces;
+
+    // If the file time is being used, always display as hh:mm:ss, then add relevant milliseconds
+
+    if (useFileTime && fileTimestamp > 0) {
+
+        format = 'hh:mm:ss';
+
+        if (xLabelDecimalPlaces > 0) {
+
+            format += '.';
+            format += 's'.repeat(xLabelDecimalPlaces);
+
+        }
+
+        xAxisHeading = 'Time of Day (' + format + ' ' + fileTimezone + ')';
+
+    } else {
+
+        let currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
+        currentSampleCount = Math.max(currentSampleCount, originalFileLength);
+        const overallLengthSeconds = currentSampleCount / currentSampleRate;
+
+        format = formatAxisUnits(overallLengthSeconds, xLabelDecimalPlaces);
+
+        xAxisHeading = 'Time (' + format + ')';
+
+    }
+
+    addSVGText(timeAxisHeadingSVG, xAxisHeading, timeAxisHeadingSVG.width.baseVal.value / 2, 10, 'middle', 'middle');
 
 }
 
@@ -1207,7 +1201,7 @@ function getAmplitudeThresholdLineOffset () {
 
     } else if (thresholdScaleIndex === THRESHOLD_SCALE_16BIT) {
 
-        const amplitudeThresholdRatio = amplitudeThresholdValues.amplitude / 32768.0;
+        const amplitudeThresholdRatio = amplitudeThresholdValues.amplitude / (INT16_MAX + 1);
         offsetFromCentre = amplitudeThresholdRatio * centre * getZoomY();
 
     } else if (thresholdScaleIndex === THRESHOLD_SCALE_DECIBEL) {
@@ -1515,6 +1509,10 @@ function reenableUI () {
     volumeSelect.disabled = false;
     playbackModeSelect.disabled = false;
 
+    sliceReselectLink.disabled = false;
+
+    settingsModalButton.disabled = false;
+
     enableFilterUI();
 
     if (errorSpan.style.display === 'none') {
@@ -1522,6 +1520,8 @@ function reenableUI () {
         displaySpans(0);
 
     }
+
+    hideSliceModal();
 
 }
 
@@ -1565,6 +1565,7 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
         }
 
         drawAxisLabels();
+        drawAxisHeadings();
 
         drawing = false;
 
@@ -1689,9 +1690,13 @@ function disableUI (startUp) {
     volumeSelect.disabled = true;
     playbackModeSelect.disabled = true;
 
+    sliceReselectLink.disabled = true;
+
     disableFilterUI();
 
     sizeInformationPanel.classList.add('grey');
+
+    settingsModalButton.disabled = true;
 
 }
 
@@ -2068,6 +2073,7 @@ function zoomInGoertzelY () {
             drawGoertzelPlot(goertzelValues, windowLength, offset, displayLength, getGoertzelZoomY(), () => {
 
                 drawAxisLabels();
+                drawAxisHeadings();
                 drawGoertzelThresholdedPeriods();
                 drawGoertzelFilter();
                 drawGoertzelThresholdLine();
@@ -2109,6 +2115,7 @@ function zoomOutGoertzelY () {
             drawGoertzelPlot(goertzelValues, windowLength, offset, displayLength, getGoertzelZoomY(), () => {
 
                 drawAxisLabels();
+                drawAxisHeadings();
                 drawGoertzelThresholdedPeriods();
                 drawGoertzelFilter();
                 drawGoertzelThresholdLine();
@@ -2146,6 +2153,7 @@ function resetGoertzelZoom () {
         drawGoertzelPlot(goertzelValues, windowLength, offset, displayLength, getGoertzelZoomY(), () => {
 
             drawAxisLabels();
+            drawAxisHeadings();
             drawGoertzelThresholdedPeriods();
             drawGoertzelFilter();
             drawGoertzelThresholdLine();
@@ -2279,7 +2287,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
 
         if (thresholdScaleIndex === THRESHOLD_SCALE_PERCENTAGE) {
 
-            threshold = 32768.0 * parseFloat(amplitudeThresholdValues.percentage) / 100.0;
+            threshold = (INT16_MAX + 1) * parseFloat(amplitudeThresholdValues.percentage) / 100.0;
 
         } else if (thresholdScaleIndex === THRESHOLD_SCALE_16BIT) {
 
@@ -2287,7 +2295,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
 
         } else if (thresholdScaleIndex === THRESHOLD_SCALE_DECIBEL) {
 
-            threshold = 32768.0 * Math.pow(10, amplitudeThresholdValues.decibels / 20);
+            threshold = (INT16_MAX + 1) * Math.pow(10, amplitudeThresholdValues.decibels / 20);
 
         }
 
@@ -2436,8 +2444,7 @@ function processReadResult (result, callback) {
 
         if (result.error === 'Could not read input file.' || result.error === 'File is too large. Use the Split function in the AudioMoth Configuration App to split your recording into 60 second sections.') {
 
-            errorMessage += '<br>';
-            errorMessage += 'For more information, <u><a href="#faqs" style="color: white;">click here</a></u>.';
+            errorMessage += ' For more information, <u><a href="#faqs" style="color: white;">click here</a></u>.';
 
         }
 
@@ -2448,6 +2455,24 @@ function processReadResult (result, callback) {
         return;
 
     }
+
+    fileTimestamp = -1;
+
+    if (result.comment !== '') {
+
+        const regex = DATE_REGEX.exec(result.comment);
+
+        if (regex) {
+
+            fileTimestamp = (parseInt(regex[1]) * 3600) + (parseInt(regex[2]) * 60) + parseInt(regex[3]);
+
+            fileTimezone = regex[7] === undefined ? 'UTC' : 'UTC' + regex[7];
+
+        }
+
+    }
+
+    originalFileLength = previewFileLengthSamples;
 
     trueSampleRate = result.sampleRate;
     trueSampleCount = result.samples.length;
@@ -2468,16 +2493,36 @@ function processReadResult (result, callback) {
 }
 
 /**
+ * Close preview UI and re-enable everything
+ */
+function cancelPreview () {
+
+    // Remove 'Loading...' from file span
+    displaySpans(0);
+
+    // Hide modal window
+    hideSliceModal();
+
+    reenableUI();
+
+}
+
+/**
  * Read the contents of the file given by the current filehandler
  * @returns Samples read from file
  */
 async function readFromFile (exampleFilePath, callback) {
+
+    timeLabelOffset = 0;
+    previewFileLengthSamples = 0;
 
     console.log('Reading samples');
 
     let result;
 
     if (exampleFilePath) {
+
+        showReselectLink = false;
 
         if (exampleResultObjects[exampleFilePath] === undefined) {
 
@@ -2490,7 +2535,7 @@ async function readFromFile (exampleFilePath, callback) {
 
                 const arrayBuffer = req.response;
 
-                result = readWavContents(arrayBuffer);
+                result = readExampleWav(arrayBuffer);
 
                 processReadResult(result, callback);
 
@@ -2511,17 +2556,112 @@ async function readFromFile (exampleFilePath, callback) {
         if (!fileHandler) {
 
             console.error('No filehandler!');
-            return [];
+            showErrorDisplay('Failed to load file.');
+            return;
 
         }
 
-        result = await readWav(fileHandler);
+        const checkResult = await checkHeader(fileHandler);
 
-        processReadResult(result, callback);
+        if (!checkResult.success) {
+
+            console.error('WAV file format is not supported!');
+            showErrorDisplay('This WAV file format is not supported.');
+            return;
+
+        }
+
+        const header = checkResult.header;
+
+        const previewSampleRate = header.wavFormat.samplesPerSecond;
+        previewFileLengthSamples = header.data.size / header.wavFormat.bytesPerCapture;
+        const previewFileLength = previewFileLengthSamples / previewSampleRate;
+
+        if (previewFileLength > 60) {
+
+            disableUI(false);
+
+            console.log('File is >60 seconds, loading preview');
+
+            sliceSelectionCallback = callback;
+
+            showSliceLoadingUI();
+            showSliceModal();
+
+            loadPreview(fileHandler, previewFileLength, previewSampleRate, () => {
+
+                updateSelectionSpan(0, 60);
+
+                drawPreviewWaveform(() => {
+
+                    drawSliceSelection(0);
+
+                    hideSliceLoadingUI();
+
+                });
+
+            }, cancelPreview);
+
+        } else {
+
+            showReselectLink = false;
+
+            result = await readWav(fileHandler);
+
+            processReadResult(result, callback);
+
+        }
 
     }
 
 }
+
+setSliceSelectButtonEventHandler(async (selection, length) => {
+
+    timeLabelOffset = selection;
+
+    let readResult;
+
+    hideSliceModal();
+
+    // If a slice length doesn't equal 60, don't provide a length and slice() will automaticall select until the end of the file
+
+    if (length !== 60) {
+
+        readResult = await readWav(fileHandler, selection);
+
+    } else {
+
+        readResult = await readWav(fileHandler, selection, length);
+
+    }
+
+    processReadResult(readResult, (processedResult) => {
+
+        const currentSampleRate = getSampleRate();
+        const currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
+        const maxDisplayTime = (Math.max(currentSampleCount, originalFileLength) / currentSampleRate) + timeLabelOffset;
+
+        sliceReselectLink.innerText = formatTimeLabel(selection, maxDisplayTime, 0, false) + ' - ' + formatTimeLabel(selection + length, maxDisplayTime, 0, false);
+        showReselectLink = true;
+
+        sliceSelectionCallback(processedResult);
+
+    });
+
+});
+
+sliceCloseButton.addEventListener('click', cancelPreview);
+
+sliceReselectLink.addEventListener('click', () => {
+
+    disableUI(false);
+
+    displaySpans(1);
+
+    showSliceModal();
+
+});
 
 /**
  * Update what the maximum value for the zoom can be, based on the number of samples loaded
@@ -2539,9 +2679,19 @@ function updateMaxZoom () {
  */
 function formatFileSize (fileSize) {
 
-    fileSize = Math.round(fileSize / 1000);
+    if (fileSize < 1000) return fileSize + ' B';
 
-    return fileSize + ' kB';
+    fileSize /= 1000;
+
+    if (Math.round(fileSize) < 1000) return fileSize.toPrecision(3) + ' kB';
+
+    fileSize /= 1000;
+
+    if (Math.round(fileSize) < 1000) return fileSize.toPrecision(3) + ' MB';
+
+    fileSize /= 1000;
+
+    return fileSize.toPrecision(3) + ' GB';
 
 }
 
@@ -2552,26 +2702,34 @@ function updateFileSizePanel () {
 
     sizeInformationPanel.classList.remove('grey');
 
-    const totalSeconds = unfilteredSamples.length / getSampleRate();
-    const totalFileSize = getSampleRate() * 2 * totalSeconds;
+    const fileSize = originalDataSize * getSampleRate() / originalSampleRate + LENGTH_OF_WAV_HEADER;
 
-    const thresholdTypeIndex = getThresholdTypeIndex();
+    const fileDescription = trueSampleRate !== getSampleRate() ? 'Downsampled' : resampledFile ? 'Resampled' : 'Original';
 
-    if (thresholdTypeIndex !== THRESHOLD_TYPE_NONE) {
+    const fileString = fileDescription + ' WAV file size: ' + formatFileSize(fileSize);
 
-        const thresholdedSeconds = thresholdedValueCount / getSampleRate();
+    if (getThresholdTypeIndex() !== THRESHOLD_TYPE_NONE) {
 
-        const thresholdedFileSize = getSampleRate() * 2 * (totalSeconds - thresholdedSeconds);
+        const compressionRatio = sampleCount / thresholdedValueCount;
 
-        const compressionRatio = (thresholdedFileSize > 0) ? totalFileSize / thresholdedFileSize : 0;
+        const thresholdedFileSize = (fileSize - LENGTH_OF_WAV_HEADER) / compressionRatio + LENGTH_OF_WAV_HEADER;
 
-        sizeInformationPanel.innerHTML = 'Original WAV file size: ' + formatFileSize(totalFileSize) + '. Resulting T.WAV file size: ' + formatFileSize(thresholdedFileSize) + '.<br>';
+        sizeInformationPanel.innerHTML = fileString + '. Resulting T.WAV file size: ' + formatFileSize(thresholdedFileSize) + '.<br>';
 
-        sizeInformationPanel.innerHTML += 'Current threshold settings give a file compression ratio of ' + compressionRatio.toFixed(1) + '.';
+        if (thresholdedValueCount === 0) {
+
+            sizeInformationPanel.innerHTML += 'Current threshold settings will result in an empty file.';
+
+        } else {
+
+            sizeInformationPanel.innerHTML += 'Current threshold settings give a file compression ratio of ' + compressionRatio.toFixed(1) + '.';
+
+        }
 
     } else {
 
-        sizeInformationPanel.innerHTML = 'File size: ' + formatFileSize(totalFileSize) + '.<br>';
+        sizeInformationPanel.innerHTML = fileString + '.<br>';
+
         sizeInformationPanel.innerHTML += 'Enable triggering to estimate file size reduction.';
 
     }
@@ -2662,17 +2820,19 @@ async function loadFile (exampleFilePath, exampleName) {
 
         if (!samples) {
 
+            displaySpans(0);
+
             return;
 
         }
 
         filteredSamples = new Array(sampleCount);
 
-        // If file has been trimmed or resampled, display warning
-
-        trimmedFile = result.trimmed;
+        // If file has been resampled, display warning
 
         resampledFile = result.resampled;
+
+        originalDataSize = result.originalDataSize;
 
         originalSampleRate = result.originalSampleRate;
 
@@ -2825,18 +2985,8 @@ async function loadFile (exampleFilePath, exampleName) {
 
 /**
  * Load samples from all example files then render the first file
- * @param {boolean} devMode If testing locally, don't load example files as it will fail
  */
-async function loadExampleFiles (devMode) {
-
-    if (devMode) {
-
-        disabledFileButton.style.display = 'none';
-        fileButton.style.display = '';
-
-        return;
-
-    }
+async function loadExampleFiles () {
 
     console.log('Loading example files');
 
@@ -3039,11 +3189,22 @@ function dragZoom (dragEndX) {
 
         }
 
-        newOffset = (newOffset < 0) ? 0 : newOffset;
+        // If drag selection is imperceptively close to an edge, just round it to the edge
+
+        const DRAG_ZOOM_BUFFER = 10;
+
+        newOffset = (newOffset < DRAG_ZOOM_BUFFER) ? 0 : newOffset;
+
+        if (sampleCount - (newOffset + newDisplayLength) < DRAG_ZOOM_BUFFER) {
+
+            newOffset = sampleCount - newDisplayLength;
+
+        }
 
         // Set new zoom/offset values
 
         displayLength = newDisplayLength;
+
         offset = newOffset;
 
         removeEndGap();
@@ -3068,23 +3229,26 @@ document.addEventListener('mouseup', (e) => {
 
     // If it's not a left click, ignore it
 
-    if (e.button !== 0 || !isDragging) {
+    if (e.button !== 0) {
 
         return;
 
     }
 
-    const w = spectrogramDragCanvas.width;
+    if (isDragging) {
 
-    // Get end of zoom drag
+        const w = spectrogramDragCanvas.width;
 
-    const rect = spectrogramDragCanvas.getBoundingClientRect();
-    let dragEndX = Math.min(w, Math.max(0, e.clientX - rect.left));
+        // Get end of zoom drag
 
-    dragEndX = (dragEndX < 0) ? 0 : dragEndX;
-    dragEndX = (dragEndX > w) ? w : dragEndX;
+        const rect = spectrogramDragCanvas.getBoundingClientRect();
 
-    dragZoom(dragEndX);
+        let dragEndX = e.clientX - rect.left;
+        dragEndX = Math.min(w, Math.max(0, dragEndX));
+
+        dragZoom(dragEndX);
+
+    }
 
 });
 
@@ -3204,6 +3368,7 @@ amplitudeThresholdScaleSelect.addEventListener('change', function () {
     }
 
     drawAxisLabels();
+    drawAxisHeadings();
 
     const thresholdTypeIndex = getThresholdTypeIndex();
 
@@ -3905,6 +4070,8 @@ playButton.addEventListener('click', () => {
             volumeSelect.disabled = true;
             playbackModeSelect.disabled = true;
 
+            settingsModalButton.disabled = true;
+
         }
 
         // Otherwise, disable UI then play
@@ -4101,7 +4268,7 @@ function createExportCanvas (exportFunction) {
 
     const fileName = fileSpan.innerText.replace(/\.[^/.]+$/, '');
 
-    return exportFunction(canvas0array, canvas1array, timeLabelSVG, yAxis0svg, yAxis1svg, plot0yAxis, plot1yAxis, linesY0, linesY1, fileName, title);
+    return exportFunction(canvas0array, canvas1array, timeLabelSVG, xAxisHeading, yAxis0svg, yAxis1svg, plot0yAxis, plot1yAxis, linesY0, linesY1, fileName, title);
 
 }
 
@@ -4343,6 +4510,37 @@ exportVideoButton.addEventListener('click', () => {
 
 });
 
+// Settings events
+
+settingsModalButton.addEventListener('click', () => {
+
+    settingsFileTimeCheckbox.checked = useFileTime;
+
+    // Warn user that setting will do nothing to current file
+
+    settingsFileTimeLabel.innerText = 'Display real time on x axis';
+
+    if (fileTimestamp <= 0) {
+
+        settingsFileTimeLabel.innerText += ' (timestamp not available for current file)';
+
+    }
+
+    settingsModal.show();
+
+});
+
+settingsApplyButton.addEventListener('click', () => {
+
+    useFileTime = settingsFileTimeCheckbox.checked;
+
+    drawAxisLabels();
+    drawAxisHeadings();
+
+    settingsModal.hide();
+
+});
+
 // Start zoom and offset level on default values
 
 resetTransformations();
@@ -4402,13 +4600,46 @@ if (!isChrome) {
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
+instructionsContent.style.display = '';
+
 if (urlParams.get('dev')) {
 
-    console.log('DEV MODE - Files will not be loaded automatically.');
-    loadExampleFiles(true);
+    loadingSpan.style.display = 'none';
+    disabledFileButton.style.display = 'none';
+    fileButton.style.display = '';
+    spectrogramLoadingSVG.style.display = 'none';
+    waveformLoadingSVG.style.display = 'none';
+
+} else if (urlParams.get('app')) {
+
+    console.log('APP MODE - Hiding instructions and link to app mode');
+    instructionsContent.style.display = 'none';
+    launchAppLink.style.display = 'none';
+
+    loadingSpan.style.display = 'none';
+    disabledFileButton.style.display = 'none';
+    fileButton.style.display = '';
+    spectrogramLoadingSVG.style.display = 'none';
+    waveformLoadingSVG.style.display = 'none';
 
 } else {
 
     loadExampleFiles();
 
 }
+
+launchAppLink.addEventListener('click', () => {
+
+    const features = 'directories=no,menubar=no,status=no,titlebar=no,toolbar=no,width=1420,height=790';
+
+    if (urlParams.get('dev')) {
+
+        window.open('http://localhost:8000/?app=true', 'mypopup', features);
+
+    } else {
+
+        window.open('https://playground.openacousticdevices.info/?app=true', 'mypopup', features);
+
+    }
+
+});

@@ -48,6 +48,11 @@ function fastLog2 (n) {
  */
 function calculateSpectrogramFrames (sampleArray, sampleArrayLength, offset, length) {
 
+    // console.log(sampleArray);
+    // console.log(sampleArrayLength);
+    // console.log(offset);
+    // console.log(length);
+
     // const startTime = new Date();
 
     stft.calculate(sampleArray, sampleArrayLength, offset, length, spectrogram);

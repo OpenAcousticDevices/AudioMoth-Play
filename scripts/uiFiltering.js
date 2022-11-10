@@ -168,7 +168,7 @@ function getSelectedRadioValue (radioName) {
 
 /**
  * Get the step of the slider for each possible sample rate
- * @param {int} sampleRate Sample rate of file
+ * @param {number} sampleRate Sample rate of file
  * @returns The step value assigned to the slider
  */
 function getFilterSliderStep (sampleRate) {
@@ -288,8 +288,8 @@ function updateFilterLabel () {
 
 /**
  * Work out where on the slider a given amplitude threshold value is
- * @param {int} amplitudeThreshold Chosen threshold
- * @param {int} scaleIndex Index of amplitude trheshold scale type (THRESHOLD_SCALE_PERCENTAGE, THRESHOLD_SCALE_16BIT, THRESHOLD_SCALE_DECIBEL)
+ * @param {number} amplitudeThreshold Chosen threshold
+ * @param {number} scaleIndex Index of amplitude trheshold scale type (THRESHOLD_SCALE_PERCENTAGE, THRESHOLD_SCALE_16BIT, THRESHOLD_SCALE_DECIBEL)
  * @returns The corresponding slider value
  */
 
@@ -330,7 +330,7 @@ function lookupAmplitudeThresholdSliderValue (amplitudeThreshold, scaleIndex) {
 /**
  * Convert exponent and mantissa into a string
  * @param {float} mantissa Percentage mantissa
- * @param {int} exponent Percentage exponent
+ * @param {number} exponent Percentage exponent
  * @returns String representation of the percentage
  */
 function formatPercentage (mantissa, exponent) {
@@ -353,7 +353,7 @@ function formatPercentage (mantissa, exponent) {
 
 /**
  * Calculate the amplitude threshold in the currently enabled scale
- * @param {int} rawSlider The value returned by the slider
+ * @param {number} rawSlider The value returned by the slider
  * @returns Object containing the converted values
  */
 function convertThreshold (rawSlider) {
@@ -385,7 +385,7 @@ function convertThreshold (rawSlider) {
 
     /* 16-bit */
 
-    const rawAmplitude = Math.round(32768 * Math.pow(10, rawLog / 20));
+    const rawAmplitude = Math.round((INT16_MAX + 1) * Math.pow(10, rawLog / 20));
 
     for (let i = 0; i < VALID_AMPLITUDE_VALUES.length; i++) {
 
@@ -469,7 +469,7 @@ function updateThresholdLabel () {
 
 /**
  * Set the high-pass filter values to given value
- * @param {int} value New value
+ * @param {number} value New value
  */
 function setHighPassSliderValue (value) {
 
@@ -479,7 +479,7 @@ function setHighPassSliderValue (value) {
 
 /**
  * Set the low-pass filter values to given value
- * @param {int} value New value
+ * @param {number} value New value
  */
 function setLowPassSliderValue (value) {
 
@@ -489,8 +489,8 @@ function setLowPassSliderValue (value) {
 
 /**
  * Set the band-pass filter values to 2 given values
- * @param {int} lowerSliderValue New lower value
- * @param {int} higherSliderValue New higher value
+ * @param {number} lowerSliderValue New lower value
+ * @param {number} higherSliderValue New higher value
  */
 function setBandPass (lowerSliderValue, higherSliderValue) {
 
@@ -504,8 +504,8 @@ function setBandPass (lowerSliderValue, higherSliderValue) {
 /**
  * Exported functions for setting values
  * @param {bool} enabled Whether or not the filter should be on
- * @param {int} lowerSliderValue New lower value
- * @param {int} higherSliderValue New higher value
+ * @param {number} lowerSliderValue New lower value
+ * @param {number} higherSliderValue New higher value
  * @param {string} filterType Name of filter type ('none', 'low', 'band', 'high')
  */
 function setFilters (enabled, lowerSliderValue, higherSliderValue, filterType) {
@@ -550,7 +550,7 @@ function setFilters (enabled, lowerSliderValue, higherSliderValue, filterType) {
 
 /**
  * Change amplitude threshold scale
- * @param {int} scaleIndex New scale index (THRESHOLD_SCALE_PERCENTAGE, THRESHOLD_SCALE_16BIT, THRESHOLD_SCALE_DECIBEL)
+ * @param {number} scaleIndex New scale index (THRESHOLD_SCALE_PERCENTAGE, THRESHOLD_SCALE_16BIT, THRESHOLD_SCALE_DECIBEL)
  */
 function setAmplitudeThresholdScaleIndex (scaleIndex) {
 
@@ -563,7 +563,7 @@ function setAmplitudeThresholdScaleIndex (scaleIndex) {
 
 /**
  * Change amplitude threshold
- * @param {int} amplitudeThreshold New amplitude threshold
+ * @param {number} amplitudeThreshold New amplitude threshold
  */
 function setAmplitudeThreshold (amplitudeThreshold) {
 
@@ -573,7 +573,7 @@ function setAmplitudeThreshold (amplitudeThreshold) {
 
 /**
  * Change amplitude threshold type
- * @param {int} type Index of threshold type (THRESHOLD_TYPE_NONE, THRESHOLD_TYPE_AMPLITUDE, THRESHOLD_TYPE_GOERTZEL)
+ * @param {number} type Index of threshold type (THRESHOLD_TYPE_NONE, THRESHOLD_TYPE_AMPLITUDE, THRESHOLD_TYPE_GOERTZEL)
  */
 function setThresholdType (type) {
 
@@ -584,7 +584,7 @@ function setThresholdType (type) {
 
 /**
  * Change minimum duration of amplitude threshold
- * @param {int} index Index of amplitude threshold duration radio button to check
+ * @param {number} index Index of amplitude threshold duration radio button to check
  */
 function setMinimumAmplitudeThresholdDuration (index) {
 
@@ -595,7 +595,7 @@ function setMinimumAmplitudeThresholdDuration (index) {
 
 /**
  * Change frequency threshold value
- * @param {int} frequencyTrigger New frequency threshold
+ * @param {number} frequencyTrigger New frequency threshold
  */
 function setFrequencyTrigger (frequencyTrigger) {
 
@@ -605,7 +605,7 @@ function setFrequencyTrigger (frequencyTrigger) {
 
 /**
  * Change the centre frequency used by the Goertzel filter
- * @param {int} freq New centre frequency
+ * @param {number} freq New centre frequency
  */
 function setFrequencyTriggerFilterFreq (freq) {
 
@@ -635,7 +635,7 @@ function setPassFiltersObserved (isObserved) {
 
 /**
  * Change the window length used by the Goertzel filter
- * @param {int} length New window length
+ * @param {number} length New window length
  */
 function setFrequencyTriggerWindowLength (length) {
 
@@ -647,7 +647,7 @@ function setFrequencyTriggerWindowLength (length) {
 
 /**
  * Change frequency threshold minimum duration
- * @param {int} index Index of radio button which controls the minimum duration of the frequency threshold
+ * @param {number} index Index of radio button which controls the minimum duration of the frequency threshold
  */
 function setMinimumFrequencyTriggerDuration (index) {
 
@@ -994,8 +994,8 @@ function updateFilterUI () {
 
 /**
  * When sample rate changes, so does the slider step. Update values to match the corresponding step
- * @param {int} value Slider value
- * @param {int} step Slider step
+ * @param {number} value Slider value
+ * @param {number} step Slider step
  * @returns Scaled slider value
  */
 function roundToSliderStep (value, step) {
@@ -1008,7 +1008,7 @@ function roundToSliderStep (value, step) {
  * Update UI according to new sample rate selection
  * @param {bool} resetPassSliders Whether or not to set pass sliders back to defaults
  * @param {bool} resetCentreSliders Whether or not to set Goertzel filter centre slider back to default
- * @param {int} sampleRate New sample rate
+ * @param {number} sampleRate New sample rate
  */
 function sampleRateChange (resetPassSliders, resetCentreSlider, sampleRate) {
 

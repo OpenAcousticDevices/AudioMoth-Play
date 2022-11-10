@@ -61,6 +61,18 @@ input::-webkit-inner-spin-button {
   left: 45px;
 }
 
+.wrapper .slice-canvas {
+  position: absolute;
+  top: 0;
+  left: 50px;
+}
+
+.wrapper .slice-axis {
+  position: absolute;
+  top: 0;
+  left: 30px;
+}
+
 :root {
   --plot-width-v: 810px;
   --control-width-v: 543px;

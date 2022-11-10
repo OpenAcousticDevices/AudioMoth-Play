@@ -127,7 +127,7 @@ function createAudioMothHeader (numberOfSamples, sampleRate, comment, artist) {
         riff: {id: 'RIFF', size: 0},
         format: 'WAVE',
         fmt: {id: 'fmt ', size: LENGTH_OF_WAV_FORMAT},
-        wavFormat: {format: PCM_FORMAT, numberOfChannels: NUMBER_OF_CHANNELS, samplesPerSecond: 0, bytesPerSecond: 0, bytesPerCapture: NUMBER_OF_BYTES_IN_SAMPLE, bitsPerSample: NUMBER_OF_BITS_IN_SAMPLE},
+        wavFormat: {format: PCM_WAV_FORMAT, numberOfChannels: NUMBER_OF_CHANNELS, samplesPerSecond: 0, bytesPerSecond: 0, bytesPerCapture: NUMBER_OF_BYTES_IN_SAMPLE, bitsPerSample: NUMBER_OF_BITS_IN_SAMPLE},
         list: {id: 'LIST', size: 3 * RIFF_ID_LENGTH + 2 * UINT32_LENGTH + LENGTH_OF_ARTIST + LENGTH_OF_COMMENT},
         info: 'INFO',
         icmt: {id: 'ICMT', size: LENGTH_OF_COMMENT, comment: ''},

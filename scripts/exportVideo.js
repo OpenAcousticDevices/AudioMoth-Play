@@ -99,9 +99,12 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
         case 'stderr':
 
             console.log(msg.data);
+
             break;
 
         case 'exit':
+
+            console.log('Exiting');
 
             succeeded = msg.data === 0;
             callback(succeeded);
@@ -109,6 +112,12 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
             break;
 
         case 'done':
+
+            if (msg.data.MEMFS[0].data.length === 0) {
+
+                break;
+
+            }
 
             // Export mp4
 

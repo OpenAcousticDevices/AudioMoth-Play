@@ -4,9 +4,11 @@
  * June 2021
  *****************************************************************************/
 
-/* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH */
-/* global PCM_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE, VALID_RESAMPLE_RATES, VALID_AUDIOMOTH_SAMPLE_RATES */
+/* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH, LENGTH_OF_WAV_HEADER */
+/* global PCM_WAV_FORMAT, EXTENSIBLE_WAV_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE, LENGTH_OF_WAV_FORMAT, VALID_RESAMPLE_RATES, VALID_AUDIOMOTH_SAMPLE_RATES */
 /* global resampleOutputLength, resample */
+
+const MAXIMUM_FILE_DURATION = 60;
 
 /* WAV header component read functions */
 
@@ -133,11 +135,13 @@ function readGeneralHeader (buffer, fileSize) {
         header.wavFormat.bytesPerCapture = readUInt16LE(state);
         header.wavFormat.bitsPerSample = readUInt16LE(state);
 
-        if (header.wavFormat.format !== PCM_FORMAT || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
+        const formatValid = header.wavFormat.format === PCM_WAV_FORMAT || header.wavFormat.format === EXTENSIBLE_WAV_FORMAT;
+
+        if (!formatValid || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
 
             return {
                 success: false,
-                error: 'Unexpected WAVE format.'
+                error: 'File format is not supported.'
             };
 
         }
@@ -157,6 +161,8 @@ function readGeneralHeader (buffer, fileSize) {
 
         }
 
+        if (header.wavFormat.format === EXTENSIBLE_WAV_FORMAT) state.index += header.fmt.size - LENGTH_OF_WAV_FORMAT;
+
         /* Find the data chunk */
 
         while (true) {
@@ -164,7 +170,7 @@ function readGeneralHeader (buffer, fileSize) {
             const id = readString(state, RIFF_ID_LENGTH);
 
             if (id === 'INFO') continue;
-                
+
             const size = readUInt32LE(state);
 
             if (id === 'ICMT') {
@@ -172,7 +178,7 @@ function readGeneralHeader (buffer, fileSize) {
                 header.icmt = {id: id, size: size};
 
                 header.icmt.comment = readString(state, size);
-                        
+
             } else if (id === 'IART') {
 
                 header.iart = {id: id, size: size};
@@ -256,7 +262,7 @@ function readAudioMothHeader (buffer, fileSize) {
         header.wavFormat.bytesPerCapture = readUInt16LE(state);
         header.wavFormat.bitsPerSample = readUInt16LE(state);
 
-        if (header.wavFormat.format !== PCM_FORMAT || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
+        if (header.wavFormat.format !== PCM_WAV_FORMAT || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
 
             return {
                 success: false,
@@ -346,7 +352,65 @@ function readAudioMothHeader (buffer, fileSize) {
 
 }
 
-function readWavContents (contents) {
+function readSamples (header, samples, originalDataSize) {
+
+    const sampleRate = header.wavFormat.samplesPerSecond;
+
+    /* Check for samples */
+
+    if (originalDataSize === 0) {
+
+        return {
+            success: false,
+            error: 'Input file has no audio samples.'
+        };
+
+    }
+
+    /* Check if resampling is necessary */
+
+    let resampled = false;
+
+    for (let i = 0; i < VALID_RESAMPLE_RATES.length; i += 1) resampled ||= (sampleRate === VALID_RESAMPLE_RATES[i]);
+
+    /* Read the samples */
+
+    let resampleRate;
+
+    let resampledSamples;
+
+    if (resampled) {
+
+        for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) {
+
+            resampleRate = VALID_AUDIOMOTH_SAMPLE_RATES[i];
+
+            if (resampleRate > sampleRate) break;
+
+        }
+
+        const resampledSampleCount = resampleOutputLength(samples.length, sampleRate, resampleRate);
+
+        resampledSamples = new Int16Array(resampledSampleCount);
+
+        resample(samples, sampleRate, resampledSamples, resampleRate);
+
+    }
+
+    return {
+        success: true,
+        samples: resampled ? resampledSamples : samples,
+        sampleRate: resampled ? resampleRate : sampleRate,
+        resampled: resampled,
+        comment: header.icmt ? header.icmt.comment : '',
+        artist: header.iart ? header.iart.artist : '',
+        originalDataSize: originalDataSize,
+        originalSampleRate: sampleRate
+    };
+
+}
+
+function readExampleWav (contents) {
 
     const fileSize = contents.byteLength;
 
@@ -376,7 +440,7 @@ function readWavContents (contents) {
 
     /* Check for samples */
 
-    let sampleCount = Math.floor(header.data.size / NUMBER_OF_BYTES_IN_SAMPLE);
+    const sampleCount = Math.floor(header.data.size / NUMBER_OF_BYTES_IN_SAMPLE);
 
     if (sampleCount === 0) {
 
@@ -387,76 +451,22 @@ function readWavContents (contents) {
 
     }
 
-    /* Check if resampling is necessary */
-
-    const sampleRate = header.wavFormat.samplesPerSecond;
-
-    let resampled = false;
-    
-    for (let i = 0; i < VALID_RESAMPLE_RATES.length; i += 1) resampled ||= (sampleRate === VALID_RESAMPLE_RATES[i]);
-
-    console.log("Resampled: " + resampled);
-
-    /* Check if trimming is necessary */
-
-    const MAXIMUM_FILE_DURATION = 60;
-
-    const maximumSampleCount = sampleRate * MAXIMUM_FILE_DURATION;
-
-    const trimmed = (sampleCount > maximumSampleCount);
-
     /* Read the samples */
-
-    if (trimmed) sampleCount = maximumSampleCount;
 
     const samples = new Int16Array(contents, header.size, sampleCount);
 
-    let resampleRate;
-
-    let resampledSamples;
-
-    if (resampled) {
-
-        for (let i = 0; i < VALID_AUDIOMOTH_SAMPLE_RATES.length; i += 1) {
-
-            resampleRate = VALID_AUDIOMOTH_SAMPLE_RATES[i];
-
-            if (resampleRate > sampleRate) break;
-
-        }
-
-        const resampledSampleCount = resampleOutputLength(sampleCount, sampleRate, resampleRate);
-
-        resampledSamples = new Int16Array(resampledSampleCount);
-
-        resample(samples, sampleRate, resampledSamples, resampleRate);
-
-    }
-
-    return {
-        success: true,
-        samples: resampled ? resampledSamples : samples,
-        sampleRate: resampled ? resampleRate : sampleRate,
-        resampled: resampled,
-        comment: header.icmt ? header.icmt.comment : "",
-        artist: header.iart ? header.iart.artist : "",
-        originalSampleRate: sampleRate,
-        trimmed: trimmed
-    };
+    return readSamples(header, samples, header.data.size);
 
 }
 
-async function readWav (fileHandler) {
+async function readWav (fileHandler, start, length) {
 
-    /* Open input file */
-
-    let file, contents;
+    let file, fileSize;
 
     try {
 
         file = await fileHandler.getFile();
-
-        contents = await file.arrayBuffer();
+        fileSize = file.size;
 
     } catch (e) {
 
@@ -467,6 +477,69 @@ async function readWav (fileHandler) {
 
     }
 
-    return readWavContents(contents);
+    if (fileSize === 0) {
+
+        return {
+            success: false,
+            error: 'Input file has zero size.'
+        };
+
+    }
+
+    /* Check header */
+
+    const headerBlob = file.slice(0, LENGTH_OF_WAV_HEADER);
+
+    const buffer = await headerBlob.arrayBuffer();
+
+    const headerResult = readGeneralHeader(buffer, fileSize);
+
+    if (headerResult.success === false) {
+
+        return {
+            success: false,
+            error: headerResult.error
+        };
+
+    }
+
+    const header = headerResult.header;
+
+    const sampleRate = header.wavFormat.samplesPerSecond;
+
+    /* Slice out relevant part of file */
+
+    start = (start === undefined) ? 0 : start;
+
+    const recordingLength = ((fileSize - LENGTH_OF_WAV_HEADER) / UINT16_LENGTH / sampleRate) - start;
+
+    if (recordingLength > MAXIMUM_FILE_DURATION) {
+
+        length = MAXIMUM_FILE_DURATION;
+
+    }
+
+    const startBytes = LENGTH_OF_WAV_HEADER + (start * sampleRate * UINT16_LENGTH);
+    const lengthBytes = length * sampleRate * UINT16_LENGTH;
+
+    const fileSlice = length ? file.slice(startBytes, startBytes + lengthBytes) : file.slice(startBytes);
+    const contents = await fileSlice.arrayBuffer();
+
+    const samples = new Int16Array(contents);
+
+    return readSamples(header, samples, header.data.size);
+
+}
+
+async function checkHeader (fileHandler) {
+
+    const file = await fileHandler.getFile();
+    const fileSize = file.size;
+
+    const blob = file.slice(0, LENGTH_OF_WAV_HEADER);
+
+    const buffer = await blob.arrayBuffer();
+
+    return readGeneralHeader(buffer, fileSize);
 
 }

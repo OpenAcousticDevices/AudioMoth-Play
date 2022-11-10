@@ -64,7 +64,7 @@ function applyGoertzelFilter (samples, sampleCount, sampleRate, freq, N, output)
 
     const c = 2.0 * Math.cos(2.0 * Math.PI * freq / sampleRate);
 
-    const maximum = N * 32768.0 * hammingMean / 2.0;
+    const maximum = N * (INT16_MAX + 1) * hammingMean / 2.0;
     const scaler = Math.pow(maximum, -1);
 
     let i = 0;
@@ -319,6 +319,8 @@ function applyGoertzelThreshold (goertzelValues, threshold, windowLength, minTri
 
         if (aboveThreshold) {
 
+            thresholdedValueCount++;
+
             if (triggerDuration > 1) {
 
                 triggerDuration--;
@@ -328,10 +330,6 @@ function applyGoertzelThreshold (goertzelValues, threshold, windowLength, minTri
                 aboveThreshold = false;
 
             }
-
-        } else {
-
-            thresholdedValueCount++;
 
         }
 

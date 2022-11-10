@@ -44,7 +44,7 @@ function resampleOutputLength (inputLength, originalSampleRate, requestedSampleR
 
 function resample (inputArray, originalSampleRate, outputArray, requestedSampleRate) {
 
-    /* Calculate the downsampling parameters */
+    /* Calculate the resampling parameters */
 
     const sampleRateDivider = Math.ceil(originalSampleRate / requestedSampleRate);
 

@@ -55,6 +55,8 @@ function applyAmplitudeThreshold (samples, inputLength, threshold, minTriggerDur
 
         if (aboveThreshold) {
 
+            thresholdedSampleCount++;
+
             if (triggerDuration > 1) {
 
                 triggerDuration--;
@@ -64,10 +66,6 @@ function applyAmplitudeThreshold (samples, inputLength, threshold, minTriggerDur
                 aboveThreshold = false;
 
             }
-
-        } else {
-
-            thresholdedSampleCount++;
 
         }
 

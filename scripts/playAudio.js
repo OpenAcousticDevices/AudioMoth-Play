@@ -89,8 +89,8 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
         const index = start + i;
 
         let sample = samples[index] * volumeModifier;
-        sample = Math.min(32767, sample);
-        sample = Math.max(-32768, sample);
+        sample = Math.min(INT16_MAX, sample);
+        sample = Math.max(INT16_MIN, sample);
 
         // Check if sample is in a thresholded period
 
@@ -114,7 +114,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                     for (let j = 0; j < powMultiplier; j++) {
 
-                        nowBuffering[unthresholdedSampleIndex] = scaleValue(sample, -32768, 32767);
+                        nowBuffering[unthresholdedSampleIndex] = scaleValue(sample, INT16_MIN, INT16_MAX);
 
                         unthresholdedSampleIndex++;
 
@@ -126,7 +126,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                 for (let j = 0; j < powMultiplier; j++) {
 
-                    nowBuffering[(i * powMultiplier) + j] = thresholded ? 0 : scaleValue(sample, -32768, 32767);
+                    nowBuffering[(i * powMultiplier) + j] = thresholded ? 0 : scaleValue(sample, INT16_MIN, INT16_MAX);
 
                 }
 
@@ -138,7 +138,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                 if (!thresholded) {
 
-                    total += scaleValue(sample, -32768, 32767);
+                    total += scaleValue(sample, INT16_MIN, INT16_MAX);
 
                     if (unthresholdedSampleIndex % positivePowMultiplier === 0) {
 
@@ -156,7 +156,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
             } else {
 
-                total += thresholded ? 0 : scaleValue(sample, -32768, 32767);
+                total += thresholded ? 0 : scaleValue(sample, INT16_MIN, INT16_MAX);
 
                 if (i % positivePowMultiplier === 0) {
 
@@ -174,7 +174,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
                 if (!thresholded) {
 
-                    nowBuffering[unthresholdedSampleIndex] = scaleValue(sample, -32768, 32767);
+                    nowBuffering[unthresholdedSampleIndex] = scaleValue(sample, INT16_MIN, INT16_MAX);
 
                     unthresholdedSampleIndex++;
 
@@ -182,7 +182,7 @@ function playAudio (samples, unthresholdedSamples, start, length, sampleRate, pl
 
             } else {
 
-                nowBuffering[i] = thresholded ? 0 : scaleValue(sample, -32768, 32767);
+                nowBuffering[i] = thresholded ? 0 : scaleValue(sample, INT16_MIN, INT16_MAX);
 
             }
 

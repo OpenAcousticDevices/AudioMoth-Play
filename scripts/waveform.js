@@ -4,26 +4,29 @@
  * September 2021
  *****************************************************************************/
 
+/* global INT16_MAX */
+
 // Drawing canvas
 
 const wavCanvas = document.getElementById('waveform-canvas');
 
 /**
  * Draw the waveform plot
+ * @param {canvas} canvas Canvas to be drawn to
  * @param {number[]} data Absolute values of samples to be plotted. Either raw data or grouped into columns.
  * @param {number} startTime Time when render started
  * @param {function} callback Function called on completion
  */
-function renderRawWaveform (pointData, startTime, callback) {
+function renderRawWaveform (canvas, pointData, startTime, callback) {
 
-    const ctx = wavCanvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
 
     ctx.strokeStyle = '#004d99';
     ctx.lineWidth = 1;
 
     ctx.beginPath();
 
-    const WAV_PIXEL_HEIGHT = wavCanvas.height;
+    const WAV_PIXEL_HEIGHT = canvas.height;
 
     ctx.moveTo(0, WAV_PIXEL_HEIGHT / 2);
 
@@ -54,16 +57,17 @@ function renderRawWaveform (pointData, startTime, callback) {
 
 /**
  * Draw the waveform plot
+ * @param {canvas} canvas Canvas to be drawn to
  * @param {number[]} data Absolute values of samples to be plotted
  * @param {number} startTime Time when render started
  * @param {function} callback Function called on completion
  */
-function renderWaveform (data, startTime, callback) {
+function renderWaveform (canvas, data, startTime, callback) {
 
-    const ctx = wavCanvas.getContext('2d');
+    const ctx = canvas.getContext('2d', {willReadFrequently: true});
 
-    const WAV_PIXEL_WIDTH = wavCanvas.width;
-    const WAV_PIXEL_HEIGHT = wavCanvas.height;
+    const WAV_PIXEL_WIDTH = canvas.width;
+    const WAV_PIXEL_HEIGHT = canvas.height;
 
     const id = ctx.getImageData(0, 0, WAV_PIXEL_WIDTH, WAV_PIXEL_HEIGHT);
 
@@ -95,7 +99,11 @@ function renderWaveform (data, startTime, callback) {
     const endTime = new Date();
     const diff = endTime - startTime;
 
-    callback(diff);
+    if (callback) {
+
+        callback(diff);
+
+    }
 
 }
 
@@ -114,7 +122,7 @@ function drawWaveform (samples, offset, length, yZoom, callback) {
 
     const halfHeight = WAV_PIXEL_HEIGHT / 2;
 
-    let multiplier = Math.pow(32767, -1);
+    let multiplier = Math.pow(INT16_MAX, -1);
 
     // Scale in y axis to apply zoom
 
@@ -169,7 +177,7 @@ function drawWaveform (samples, offset, length, yZoom, callback) {
 
         }
 
-        renderRawWaveform(pointData, startTime, callback);
+        renderRawWaveform(wavCanvas, pointData, startTime, callback);
 
     } else {
 
@@ -209,7 +217,7 @@ function drawWaveform (samples, offset, length, yZoom, callback) {
 
         }
 
-        renderWaveform(pointData, startTime, callback);
+        renderWaveform(wavCanvas, pointData, startTime, callback);
 
     }
 
