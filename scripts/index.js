@@ -47,6 +47,8 @@ const FILLER_SAMPLE_COUNT = FILLER_SAMPLE_RATE * 60;
 const errorSpan = document.getElementById('error-span');
 const fileSelectionTitleSpan = document.getElementById('file-selection-title-span');
 const browserErrorSpan = document.getElementById('browser-error-span');
+const browserErrorSpanApp = document.getElementById('browser-error-span-app');
+const appExampleLink = document.getElementById('app-example-link');
 const ERROR_DISPLAY_TIME = 3000;
 
 // File selection elements
@@ -3045,6 +3047,16 @@ for (let i = 0; i < examplePaths.length; i++) {
 
 }
 
+appExampleLink.addEventListener('click', () => {
+
+    if (!drawing && !playing) {
+
+        loadFile(examplePaths[0], exampleNames[0]);
+
+    }
+
+});
+
 /**
  * Handle start of a zoom drag event
  * @param {event} e Drag event
@@ -4583,22 +4595,31 @@ drawLoadingImage(spectrogramLoadingSVG);
 
 // Display error if current browser is not Chrome
 
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+
 const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
 
 if (!isChrome) {
 
     fileSelectionTitleDiv.classList.add('grey');
-    browserErrorSpan.style.display = '';
     fileSelectionTitleSpan.style.display = 'none';
     disabledFileButton.style.display = '';
     fileButton.style.display = 'none';
 
+    if (urlParams.get('app')) {
+
+        browserErrorSpanApp.style.display = '';
+
+    } else {
+
+        browserErrorSpan.style.display = '';
+
+    }
+
 }
 
 // Check for dev mode
-
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
 
 instructionsContent.style.display = '';
 
