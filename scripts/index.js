@@ -1571,9 +1571,6 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
 
         drawing = false;
 
-        disabledFileButton.style.display = isChrome ? 'none' : '';
-        fileButton.style.display = isChrome ? '' : 'none';
-
         fileButton.disabled = false;
         if (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) {
 
@@ -4600,12 +4597,13 @@ const urlParams = new URLSearchParams(queryString);
 
 const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
 
+disabledFileButton.style.display = isChrome ? 'none' : '';
+fileButton.style.display = isChrome ? '' : 'none';
+
 if (!isChrome) {
 
     fileSelectionTitleDiv.classList.add('grey');
     fileSelectionTitleSpan.style.display = 'none';
-    disabledFileButton.style.display = '';
-    fileButton.style.display = 'none';
 
     if (urlParams.get('app')) {
 
@@ -4626,8 +4624,6 @@ instructionsContent.style.display = '';
 if (urlParams.get('dev')) {
 
     loadingSpan.style.display = 'none';
-    disabledFileButton.style.display = 'none';
-    fileButton.style.display = '';
     spectrogramLoadingSVG.style.display = 'none';
     waveformLoadingSVG.style.display = 'none';
 
@@ -4638,8 +4634,6 @@ if (urlParams.get('dev')) {
     launchAppLink.style.display = 'none';
 
     loadingSpan.style.display = 'none';
-    disabledFileButton.style.display = 'none';
-    fileButton.style.display = '';
     spectrogramLoadingSVG.style.display = 'none';
     waveformLoadingSVG.style.display = 'none';
 
