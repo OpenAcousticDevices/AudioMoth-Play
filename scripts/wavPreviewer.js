@@ -683,6 +683,34 @@ function holdButton (button, delay, action) {
 
 }
 
+function moveSliceSelectionLeft () {
+
+    updateSliceSelection(sliceSelection - 30);
+
+    if (sliceSelection - 30 + 30 < currentPage * HOUR_SECONDS) {
+
+        updatePreviewPage(currentPage - 1);
+
+        drawPreviewWaveform();
+
+    }
+
+}
+
+function moveSliceSelectionRight () {
+
+    updateSliceSelection(sliceSelection + 30);
+
+    if (sliceSelection + 30 + 30 > (currentPage + 1) * HOUR_SECONDS) {
+
+        updatePreviewPage(currentPage + 1);
+
+        drawPreviewWaveform();
+
+    }
+
+}
+
 holdButton(sliceSelectionLeftButton, 300, () => {
 
     // Add 30 seconds to check if middle overlaps start of page
@@ -736,7 +764,7 @@ function setSliceSelectButtonEventHandler (eventHandler) {
 /**
  * If sliceSelectEventHandler has been set, run it with the current selection
  */
-function usePreviewSelection () {
+function usePreviewSelection (setTransformations) {
 
     if (sliceSelectEventHandler) {
 
@@ -744,7 +772,7 @@ function usePreviewSelection () {
 
         const length = sliceSelection + 60 > previewLength ? previewLength - sliceSelection : 60;
 
-        sliceSelectEventHandler(sliceSelection, length);
+        sliceSelectEventHandler(sliceSelection, length, setTransformations);
 
     }
 
@@ -756,5 +784,11 @@ sliceLoadingCancelButton.addEventListener('click', () => {
 
 });
 
-sliceSelectButton.addEventListener('click', usePreviewSelection);
-sliceSelectionCanvas.addEventListener('dblclick', usePreviewSelection);
+function sliceClickEvent () {
+
+    usePreviewSelection(false);
+
+}
+
+sliceSelectButton.addEventListener('click', sliceClickEvent);
+sliceSelectionCanvas.addEventListener('dblclick', sliceClickEvent);

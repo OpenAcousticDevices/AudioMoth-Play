@@ -6,7 +6,6 @@
 
 /* global DISPLAYED_TIME_AMOUNTS */
 
-
 /**
  * Given the current duration being displayed, what level of precision and increment should be used to draw x axis labels
  * @param {number} length Displayed length in samples

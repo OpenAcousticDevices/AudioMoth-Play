@@ -4,7 +4,7 @@
  * October 2021
  *****************************************************************************/
 
-/* global TWO_PI, GOERTZEL_THRESHOLD_BUFFER_LENGTH */
+/* global TWO_PI, GOERTZEL_THRESHOLD_BUFFER_LENGTH, INT16_MAX */
 
 // Drawing canvas
 

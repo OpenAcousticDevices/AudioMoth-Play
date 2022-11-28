@@ -116,3 +116,9 @@ input::-webkit-inner-spin-button {
 .grey {
   color: #D3D3D3;
 }
+
+.button-secondary-dark {
+  color: #fff;
+  background-color: #575d65;
+  border-color: #6c757d;
+}

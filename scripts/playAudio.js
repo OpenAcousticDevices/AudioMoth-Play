@@ -4,7 +4,7 @@
  * August 2021
  *****************************************************************************/
 
-/* global AMPLITUDE_THRESHOLD_BUFFER_LENGTH */
+/* global AMPLITUDE_THRESHOLD_BUFFER_LENGTH, INT16_MIN, INT16_MAX */
 /* global MIN_SAMPLE_RATE, MAX_SAMPLE_RATE */
 /* global PLAYBACK_MODE_ALL, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_MUTE */
 

@@ -42,18 +42,12 @@ function fastLog2 (n) {
 /**
  * Create spectrogram
  * @param {number[]} sampleArray Samples to be processed
+ * @param {number} sampleArrayLength The number of valid samples in the array
  * @param {number} offset Number of samples in array to start processing
  * @param {number} length Number of samples after offset to stop
  * @returns Object containing the spectrogram and its minimum and maximum values for use in colouring
  */
 function calculateSpectrogramFrames (sampleArray, sampleArrayLength, offset, length) {
-
-    // console.log(sampleArray);
-    // console.log(sampleArrayLength);
-    // console.log(offset);
-    // console.log(length);
-
-    // const startTime = new Date();
 
     stft.calculate(sampleArray, sampleArrayLength, offset, length, spectrogram);
 
@@ -85,10 +79,6 @@ function calculateSpectrogramFrames (sampleArray, sampleArrayLength, offset, len
 
     min = fastLog2(min);
     max = fastLog2(max);
-
-    // const endTime = new Date();
-    // const diff = endTime - startTime;
-    // console.log('Processing time:', diff);
 
     return {
         frames: spectrogram,

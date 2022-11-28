@@ -4,7 +4,7 @@
  * June 2021
  *****************************************************************************/
 
-/* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH, LENGTH_OF_WAV_HEADER */
+/* global UINT16_LENGTH, UINT32_LENGTH, RIFF_ID_LENGTH, LENGTH_OF_WAV_HEADER, MAXIMUM_LENGTH_OF_WAV_HEADER */
 /* global PCM_WAV_FORMAT, EXTENSIBLE_WAV_FORMAT, NUMBER_OF_CHANNELS, NUMBER_OF_BITS_IN_SAMPLE, NUMBER_OF_BYTES_IN_SAMPLE, LENGTH_OF_WAV_FORMAT, VALID_RESAMPLE_RATES, VALID_AUDIOMOTH_SAMPLE_RATES */
 /* global resampleOutputLength, resample */
 
@@ -488,7 +488,7 @@ async function readWav (fileHandler, start, length) {
 
     /* Check header */
 
-    const headerBlob = file.slice(0, LENGTH_OF_WAV_HEADER);
+    const headerBlob = file.slice(0, MAXIMUM_LENGTH_OF_WAV_HEADER);
 
     const buffer = await headerBlob.arrayBuffer();
 
@@ -505,13 +505,17 @@ async function readWav (fileHandler, start, length) {
 
     const header = headerResult.header;
 
+    const headerLength = header.size;
+
+    const dataLength = header.data.size;
+
     const sampleRate = header.wavFormat.samplesPerSecond;
 
     /* Slice out relevant part of file */
 
     start = (start === undefined) ? 0 : start;
 
-    const recordingLength = ((fileSize - LENGTH_OF_WAV_HEADER) / UINT16_LENGTH / sampleRate) - start;
+    const recordingLength = dataLength / UINT16_LENGTH / sampleRate - start;
 
     if (recordingLength > MAXIMUM_FILE_DURATION) {
 
@@ -519,7 +523,7 @@ async function readWav (fileHandler, start, length) {
 
     }
 
-    const startBytes = LENGTH_OF_WAV_HEADER + (start * sampleRate * UINT16_LENGTH);
+    const startBytes = headerLength + (start * sampleRate * UINT16_LENGTH);
     const lengthBytes = length * sampleRate * UINT16_LENGTH;
 
     const fileSlice = length ? file.slice(startBytes, startBytes + lengthBytes) : file.slice(startBytes);
@@ -536,7 +540,7 @@ async function checkHeader (fileHandler) {
     const file = await fileHandler.getFile();
     const fileSize = file.size;
 
-    const blob = file.slice(0, LENGTH_OF_WAV_HEADER);
+    const blob = file.slice(0, MAXIMUM_LENGTH_OF_WAV_HEADER);
 
     const buffer = await blob.arrayBuffer();
 

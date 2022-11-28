@@ -6,9 +6,10 @@
 
 /* global XMLHttpRequest, bootstrap */
 /* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, SECONDS_IN_DAY */
+/* global STATIC_COLOUR_MAX */
 
 /* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader */
-/* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler */
+/* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler, usePreviewSelection, moveSliceSelectionLeft, moveSliceSelectionRight */
 /* global applyLowPassFilter, applyHighPassFilter, applyBandPassFilter, FILTER_NONE, FILTER_LOW, FILTER_BAND, FILTER_HIGH, applyAmplitudeThreshold */
 /* global playAudio, stopAudio, getTimestamp, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_ALL, AMPLITUDE_THRESHOLD_BUFFER_LENGTH, createAudioContext */
 /* global applyGoertzelFilter, drawGoertzelPlot, applyGoertzelThreshold, GOERTZEL_THRESHOLD_BUFFER_LENGTH, generateHammingValues */
@@ -31,7 +32,7 @@
 
 /* global enableSampleRateControl, disableSampleRateControl, updateSampleRateUI, getSampleRateSelection, addSampleRateUIListeners */
 
-/* global downsample */
+/* global downsample, resampleOutputLength */
 
 // Launch page as app without instructions
 
@@ -82,6 +83,7 @@ const settingsApplyButton = document.getElementById('settings-apply-button');
 const settingsModal = new bootstrap.Modal(document.getElementById('settings-modal'));
 const settingsFileTimeCheckbox = document.getElementById('settings-file-time-checkbox');
 const settingsFileTimeLabel = document.getElementById('settings-file-time-label');
+const settingsDynamicColoursCheckbox = document.getElementById('settings-dynamic-colours-checkbox');
 
 // Example file variables
 
@@ -99,6 +101,10 @@ const zoomOutButton = document.getElementById('zoom-out-button');
 
 const panLeftButton = document.getElementById('pan-left-button');
 const panRightButton = document.getElementById('pan-right-button');
+const panLeftIcon = document.getElementById('pan-left-icon');
+const panRightIcon = document.getElementById('pan-right-icon');
+const panDoubleLeftIcon = document.getElementById('pan-double-left-icon');
+const panDoubleRightIcon = document.getElementById('pan-double-right-icon');
 
 // Minimum amount of time which can be viewed on the plot
 
@@ -187,6 +193,10 @@ const goertzelLabelSVG = document.getElementById('goertzel-label-svg');
 
 let xAxisHeading = 'Time (S)';
 
+// Whether or not to dynamically generate a colour scheme for spectrograms
+
+let useDynamicColours = false;
+
 // File variables
 
 let fileHandler;
@@ -214,9 +224,15 @@ let downsampledUnfilteredSamples;
 
 let timeLabelOffset = 0;
 
+// When navigating between slices of a larger file, transformations and downsampled sample rate need to be remembered
+
+let prePanOffset = 0;
+let prePanDisplayLength = 0;
+let prePanSampleRate = 0;
+
 // If file is sliced, the original size of the file in samples
 
-let previewFileLengthSamples;
+let overallFileLengthSamples;
 let originalFileLength = 0;
 
 // Timestamp when file was recorded
@@ -568,7 +584,15 @@ function drawAxisLabels () {
 
     currentDisplayTime = (currentDisplayTime + (offset / currentSampleRate)) % SECONDS_IN_DAY;
 
-    const overallLengthSeconds = currentSampleCount / currentSampleRate;
+    let overallLength = isExampleFile ? currentSampleCount : overallFileLengthSamples;
+
+    if (resampledFile) {
+
+        overallLength = resampleOutputLength(overallFileLengthSamples, originalSampleRate, sampleRate);
+
+    }
+
+    const overallLengthSeconds = overallLength / currentSampleRate;
 
     while (label <= currentSampleCount) {
 
@@ -1144,30 +1168,118 @@ function updatePanUI () {
 
     }
 
-    if (offset <= 0) {
+    let darkenPanLeft = false;
+    let darkenPanRight = false;
 
-        panLeftButton.disabled = true;
+    let overallLength = overallFileLengthSamples;
 
-    } else {
+    if (resampledFile) {
 
-        panLeftButton.disabled = false;
+        overallLength = resampleOutputLength(overallFileLengthSamples, originalSampleRate, sampleRate);
 
     }
 
-    let sampleEnd = Math.floor(offset + displayLength);
+    // If it's a sliced longer file, work out which panning buttons are appropriate differently
 
-    // Gap at the end of the plot in samples
-    const gapLength = sampleEnd - sampleCount;
+    if (overallLength === sampleCount || isExampleFile) {
 
-    sampleEnd = sampleEnd > sampleCount ? sampleCount : sampleEnd;
+        if (offset <= 0) {
 
-    if (gapLength >= 0) {
+            panLeftButton.disabled = true;
 
-        panRightButton.disabled = true;
+        } else {
+
+            panLeftButton.disabled = false;
+
+        }
+
+        const sampleEnd = Math.floor(offset + displayLength);
+
+        // Gap at the end of the plot in samples
+        const gapLength = sampleEnd - sampleCount;
+
+        if (gapLength >= 0) {
+
+            panRightButton.disabled = true;
+
+        } else {
+
+            panRightButton.disabled = false;
+
+        }
 
     } else {
 
-        panRightButton.disabled = false;
+        const timeLabelOffsetSamples = timeLabelOffset * sampleRate;
+
+        if (offset + timeLabelOffsetSamples <= 0) {
+
+            panLeftButton.disabled = true;
+
+        } else {
+
+            panLeftButton.disabled = false;
+
+            // If the next pan click would move to the next chunk, darken the button slightly
+
+            darkenPanLeft = offset === 0 && timeLabelOffsetSamples > 0;
+
+        }
+
+        const sampleEnd = Math.floor(offset + displayLength + timeLabelOffsetSamples);
+
+        // Gap at the end of the file in samples
+        const gapLength = sampleEnd - overallLength;
+
+        if (gapLength >= 0) {
+
+            panRightButton.disabled = true;
+
+        } else {
+
+            panRightButton.disabled = false;
+
+            // If the next pan click would move to the next chunk, darken the button slightly
+
+            darkenPanRight = offset + displayLength === sampleCount;
+
+        }
+
+    }
+
+    if (darkenPanLeft) {
+
+        panLeftButton.classList.remove('button-secondary');
+        panLeftButton.classList.add('button-secondary-dark');
+
+        panLeftIcon.style.display = 'none';
+        panDoubleLeftIcon.style.display = '';
+
+    } else {
+
+        panLeftButton.classList.remove('button-secondary-dark');
+        panLeftButton.classList.add('button-secondary');
+
+        panLeftIcon.style.display = '';
+        panDoubleLeftIcon.style.display = 'none';
+
+    }
+
+    if (darkenPanRight) {
+
+        panRightButton.classList.remove('button-secondary');
+        panRightButton.classList.add('button-secondary-dark');
+
+        panRightIcon.style.display = 'none';
+        panDoubleRightIcon.style.display = '';
+
+    } else {
+
+        panRightButton.classList.remove('button-secondary-dark');
+        panRightButton.classList.add('button-secondary');
+
+        panRightIcon.style.display = '';
+        panDoubleRightIcon.style.display = 'none';
 
     }
 
@@ -1624,7 +1736,7 @@ function estimateRenderTime () {
  */
 function drawPlots (samples, isInitialRender) {
 
-    drawSpectrogram(processedSpectrumFrames, spectrumMin, spectrumMax, async (completionTime) => {
+    drawSpectrogram(processedSpectrumFrames, useDynamicColours ? spectrumMin : 0.0, useDynamicColours ? spectrumMax : STATIC_COLOUR_MAX, async (completionTime) => {
 
         resetCanvas(spectrogramThresholdCanvas);
         spectrogramLoadingSVG.style.display = 'none';
@@ -1716,7 +1828,9 @@ function processContents (samples, isInitialRender, renderPlots) {
 
         // Process spectrogram frames
 
-        const result = calculateSpectrogramFrames(samples, sampleCount, renderPlots ? offset : 0, renderPlots ? displayLength : sampleCount);
+        const useAllSamples = !renderPlots || (spectrumMin === 0.0 && spectrumMax === 0.0);
+
+        const result = calculateSpectrogramFrames(samples, sampleCount, !useAllSamples ? offset : 0, !useAllSamples ? displayLength : sampleCount);
 
         processedSpectrumFrames = result.frames;
 
@@ -1751,7 +1865,6 @@ function resetXTransformations () {
     const currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
     displayLength = currentSampleCount;
     offset = 0;
-    updateNavigationUI();
 
 }
 
@@ -1792,17 +1905,47 @@ function panRight () {
 
         const offsetIncrement = Math.floor(displayLength / 2);
 
-        offset = offset + offsetIncrement;
+        const newOffset = offset + offsetIncrement;
 
-        removeEndGap();
+        if (offset + displayLength < sampleCount) {
 
-        setTimeout(() => {
+            offset = newOffset;
 
-            updatePlots(false, true, false, false, false);
+            removeEndGap();
 
-        }, 0);
+            setTimeout(() => {
 
-        updatePanUI();
+                updatePlots(false, true, false, false, false);
+
+            }, 0);
+
+            updatePanUI();
+
+        } else {
+
+            // If moving between chunks is likely to cause a bit of lag, disable the UI
+
+            if (sampleRate >= 96000) {
+
+                disableUI();
+
+            }
+
+            // Each slice is 30 seconds, so moving one to the right shifts everything to the right 30 seconds
+            // In order to make sure the offset is in the right place, subtract 30 seconds from the newOffset
+
+            prePanOffset = newOffset - (30 * sampleRate);
+            prePanDisplayLength = displayLength;
+
+            prePanSampleRate = sampleRate;
+
+            spectrumMin = 0.0;
+            spectrumMax = 0.0;
+
+            moveSliceSelectionRight();
+            usePreviewSelection(true);
+
+        }
 
     }
 
@@ -1819,7 +1962,42 @@ function panLeft () {
 
         const newOffset = offset - offsetIncrement;
 
-        offset = Math.max(newOffset, 0);
+        if (newOffset < 0) {
+
+            if (overallFileLengthSamples === sampleCount || isExampleFile) {
+
+                offset = 0;
+
+            } else {
+
+                // If moving between chunks is likely to cause a bit of lag, disable the UI
+
+                if (sampleRate >= 96000) {
+
+                    disableUI();
+
+                }
+
+                // Each slice is 30 seconds, so moving one to the left shifts everything to the left 30 seconds
+                // In order to make sure the offset is in the right place, add the (negative) newOffset to 30 seconds
+
+                prePanOffset = newOffset + (30 * sampleRate);
+                prePanDisplayLength = displayLength;
+
+                prePanSampleRate = sampleRate;
+
+                moveSliceSelectionLeft();
+                usePreviewSelection(true);
+
+                return;
+
+            }
+
+        } else {
+
+            offset = newOffset;
+
+        }
 
         setTimeout(() => {
 
@@ -1896,6 +2074,7 @@ function zoomOut () {
         } else {
 
             resetXTransformations();
+            updateNavigationUI();
 
         }
 
@@ -2439,15 +2618,7 @@ function processReadResult (result, callback) {
 
         console.error('Failed to read file');
 
-        let errorMessage = result.error;
-
-        if (result.error === 'Could not read input file.' || result.error === 'File is too large. Use the Split function in the AudioMoth Configuration App to split your recording into 60 second sections.') {
-
-            errorMessage += ' For more information, <u><a href="#faqs" style="color: white;">click here</a></u>.';
-
-        }
-
-        showErrorDisplay(errorMessage);
+        showErrorDisplay(result.error);
 
         reenableUI();
 
@@ -2471,7 +2642,7 @@ function processReadResult (result, callback) {
 
     }
 
-    originalFileLength = previewFileLengthSamples;
+    originalFileLength = overallFileLengthSamples;
 
     trueSampleRate = result.sampleRate;
     trueSampleCount = result.samples.length;
@@ -2513,7 +2684,7 @@ function cancelPreview () {
 async function readFromFile (exampleFilePath, callback) {
 
     timeLabelOffset = 0;
-    previewFileLengthSamples = 0;
+    overallFileLengthSamples = 0;
 
     console.log('Reading samples');
 
@@ -2573,8 +2744,8 @@ async function readFromFile (exampleFilePath, callback) {
         const header = checkResult.header;
 
         const previewSampleRate = header.wavFormat.samplesPerSecond;
-        previewFileLengthSamples = header.data.size / header.wavFormat.bytesPerCapture;
-        const previewFileLength = previewFileLengthSamples / previewSampleRate;
+        overallFileLengthSamples = header.data.size / header.wavFormat.bytesPerCapture;
+        const previewFileLength = overallFileLengthSamples / previewSampleRate;
 
         if (previewFileLength > 60) {
 
@@ -2615,7 +2786,7 @@ async function readFromFile (exampleFilePath, callback) {
 
 }
 
-setSliceSelectButtonEventHandler(async (selection, length) => {
+setSliceSelectButtonEventHandler(async (selection, length, setTransformations) => {
 
     timeLabelOffset = selection;
 
@@ -2623,7 +2794,7 @@ setSliceSelectButtonEventHandler(async (selection, length) => {
 
     hideSliceModal();
 
-    // If a slice length doesn't equal 60, don't provide a length and slice() will automaticall select until the end of the file
+    // If a slice length doesn't equal 60, don't provide a length and slice() will automatically select until the end of the file
 
     if (length !== 60) {
 
@@ -2644,7 +2815,7 @@ setSliceSelectButtonEventHandler(async (selection, length) => {
         sliceReselectLink.innerText = formatTimeLabel(selection, maxDisplayTime, 0, false) + ' - ' + formatTimeLabel(selection + length, maxDisplayTime, 0, false);
         showReselectLink = true;
 
-        sliceSelectionCallback(processedResult);
+        sliceSelectionCallback(processedResult, setTransformations);
 
     });
 
@@ -2811,7 +2982,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
     // Read samples
 
-    await readFromFile(exampleFilePath, (result) => {
+    await readFromFile(exampleFilePath, (result, setTransformations) => {
 
         const samples = result.samples;
 
@@ -2826,8 +2997,6 @@ async function loadFile (exampleFilePath, exampleName) {
         }
 
         filteredSamples = new Array(sampleCount);
-
-        // If file has been resampled, display warning
 
         resampledFile = result.resampled;
 
@@ -2848,9 +3017,22 @@ async function loadFile (exampleFilePath, exampleName) {
 
         goertzelValues = [];
 
-        // Reset UI
+        // Reset transformations or, if panning to a new slice, set the transformations to precalculated values
 
-        resetTransformations();
+        if (setTransformations) {
+
+            offset = prePanOffset;
+            displayLength = (offset + displayLength > sampleCount) ? sampleCount - offset : prePanDisplayLength;
+
+            sampleRate = prePanSampleRate;
+
+        } else {
+
+            resetTransformations();
+
+        }
+
+        updateNavigationUI();
 
         clearSVG(waveformThresholdLineSVG);
 
@@ -2875,6 +3057,8 @@ async function loadFile (exampleFilePath, exampleName) {
 
         }
 
+        sampleCount = downsampleResult.length;
+
         // Update file name display
 
         fileSpan.innerText = fileName;
@@ -2897,7 +3081,12 @@ async function loadFile (exampleFilePath, exampleName) {
         const centreObserved = getCentreObserved();
 
         sampleRateChange(resetSliders || !passFiltersObserved, resetSliders || !centreObserved, getSampleRate());
-        updateSampleRateUI(getTrueSampleRate());
+
+        if (!setTransformations) {
+
+            updateSampleRateUI(getTrueSampleRate());
+
+        }
 
         if (resetSliders) {
 
@@ -3582,6 +3771,7 @@ function reset () {
         updatePlots(true, true, true, true, true);
 
         resetXTransformations();
+        updateNavigationUI();
 
     }
 
@@ -3653,6 +3843,7 @@ highPassFilterSlider.on('change', updateFilterLabel);
 function resetNavigation () {
 
     resetXTransformations();
+    updateNavigationUI();
     updatePlots(false, true, false, false, false);
 
 }
@@ -4524,6 +4715,7 @@ exportVideoButton.addEventListener('click', () => {
 settingsModalButton.addEventListener('click', () => {
 
     settingsFileTimeCheckbox.checked = useFileTime;
+    settingsDynamicColoursCheckbox.checked = useDynamicColours;
 
     // Warn user that setting will do nothing to current file
 
@@ -4541,10 +4733,30 @@ settingsModalButton.addEventListener('click', () => {
 
 settingsApplyButton.addEventListener('click', () => {
 
-    useFileTime = settingsFileTimeCheckbox.checked;
+    const changedUseFileTime = useFileTime !== settingsFileTimeCheckbox.checked;
+    const changedUseDynamicColours = useDynamicColours !== settingsDynamicColoursCheckbox.checked;
 
-    drawAxisLabels();
-    drawAxisHeadings();
+    useFileTime = settingsFileTimeCheckbox.checked;
+    useDynamicColours = settingsDynamicColoursCheckbox.checked;
+
+    // If setting has been changed, update the relevant UI
+
+    if (changedUseFileTime) {
+
+        drawAxisLabels();
+        drawAxisHeadings();
+
+    }
+
+    if (changedUseDynamicColours) {
+
+        setTimeout(() => {
+
+            updatePlots(false, true, false, false, false);
+
+        }, 0);
+
+    }
 
     settingsModal.hide();
 
@@ -4553,6 +4765,7 @@ settingsApplyButton.addEventListener('click', () => {
 // Start zoom and offset level on default values
 
 resetTransformations();
+updateNavigationUI();
 
 // Add filler axis labels
 

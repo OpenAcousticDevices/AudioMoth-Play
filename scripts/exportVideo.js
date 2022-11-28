@@ -62,9 +62,9 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
 
             console.log('Ready, processing video');
 
-            millisecondsPerFrame 
-                        = durationInMilliseconds <= 10 * MILLISECONDS_IN_SECOND ? 40 
-                        : durationInMilliseconds <= 30 * MILLISECONDS_IN_SECOND ? 100 
+            millisecondsPerFrame
+                        = durationInMilliseconds <= 10 * MILLISECONDS_IN_SECOND ? 40
+                        : durationInMilliseconds <= 30 * MILLISECONDS_IN_SECOND ? 100
                         : 500;
 
             framesPerSecond = MILLISECONDS_IN_SECOND / millisecondsPerFrame;

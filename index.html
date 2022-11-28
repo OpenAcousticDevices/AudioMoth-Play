@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
         <title>AudioMoth Filter Playground</title>
         <link rel="icon" type="image/png" href="assets/favicon.png">
         <link rel="stylesheet" href="css/external/bootstrap.min.css">
@@ -84,11 +85,13 @@
                                 <button class="btn btn-primary nav-button" id="zoom-out-button" disabled>
                                     <img class="button-icon" src="./assets/zoom-out.svg" alt="Bootstrap">
                                 </button>
-                                <button class="btn btn-secondary nav-button" id="pan-left-button" disabled>
-                                    <img class="button-icon" src="./assets/chevron-left.svg" alt="Bootstrap">
+                                <button class="btn btn-secondary nav-button" id="pan-left-button" style="display: inline-flex; align-items: center;" disabled>
+                                    <img class="button-icon" src="./assets/chevron-left.svg" alt="Bootstrap" id="pan-left-icon">
+                                    <img class="button-icon" src="./assets/chevron-double-left.svg" alt="Bootstrap" id="pan-double-left-icon" style="display: none;">
                                 </button>
-                                <button class="btn btn-secondary nav-button" id="pan-right-button" disabled>
-                                    <img class="button-icon" src="./assets/chevron-right.svg" alt="Bootstrap">
+                                <button class="btn btn-secondary nav-button" id="pan-right-button" style="display: inline-flex; align-items: center;" disabled>
+                                    <img class="button-icon" src="./assets/chevron-right.svg" alt="Bootstrap" id="pan-right-icon">
+                                    <img class="button-icon" src="./assets/chevron-double-right.svg" alt="Bootstrap" id="pan-double-right-icon" style="display: none;">
                                 </button>
                             </div>
                         </div>
@@ -739,6 +742,9 @@
                         <div class="modal-body">
                             <input type="checkbox" id="settings-file-time-checkbox" style="vertical-align: middle;">
                             <label for="settings-file-time-checkbox" id="settings-file-time-label">Display real time on x axis</label>
+                            <br>
+                            <input type="checkbox" id="settings-dynamic-colours-checkbox" style="vertical-align: middle;">
+                            <label for="settings-dynamic-colours-checkbox" id="settings-dynamic-colours-label">Use dynamic spectrogram colouring</label>
                         </div>
                         <div class="modal-footer">
                             <button id="settings-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

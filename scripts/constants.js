@@ -40,6 +40,8 @@ const LENGTH_OF_ARTIST = 32;
 const LENGTH_OF_COMMENT = 384;
 const LENGTH_OF_WAV_HEADER = 488;
 
+const MAXIMUM_LENGTH_OF_WAV_HEADER = 32 * 1024;
+
 /* WAV format constants */
 
 const PCM_WAV_FORMAT = 1;
@@ -158,3 +160,5 @@ const DISPLAYED_TIME_AMOUNTS = [
         precision: 3
     }
 ];
+
+const STATIC_COLOUR_MAX = 15.0;

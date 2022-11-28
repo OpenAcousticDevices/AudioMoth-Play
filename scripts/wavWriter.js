@@ -143,7 +143,7 @@ function createAudioMothHeader (numberOfSamples, sampleRate, comment, artist) {
     updateComment(header, comment);
 
     updateArtist(header, artist);
- 
+
     return header;
 
 }
