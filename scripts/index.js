@@ -1964,7 +1964,7 @@ function panLeft () {
 
         if (newOffset < 0) {
 
-            if (overallFileLengthSamples === sampleCount || isExampleFile) {
+            if (offset > 0 || overallFileLengthSamples === sampleCount || isExampleFile) {
 
                 offset = 0;
 
