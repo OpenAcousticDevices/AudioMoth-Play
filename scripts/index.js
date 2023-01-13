@@ -324,6 +324,10 @@ const exportVideoSpinner = document.getElementById('video-spinner');
 
 const instructionsContent = document.getElementById('instructions-content');
 
+// When preview UI opens, if it's a new file then the sample rate should change when a slice is selected, otherwise it should stay the same
+
+let isNewFile = false;
+
 /**
  * 0 - Default
  * 1 - Loading
@@ -1173,7 +1177,7 @@ function updatePanUI () {
 
     let overallLength = overallFileLengthSamples;
 
-    if (resampledFile) {
+    if (resampledFile || sampleRate !== trueSampleRate) {
 
         overallLength = resampleOutputLength(overallFileLengthSamples, originalSampleRate, sampleRate);
 
@@ -1826,11 +1830,15 @@ function processContents (samples, isInitialRender, renderPlots) {
 
         console.log('Calculating spectrogram frames');
 
-        // Process spectrogram frames
+        // If the resulting frames aren't forrendering or the colour map hasn't been calculated yet, use all the samples
 
-        const useAllSamples = !renderPlots || (spectrumMin === 0.0 && spectrumMax === 0.0);
+        let useAllSamples = !renderPlots || (spectrumMin === 0.0 && spectrumMax === 0.0);
 
-        const result = calculateSpectrogramFrames(samples, sampleCount, !useAllSamples ? offset : 0, !useAllSamples ? displayLength : sampleCount);
+        // If you're loading an offset part of a file, there's no need to process all samples
+
+        useAllSamples &= offset === 0;
+
+        const result = calculateSpectrogramFrames(samples, sampleCount, useAllSamples ? 0 : offset, useAllSamples ? sampleCount : displayLength);
 
         processedSpectrumFrames = result.frames;
 
@@ -2610,9 +2618,10 @@ function showErrorDisplay (message) {
 /**
  * Process the result of loading a file
  * @param {object} result wavReader.js result object
+ * @param {number} updateSampleRate Whether or not to update the sample rate from the result object
  * @param {function} callback Function called after completion
  */
-function processReadResult (result, callback) {
+function processReadResult (result, updateSampleRate, callback) {
 
     if (!result.success) {
 
@@ -2644,10 +2653,14 @@ function processReadResult (result, callback) {
 
     originalFileLength = overallFileLengthSamples;
 
-    trueSampleRate = result.sampleRate;
-    trueSampleCount = result.samples.length;
+    if (updateSampleRate) {
 
-    sampleRate = trueSampleRate;
+        trueSampleRate = result.sampleRate;
+        sampleRate = trueSampleRate;
+
+    }
+
+    trueSampleCount = result.samples.length;
     sampleCount = trueSampleCount;
 
     const duration = sampleCount / sampleRate;
@@ -2666,6 +2679,8 @@ function processReadResult (result, callback) {
  * Close preview UI and re-enable everything
  */
 function cancelPreview () {
+
+    isNewFile = false;
 
     // Remove 'Loading...' from file span
     displaySpans(0);
@@ -2707,7 +2722,7 @@ async function readFromFile (exampleFilePath, callback) {
 
                 result = readExampleWav(arrayBuffer);
 
-                processReadResult(result, callback);
+                processReadResult(result, true, callback);
 
             };
 
@@ -2717,7 +2732,7 @@ async function readFromFile (exampleFilePath, callback) {
 
             result = exampleResultObjects[exampleFilePath];
 
-            processReadResult(result, callback);
+            processReadResult(result, true, callback);
 
         }
 
@@ -2755,6 +2770,8 @@ async function readFromFile (exampleFilePath, callback) {
 
             sliceSelectionCallback = callback;
 
+            isNewFile = true;
+
             showSliceLoadingUI();
             showSliceModal();
 
@@ -2778,7 +2795,7 @@ async function readFromFile (exampleFilePath, callback) {
 
             result = await readWav(fileHandler);
 
-            processReadResult(result, callback);
+            processReadResult(result, true, callback);
 
         }
 
@@ -2806,7 +2823,7 @@ setSliceSelectButtonEventHandler(async (selection, length, setTransformations) =
 
     }
 
-    processReadResult(readResult, (processedResult) => {
+    processReadResult(readResult, isNewFile, (processedResult) => {
 
         const currentSampleRate = getSampleRate();
         const currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
@@ -2816,6 +2833,8 @@ setSliceSelectButtonEventHandler(async (selection, length, setTransformations) =
         showReselectLink = true;
 
         sliceSelectionCallback(processedResult, setTransformations);
+
+        isNewFile = false;
 
     });
 
@@ -3028,7 +3047,17 @@ async function loadFile (exampleFilePath, exampleName) {
 
         } else {
 
+            const downsampledDisplayLength = displayLength;
+
             resetTransformations();
+
+            // If the sample rate was changed in another slice, don't reset the displayLength
+
+            if (sampleRate !== trueSampleRate) {
+
+                displayLength = downsampledDisplayLength;
+
+            }
 
         }
 
@@ -3082,7 +3111,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         sampleRateChange(resetSliders || !passFiltersObserved, resetSliders || !centreObserved, getSampleRate());
 
-        if (!setTransformations) {
+        if (!setTransformations && isNewFile) {
 
             updateSampleRateUI(getTrueSampleRate());
 
