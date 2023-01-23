@@ -2663,13 +2663,13 @@ function processReadResult (result, updateSampleRate, callback) {
     trueSampleCount = result.samples.length;
     sampleCount = trueSampleCount;
 
-    const duration = sampleCount / sampleRate;
+    const duration = sampleCount / trueSampleRate;
 
     const loadedFileName = fileHandler ? fileHandler.name : 'Example file';
 
     console.log('------ ' + loadedFileName + ' ------');
 
-    console.log('Loaded ' + sampleCount + ' samples at a sample rate of ' + sampleRate + ' Hz (' + duration.toFixed(2) + ' seconds)');
+    console.log('Loaded ' + sampleCount + ' samples at a sample rate of ' + trueSampleRate + ' Hz (' + duration.toFixed(2) + ' seconds)');
 
     callback(result);
 
@@ -2825,7 +2825,7 @@ setSliceSelectButtonEventHandler(async (selection, length, setTransformations) =
 
     processReadResult(readResult, isNewFile, (processedResult) => {
 
-        const currentSampleRate = getSampleRate();
+        const currentSampleRate = trueSampleRate;
         const currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
         const maxDisplayTime = (Math.max(currentSampleCount, originalFileLength) / currentSampleRate) + timeLabelOffset;
 
@@ -3178,13 +3178,15 @@ async function loadFile (exampleFilePath, exampleName) {
 
         if (filterIndex === FILTER_NONE && thresholdTypeIndex === THRESHOLD_TYPE_NONE) {
 
-            processContents(unfilteredSamples, true, true);
+            // unfilteredSamples and downsampledUnfilteredSamples only differ if downsampling has occurred, so use downsampledUnfilteredSamples
+
+            processContents(downsampledUnfilteredSamples, true, true);
 
         } else {
 
             // Calculate spectrogram frames of unfiltered samples to create initial colour map
 
-            processContents(unfilteredSamples, true, false);
+            processContents(downsampledUnfilteredSamples, true, false);
 
             // Get filtered/thresholded samples
 
