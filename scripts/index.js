@@ -3222,6 +3222,7 @@ async function loadExampleFiles () {
 
             if (i === exampleNames.length - 1) {
 
+                isNewFile = true;
                 loadFile(examplePaths[0], exampleNames[0]);
 
             }
@@ -3254,6 +3255,7 @@ for (let i = 0; i < examplePaths.length; i++) {
 
         if (!drawing && !playing) {
 
+            isNewFile = true;
             loadFile(examplePaths[i], exampleNames[i]);
 
         }
@@ -3266,6 +3268,7 @@ appExampleLink.addEventListener('click', () => {
 
     if (!drawing && !playing) {
 
+        isNewFile = true;
         loadFile(examplePaths[0], exampleNames[0]);
 
     }
