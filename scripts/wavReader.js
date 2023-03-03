@@ -507,7 +507,27 @@ async function readWav (fileHandler, start, length) {
 
     const headerLength = header.size;
 
-    const dataLength = header.data.size;
+    /* Check different sizes */
+
+    const dataSize = header.data.size;
+
+    const fileSizeSize = fileSize - headerLength;
+
+    const riffSize = header.riff.size + RIFF_ID_LENGTH + UINT32_LENGTH - headerLength;
+
+    let dataLength = dataSize;
+
+    if ((dataSize !== riffSize) || (dataSize !== fileSizeSize)) {
+
+        console.log("WAVE READER: Using minimum of inconsistent data sizes.");
+ 
+        dataLength = Math.min(dataSize, Math.min(riffSize, fileSizeSize));
+
+        header.data.size = dataLength;
+
+        header.riff.size = dataLength + headerLength - RIFF_ID_LENGTH - UINT32_LENGTH;
+       
+    }
 
     const sampleRate = header.wavFormat.samplesPerSecond;
 
@@ -526,7 +546,7 @@ async function readWav (fileHandler, start, length) {
     const startBytes = headerLength + (start * sampleRate * UINT16_LENGTH);
     const lengthBytes = length * sampleRate * UINT16_LENGTH;
 
-    const fileSlice = length ? file.slice(startBytes, startBytes + lengthBytes) : file.slice(startBytes);
+    const fileSlice = length ? file.slice(startBytes, startBytes + lengthBytes) : file.slice(startBytes, startBytes + dataLength);
     const contents = await fileSlice.arrayBuffer();
 
     const samples = new Int16Array(contents);

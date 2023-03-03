@@ -6,7 +6,7 @@
 
 /* global XMLHttpRequest, bootstrap */
 /* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, SECONDS_IN_DAY */
-/* global STATIC_COLOUR_MAX */
+/* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */
 
 /* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader */
 /* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler, usePreviewSelection, moveSliceSelectionLeft, moveSliceSelectionRight */
@@ -1740,7 +1740,7 @@ function estimateRenderTime () {
  */
 function drawPlots (samples, isInitialRender) {
 
-    drawSpectrogram(processedSpectrumFrames, useDynamicColours ? spectrumMin : 0.0, useDynamicColours ? spectrumMax : STATIC_COLOUR_MAX, async (completionTime) => {
+    drawSpectrogram(processedSpectrumFrames, useDynamicColours ? spectrumMin : STATIC_COLOUR_MIN, useDynamicColours ? spectrumMax : STATIC_COLOUR_MAX, async (completionTime) => {
 
         resetCanvas(spectrogramThresholdCanvas);
         spectrogramLoadingSVG.style.display = 'none';

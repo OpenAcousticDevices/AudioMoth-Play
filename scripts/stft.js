@@ -32,7 +32,7 @@ function STFT (pixelWidth, pixelHeight) {
 
     this._csize = this._size << 1;
 
-    // Generate internal ouput arrays
+    // Generate internal output arrays
 
     this._out = new Array(this._csize);
 
@@ -74,11 +74,11 @@ function STFT (pixelWidth, pixelHeight) {
 
     }
 
-    this._width = power % 2 === 0 ? power - 1 : power;
+    this._width = power % 2 === 0 ? power - 1 : power;    
 
     // Generate bit-reversal patterns
 
-    this._bitrev = new Array(1 << this._width);
+    this._bitrev = new Array(this._size / 2);
 
     for (let j = 0; j < this._bitrev.length; j++) {
 
@@ -114,7 +114,7 @@ STFT.prototype.calculate = function calculateSync (data, dataLength, offset, len
 
             this._start = constrainedStart;
 
-            this._realTransform4();
+            this._realTransform();
 
             for (let k = 0; k < this._pixelHeight; k += 1) {
 
@@ -123,13 +123,13 @@ STFT.prototype.calculate = function calculateSync (data, dataLength, offset, len
                 const real = this._out[index];
                 const imag = this._out[index + 1];
 
-                const magnitude = 2 / this._size * Math.sqrt(real * real + imag * imag);
+                const magnitudeSquared = 4 / this._size / this._size * (real * real + imag * imag);
 
                 const sonogramIndex = (this._pixelHeight - 1 - k) * this._pixelWidth + i;
 
                 const existingValue = j === 0 ? 0 : out[sonogramIndex];
 
-                out[sonogramIndex] = Math.max(magnitude, existingValue);
+                out[sonogramIndex] = Math.max(magnitudeSquared, existingValue);
 
             }
 
@@ -141,30 +141,30 @@ STFT.prototype.calculate = function calculateSync (data, dataLength, offset, len
 
 };
 
-STFT.prototype._realTransform4 = function _realTransform4 () {
+STFT.prototype._realTransform = function _realTransform () {
 
     const out = this._out;
-    const size = this._csize;
+    const csize = this._csize;
     const width = this._width;
     const table = this._table;
 
     let step = 1 << width;
-    let len = (size / step) << 1;
+    let len = (csize / step) << 1;
     const bitrev = this._bitrev;
 
     if (len === 4) {
 
-        for (let outOff = 0, t = 0; outOff < size; outOff += len, t++) {
+        for (let outOffset = 0, t = 0; outOffset < csize; outOffset += len, t++) {
 
-            this._singleRealTransform2(outOff, bitrev[t] >>> 1, step >>> 1);
+            this._singleRealTransform2(bitrev[t] >>> 1, step >>> 1, outOffset);
 
         }
 
     } else {
 
-        for (let outOff = 0, t = 0; outOff < size; outOff += len, t++) {
+        for (let outOffset = 0, t = 0; outOffset < csize; outOffset += len, t++) {
 
-            this._singleRealTransform4(outOff, bitrev[t] >>> 1, step >>> 1);
+            this._singleRealTransform4(bitrev[t] >>> 1, step >>> 1, outOffset);
 
         }
 
@@ -172,17 +172,17 @@ STFT.prototype._realTransform4 = function _realTransform4 () {
 
     for (step >>= 2; step >= 2; step >>= 2) {
 
-        len = (size / step) << 1;
+        len = (csize / step) << 1;
 
         const halfLen = len >>> 1;
         const quarterLen = halfLen >>> 1;
-        const hquarterLen = quarterLen >>> 1;
+        const halfQuarterLen = quarterLen >>> 1;
 
-        for (let outOff = 0; outOff < size; outOff += len) {
+        for (let outOffset = 0; outOffset < csize; outOffset += len) {
 
-            for (let i = 0, k = 0; i <= hquarterLen; i += 2, k += step) {
+            for (let i = 0, k = 0; i <= halfQuarterLen; i += 2, k += step) {
 
-                const A = outOff + i;
+                const A = outOffset + i;
                 const B = A + quarterLen;
                 const C = B + quarterLen;
                 const D = C + quarterLen;
@@ -245,7 +245,7 @@ STFT.prototype._realTransform4 = function _realTransform4 () {
 
                 }
 
-                if (i === hquarterLen) continue;
+                if (i === halfQuarterLen) continue;
 
                 const ST0r = T1r;
                 const ST0i = -T1i;
@@ -262,8 +262,8 @@ STFT.prototype._realTransform4 = function _realTransform4 () {
                 const SFBr = ST1r + ST3i;
                 const SFBi = ST1i - ST3r;
 
-                const SA = outOff + quarterLen - i;
-                const SB = outOff + halfLen - i;
+                const SA = outOffset + quarterLen - i;
+                const SB = outOffset + halfLen - i;
 
                 out[SA] = SFAr;
                 out[SA + 1] = SFAi;
@@ -278,37 +278,35 @@ STFT.prototype._realTransform4 = function _realTransform4 () {
 
 };
 
-// Radix-2 implementation for len == 4
+/* Radix functions */
 
-STFT.prototype._singleRealTransform2 = function _singleRealTransform2 (outOff, off, step) {
+STFT.prototype._singleRealTransform2 = function _singleRealTransform2 (index, step, outOffset) {
 
     const out = this._out;
     const data = this._data;
 
-    const evenR = data[this._start + off] * this._coefficients[off];
-    const oddR = data[this._start + off + step] * this._coefficients[off + step];
+    const evenR = data[this._start + index] * this._coefficients[index];
+    const oddR = data[this._start + index + step] * this._coefficients[index + step];
 
     const leftR = evenR + oddR;
     const rightR = evenR - oddR;
 
-    out[outOff] = leftR;
-    out[outOff + 1] = 0;
-    out[outOff + 2] = rightR;
-    out[outOff + 3] = 0;
+    out[outOffset] = leftR;
+    out[outOffset + 1] = 0;
+    out[outOffset + 2] = rightR;
+    out[outOffset + 3] = 0;
 
 };
 
-// Radix-4 implementation for len == 8
-
-STFT.prototype._singleRealTransform4 = function _singleRealTransform4 (outOff, off, step) {
+STFT.prototype._singleRealTransform4 = function _singleRealTransform4 (index, step, outOffset) {
 
     const out = this._out;
     const data = this._data;
 
-    const Ar = data[this._start + off] * this._coefficients[off];
-    const Br = data[this._start + off + step] * this._coefficients[off + step];
-    const Cr = data[this._start + off + 2 * step] * this._coefficients[off + 2 * step];
-    const Dr = data[this._start + off + 3 * step] * this._coefficients[off + 3 * step];
+    const Ar = data[this._start + index] * this._coefficients[index];
+    const Br = data[this._start + index + step] * this._coefficients[index + step];
+    const Cr = data[this._start + index + 2 * step] * this._coefficients[index + 2 * step];
+    const Dr = data[this._start + index + 3 * step] * this._coefficients[index + 3 * step];
 
     const T0r = Ar + Cr;
     const T1r = Ar - Cr;
@@ -322,13 +320,13 @@ STFT.prototype._singleRealTransform4 = function _singleRealTransform4 (outOff, o
     const FDr = T1r;
     const FDi = T3r;
 
-    out[outOff] = FAr;
-    out[outOff + 1] = 0;
-    out[outOff + 2] = FBr;
-    out[outOff + 3] = FBi;
-    out[outOff + 4] = FCr;
-    out[outOff + 5] = 0;
-    out[outOff + 6] = FDr;
-    out[outOff + 7] = FDi;
+    out[outOffset] = FAr;
+    out[outOffset + 1] = 0;
+    out[outOffset + 2] = FBr;
+    out[outOffset + 3] = FBi;
+    out[outOffset + 4] = FCr;
+    out[outOffset + 5] = 0;
+    out[outOffset + 6] = FDr;
+    out[outOffset + 7] = FDi;
 
 };

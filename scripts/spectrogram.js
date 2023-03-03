@@ -77,8 +77,8 @@ function calculateSpectrogramFrames (sampleArray, sampleArrayLength, offset, len
 
     // Apply log2() to min and max as it will be applied to scale spectrogram values later
 
-    min = fastLog2(min);
-    max = fastLog2(max);
+    min = fastLog2(min) / 2;
+    max = fastLog2(max) / 2;
 
     return {
         frames: spectrogram,
@@ -115,7 +115,7 @@ function drawSpectrogram (spectrogram, min, max, callback) {
 
             if (spectrogram[index] !== 0.0) {
 
-                let colourIndex = Math.round(255 * (fastLog2(spectrogram[index]) - min) / (max - min));
+                let colourIndex = Math.round(255 * (fastLog2(spectrogram[index]) / 2 - min) / (max - min));
 
                 colourIndex = Math.max(colourIndex, 0);
                 colourIndex = Math.min(colourIndex, 255);

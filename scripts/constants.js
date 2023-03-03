@@ -161,4 +161,5 @@ const DISPLAYED_TIME_AMOUNTS = [
     }
 ];
 
+const STATIC_COLOUR_MIN = 2.0;
 const STATIC_COLOUR_MAX = 15.0;
