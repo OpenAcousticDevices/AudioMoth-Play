@@ -2770,12 +2770,12 @@ async function readFromFile (exampleFilePath, callback) {
 
             sliceSelectionCallback = callback;
 
-            isNewFile = true;
-
             showSliceLoadingUI();
             showSliceModal();
 
             loadPreview(fileHandler, previewFileLength, previewSampleRate, () => {
+
+                isNewFile = true;
 
                 updateSelectionSpan(0, 60);
 
@@ -2790,6 +2790,8 @@ async function readFromFile (exampleFilePath, callback) {
             }, cancelPreview);
 
         } else {
+
+            isNewFile = true;
 
             showReselectLink = false;
 
