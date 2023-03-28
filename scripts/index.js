@@ -1029,7 +1029,7 @@ function drawAxisLabels () {
 
             baseline = 'text-bottom';
 
-        } else if (i === goertzelLabelTexts.length - 1) {
+        } else if (Math.round(labelY) === 0) {
 
             baseline = 'hanging';
 
