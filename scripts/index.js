@@ -84,6 +84,8 @@ const settingsModal = new bootstrap.Modal(document.getElementById('settings-moda
 const settingsFileTimeCheckbox = document.getElementById('settings-file-time-checkbox');
 const settingsFileTimeLabel = document.getElementById('settings-file-time-label');
 const settingsDynamicColoursCheckbox = document.getElementById('settings-dynamic-colours-checkbox');
+const settingsVideoLineCheckbox = document.getElementById('settings-video-line-checkbox');
+const settingsVideoFixedFPSCheckbox = document.getElementById('settings-video-fixed-fps-checkbox');
 
 // Example file variables
 
@@ -240,6 +242,11 @@ let originalFileLength = 0;
 let fileTimestamp = -1;
 let fileTimezone = 'UTC';
 let useFileTime = false;
+
+// Video export options
+
+let videoLineEnabled = true;
+let fixedFpsEnabled = false;
 
 // Drawing/processing flag
 
@@ -4721,7 +4728,7 @@ exportVideoButton.addEventListener('click', () => {
 
     // Process audio and image into video file
 
-    exportVideo(imageCanvas, audioFileArray, videoLength, fileName, (succeeded) => {
+    exportVideo(imageCanvas, audioFileArray, videoLength, fileName, videoLineEnabled, fixedFpsEnabled, (succeeded) => {
 
         exportVideoIcon.style.display = '';
         exportVideoSpinner.style.display = 'none';
@@ -4752,6 +4759,8 @@ settingsModalButton.addEventListener('click', () => {
 
     settingsFileTimeCheckbox.checked = useFileTime;
     settingsDynamicColoursCheckbox.checked = useDynamicColours;
+    settingsVideoLineCheckbox.checked = videoLineEnabled;
+    settingsVideoFixedFPSCheckbox.checked = fixedFpsEnabled;
 
     // Warn user that setting will do nothing to current file
 
@@ -4774,6 +4783,8 @@ settingsApplyButton.addEventListener('click', () => {
 
     useFileTime = settingsFileTimeCheckbox.checked;
     useDynamicColours = settingsDynamicColoursCheckbox.checked;
+    videoLineEnabled = settingsVideoLineCheckbox.checked;
+    fixedFpsEnabled = settingsVideoFixedFPSCheckbox.checked;
 
     // If setting has been changed, update the relevant UI
 

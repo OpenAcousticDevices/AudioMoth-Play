@@ -161,7 +161,7 @@ function readGeneralHeader (buffer, fileSize) {
 
         }
 
-        if (header.wavFormat.format === EXTENSIBLE_WAV_FORMAT) state.index += header.fmt.size - LENGTH_OF_WAV_FORMAT;
+        state.index += header.fmt.size - LENGTH_OF_WAV_FORMAT;
 
         /* Find the data chunk */
 

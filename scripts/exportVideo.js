@@ -6,6 +6,16 @@
 
 /* global Worker, Blob, webkitURL */
 
+const plotX = 70 + 1;
+const plot0Y = 45 + 1;
+const plot1Y = 325 + 1;
+
+const plotW = 748 - 2;
+const plot0H = 238 - 2;
+const plot1H = 255 - 2;
+
+const lineCol = 'red';
+
 const MILLISECONDS_IN_SECOND = 1000;
 
 function convertDataURIToBinary (dataURI) {
@@ -40,7 +50,7 @@ function done (output, name) {
 
 }
 
-function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, callback) {
+function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, lineEnabled, fixedFpsEnabled, callback) {
 
     const videoName = fileName + '_EXPORT.mp4';
 
@@ -54,7 +64,11 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
 
         let succeeded;
 
-        let millisecondsPerFrame, framesPerSecond, roundedDurationInMilliseconds;
+        let millisecondsPerFrame, framesPerSecond, roundedDurationInMilliseconds, numberOfFrames;
+
+        let vfString0, vfString1;
+
+        let args;
 
         switch (msg.type) {
 
@@ -64,33 +78,61 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
 
             millisecondsPerFrame
                         = durationInMilliseconds <= 10 * MILLISECONDS_IN_SECOND ? 40
-                        : durationInMilliseconds <= 30 * MILLISECONDS_IN_SECOND ? 100
+                        : (durationInMilliseconds <= 30 * MILLISECONDS_IN_SECOND || fixedFpsEnabled) ? 100
                         : 500;
 
             framesPerSecond = MILLISECONDS_IN_SECOND / millisecondsPerFrame;
 
-            roundedDurationInMilliseconds = millisecondsPerFrame * Math.ceil(durationInMilliseconds / millisecondsPerFrame);
+            numberOfFrames = Math.floor(durationInMilliseconds / millisecondsPerFrame);
+            console.log('numberOfFrames', numberOfFrames);
+
+            roundedDurationInMilliseconds = millisecondsPerFrame * numberOfFrames;
+
+            args = [
+                '-loop', '1',
+                '-y',
+                '-r', framesPerSecond.toString(),
+                '-i', 'IMG.JPG',
+                '-i', 'AUDIO.WAV',
+                '-c:v', 'libx264',
+                '-preset', 'ultrafast',
+                '-tune', 'stillimage',
+                '-rc-lookahead', '2',
+                '-c:a', 'aac',
+                '-b:a', '192k',
+                '-pix_fmt', 'yuv420p',
+                '-t', roundedDurationInMilliseconds.toString() + 'ms'
+            ];
+
+            if (lineEnabled) {
+
+                vfString0 = 'audiomothanimation=';
+                vfString0 += 'x=' + plotX;
+                vfString0 += ':y=' + plot0Y;
+                vfString0 += ':w=' + plotW;
+                vfString0 += ':h=' + plot0H;
+                vfString0 += ':color=' + lineCol;
+                vfString0 += ':framecount=' + numberOfFrames;
+
+                vfString1 = 'audiomothanimation=';
+                vfString1 += 'x=' + plotX;
+                vfString1 += ':y=' + plot1Y;
+                vfString1 += ':w=' + plotW;
+                vfString1 += ':h=' + plot1H;
+                vfString1 += ':color=' + lineCol;
+                vfString1 += ':framecount=' + numberOfFrames;
+
+                args.push('-vf', vfString0 + ',' + vfString1);
+
+            }
+
+            args.push('out.mp4');
 
             worker.postMessage({
                 type: 'run',
                 TOTAL_MEMORY: 256 * 1024 * 1024,
                 MEMFS: [audioData, imageData],
-                arguments: [
-                    '-loop', '1',
-                    '-y',
-                    '-r', framesPerSecond.toString(),
-                    '-i', 'IMG.JPG',
-                    '-i', 'AUDIO.WAV',
-                    '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-tune', 'stillimage',
-                    '-rc-lookahead', '2',
-                    '-c:a', 'aac',
-                    '-b:a', '192k',
-                    '-pix_fmt', 'yuv420p',
-                    '-t', roundedDurationInMilliseconds.toString() + 'ms',
-                    'out.mp4'
-                ]
+                arguments: args
             });
 
             break;
@@ -134,7 +176,7 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
 
 }
 
-function exportVideo (imageCanvas, audioArray, length, fileName, callback) {
+function exportVideo (imageCanvas, audioArray, length, fileName, lineEnabled, fixedFpsEnabled, callback) {
 
     const mimeType = 'image/jpeg';
     const imageString = imageCanvas.toDataURL(mimeType, 1);
@@ -150,6 +192,6 @@ function exportVideo (imageCanvas, audioArray, length, fileName, callback) {
         data: audioArray
     };
 
-    finaliseVideo(imageData, audioData, length, fileName, callback);
+    finaliseVideo(imageData, audioData, length, fileName, lineEnabled, fixedFpsEnabled, callback);
 
 }
