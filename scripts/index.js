@@ -360,6 +360,7 @@ function displaySpans (index) {
         resampledSpan.style.display = resampledFile ? '' : 'none';
         loadingSpan.style.display = 'none';
         errorSpan.style.display = 'none';
+        fileButton.disabled = false;
 
         if (isExampleFile) {
 
@@ -397,6 +398,7 @@ function displaySpans (index) {
         loadingSpan.style.display = 'none';
         resampledSpan.style.display = 'none';
         sliceReselectSpan.style.display = 'none';
+        fileButton.disabled = false;
         break;
 
     }
@@ -4887,6 +4889,8 @@ if (urlParams.get('dev')) {
     spectrogramLoadingSVG.style.display = 'none';
     waveformLoadingSVG.style.display = 'none';
 
+    fileButton.disabled = false;
+
 } else if (urlParams.get('app')) {
 
     console.log('APP MODE - Hiding instructions and link to app mode');
@@ -4896,6 +4900,8 @@ if (urlParams.get('dev')) {
     loadingSpan.style.display = 'none';
     spectrogramLoadingSVG.style.display = 'none';
     waveformLoadingSVG.style.display = 'none';
+
+    fileButton.disabled = false;
 
 } else {
 
