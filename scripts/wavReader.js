@@ -21,7 +21,8 @@ function readString (state, length) {
     const utf8decoder = new TextDecoder();
 
     const bufferSplit = state.buffer.slice(state.index, state.index + length);
-    const intBuffer = new Uint16Array(bufferSplit);
+
+    const intBuffer = new Uint8Array(bufferSplit);
     const result = utf8decoder.decode(intBuffer).replace(/\0/g, '');
 
     state.index += length;
@@ -209,6 +210,8 @@ function readGeneralHeader (buffer, fileSize) {
                 state.index += size;
 
             }
+
+            state.index += size & 0x01 ? 1 : 0;
 
         }
 
