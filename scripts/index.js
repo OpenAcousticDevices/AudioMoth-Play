@@ -336,6 +336,15 @@ const instructionsContent = document.getElementById('instructions-content');
 let isNewFile = false;
 
 /**
+ * @returns Boolean check if currently loaded file is a T.WAV AudioMoth file
+ */
+function isTWAV() {
+
+    return fileSpan.innerText.includes('T.WAV');
+
+}
+
+/**
  * 0 - Default
  * 1 - Loading
  * 2 - Error
@@ -589,7 +598,7 @@ function drawAxisLabels () {
     let currentDisplayTime = Math.max(displayLength, originalFileLength) / currentSampleRate;
     currentDisplayTime += timeLabelOffset;
 
-    if (useFileTime && fileTimestamp > 0) {
+    if (useFileTime && fileTimestamp > 0 && !isTWAV()) {
 
         currentDisplayTime += fileTimestamp;
 
@@ -645,7 +654,7 @@ function drawAxisLabels () {
         let labelValue = label / currentSampleRate;
         labelValue += timeLabelOffset;
 
-        if (useFileTime && fileTimestamp > 0) {
+        if (useFileTime && fileTimestamp > 0 && !isTWAV()) {
 
             labelValue += fileTimestamp;
 
@@ -653,7 +662,7 @@ function drawAxisLabels () {
 
         labelValue = labelValue % SECONDS_IN_DAY;
 
-        const labelText = formatTimeLabel(labelValue, overallLengthSeconds, xLabelDecimalPlaces, useFileTime && fileTimestamp > 0);
+        const labelText = formatTimeLabel(labelValue, overallLengthSeconds, xLabelDecimalPlaces, useFileTime && fileTimestamp > 0 && !isTWAV());
 
         // Ticks must be offset to 0.5, end tick must align with end of plot
 
@@ -1081,7 +1090,7 @@ function drawAxisHeadings () {
 
     // If the file time is being used, always display as hh:mm:ss, then add relevant milliseconds
 
-    if (useFileTime && fileTimestamp > 0) {
+    if (useFileTime && fileTimestamp > 0 && !isTWAV()) {
 
         format = 'hh:mm:ss';
 
@@ -2760,6 +2769,7 @@ async function readFromFile (exampleFilePath, callback) {
         if (!checkResult.success) {
 
             console.error('WAV file format is not supported!');
+            console.error(checkResult.error);
             showErrorDisplay('This WAV file format is not supported.');
             return;
 
@@ -4768,7 +4778,7 @@ settingsModalButton.addEventListener('click', () => {
 
     settingsFileTimeLabel.innerText = 'Display real time on x axis';
 
-    if (fileTimestamp <= 0) {
+    if (fileTimestamp <= 0 || isTWAV()) {
 
         settingsFileTimeLabel.innerText += ' (timestamp not available for current file)';
 
