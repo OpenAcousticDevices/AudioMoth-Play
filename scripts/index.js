@@ -1848,7 +1848,7 @@ function processContents (samples, isInitialRender, renderPlots) {
 
         console.log('Calculating spectrogram frames');
 
-        // If the resulting frames aren't forrendering or the colour map hasn't been calculated yet, use all the samples
+        // If the resulting frames aren't for rendering or the colour map hasn't been calculated yet, use all the samples
 
         let useAllSamples = !renderPlots || (spectrumMin === 0.0 && spectrumMax === 0.0);
 
@@ -1860,12 +1860,12 @@ function processContents (samples, isInitialRender, renderPlots) {
 
         processedSpectrumFrames = result.frames;
 
-        if (spectrumMin === 0.0 && spectrumMax === 0.0) {
+        if ((spectrumMin === 0.0 && spectrumMax === 0.0) || useDynamicColours) {
 
             spectrumMin = result.min;
             spectrumMax = result.max;
 
-            console.log('Setting colour map. Min: ' + spectrumMin.toFixed(2) + ' Max: ' + spectrumMax.toFixed(2));
+            console.log('Calculated colour map. Min: ' + spectrumMin.toFixed(2) + ' Max: ' + spectrumMax.toFixed(2));
 
         }
 
