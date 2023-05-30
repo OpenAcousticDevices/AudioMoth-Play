@@ -219,9 +219,11 @@ function readGeneralHeader (buffer, fileSize) {
 
         /* An error has occurred */
 
+        console.error(e.message);
+
         return {
             success: false,
-            error: e.message
+            error: 'An error occurred whilst reading the WAV file.'
         };
 
     }
