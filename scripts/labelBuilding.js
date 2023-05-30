@@ -90,7 +90,7 @@ function formatTimeLabel (time, maxTime, decimalPlaces, displayAll) {
     // If the value is a decimal, 2 characters are used to display the integer value + 1 character for the decimal point
 
     let secsPadding = decimalPlaces > 0 ? decimalPlaces + 3 : 2;
-    secsPadding = maxTime < 60 ? secsPadding - 1 : secsPadding;
+    secsPadding = (maxTime >= 60 || displayAll) ? secsPadding : 0;
 
     const hours = Math.floor(time / 3600);
     time -= hours * 3600;
