@@ -53,7 +53,7 @@ function calculateSpectrogramFrames (sampleArray, sampleArrayLength, offset, len
 
     // Calculate the max and min values in spectrogram so the colour map can be applied during rendering
 
-    let max = 0;
+    let max = -1000000;
     let min = 1000000;
 
     for (let i = 0; i < PIXEL_WIDTH; i += 1) {
