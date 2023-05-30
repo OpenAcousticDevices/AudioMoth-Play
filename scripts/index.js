@@ -208,8 +208,8 @@ let sampleCount = 0;
 let trueSampleCount = 0;
 let sampleRate, trueSampleRate;
 let processedSpectrumFrames;
-let spectrumMin = 0;
-let spectrumMax = 0;
+let spectrumMin = Number.MAX_SAFE_INTEGER;
+let spectrumMax = Number.MIN_SAFE_INTEGER;
 let firstFile = true;
 
 let artist = '';
@@ -1965,8 +1965,8 @@ function panRight () {
 
             prePanSampleRate = sampleRate;
 
-            spectrumMin = 0.0;
-            spectrumMax = 0.0;
+            spectrumMin = Number.MAX_SAFE_INTEGER;
+            spectrumMax = Number.MIN_SAFE_INTEGER;
 
             moveSliceSelectionRight();
             usePreviewSelection(true);
@@ -2574,8 +2574,9 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
     if (resetColourMap) {
 
         console.log('Resetting colour map');
-        spectrumMin = 0.0;
-        spectrumMax = 0.0;
+
+        spectrumMin = Number.MAX_SAFE_INTEGER;
+        spectrumMax = Number.MIN_SAFE_INTEGER;
 
     }
 
@@ -2768,9 +2769,8 @@ async function readFromFile (exampleFilePath, callback) {
 
         if (!checkResult.success) {
 
-            console.error('WAV file format is not supported!');
             console.error(checkResult.error);
-            showErrorDisplay('This WAV file format is not supported.');
+            showErrorDisplay(checkResult.error);
             return;
 
         }
@@ -3120,8 +3120,9 @@ async function loadFile (exampleFilePath, exampleName) {
         // Reset values used to calculate colour map
 
         console.log('Resetting colour map');
-        spectrumMin = 0.0;
-        spectrumMax = 0.0;
+
+        spectrumMin = Number.MAX_SAFE_INTEGER;
+        spectrumMax = Number.MIN_SAFE_INTEGER;
 
         // Update filter range, resetting values if it's the first file loaded or the sliders have been observed
 
@@ -3871,8 +3872,9 @@ addSampleRateUIListeners(() => {
     // Reset colour map here, rather than as part of updatePlots() so the max and min don't use the possibly filtered values
 
     console.log('Resetting colour map');
-    spectrumMin = 0.0;
-    spectrumMax = 0.0;
+
+    spectrumMin = Number.MAX_SAFE_INTEGER;
+    spectrumMax = Number.MIN_SAFE_INTEGER;
 
     processContents(downsampledUnfilteredSamples, false, false);
 
