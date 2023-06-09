@@ -6,7 +6,7 @@
 
 /* Regex used to extract timestamp from header comment */
 
-const DATE_REGEX = /^Recorded at (\d\d):(\d\d):(\d\d) (\d\d)\/(\d\d)\/(\d\d\d\d) \(UTC(((\+|\-)\d{1,2}(:\d{1,2})?)?)?\)/;
+const DATE_REGEX = /^Recorded at (\d\d):(\d\d):(\d\d)(\.\d\d\d)? (\d\d)\/(\d\d)\/(\d\d\d\d) \(UTC(((\+|\-)\d{1,2}(:\d{1,2})?)?)?\)/;
 
 /* Number of seconds in 24 hours */
 
