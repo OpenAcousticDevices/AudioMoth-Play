@@ -2663,11 +2663,8 @@ function processReadResult (result, updateSampleRate, callback) {
         if (regex) {
 
             fileTimestamp = (parseInt(regex[1]) * 3600) + (parseInt(regex[2]) * 60) + parseInt(regex[3]);
-            fileTimestamp += regex[4] === undefined ? '' : parseFloat(regex[4]);
 
-            console.log('Loaded file with timestamp:', fileTimestamp);
-
-            fileTimezone = regex[8] === undefined ? 'UTC' : 'UTC' + regex[8];
+            fileTimezone = regex[7] === undefined ? 'UTC' : 'UTC' + regex[7];
 
         }
 
