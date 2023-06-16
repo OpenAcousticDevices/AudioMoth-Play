@@ -289,11 +289,10 @@ function drawSliceLoadingBar (completion) {
 /**
  * Read file in chunks to calculate a series of min and max values which can be used to draw a waveform
  * @param {FileSystemFileHandle} fileHandler Object which handles file access
- * @param {number} lengthSeconds Length of file in seconds
- * @param {number} previewSampleRate File's sample rate
+ * @param {Header} header Object describing the WAV file header
  * @param {function} callback Function to be called after completion
  */
-async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, cancelCallback) {
+async function loadPreview (fileHandler, header, callback, cancelCallback) {
 
     previewCancelled = false;
 
@@ -315,18 +314,17 @@ async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, c
 
     multiplier *= -1;
 
-    previewLength = lengthSeconds;
-    previewSampleRate = pSampleRate;
+    previewSampleRate = header.wavFormat.samplesPerSecond;
+
+    previewLength = header.data.size / header.wavFormat.bytesPerCapture / previewSampleRate;
 
     const file = await fileHandler.getFile();
 
-    const fileSize = file.size;
-
     /**
-     * Divide lengthSeconds by 1 hour to get page count
+     * Divide previewLength by 1 hour to get page count
      * If pageCount > 1, enable navigation buttons
      * Keep track of what page is being drawn
-     * lengthSeconds % 1 hour to get length of final page. If 0, final page = 1 hour
+     * previewLength % 1 hour to get length of final page. If 0, final page = 1 hour
      * Calculate finalPageChunkSize using finalPageLength
      * chunkSize is a constant, assuming normal page size is 1 hour
      * currentChunkSize = either chunkSize or finalPageChunkSize, depending on if currentPage === pageCount - 1 (final page)
@@ -335,13 +333,13 @@ async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, c
 
     // Max page length is 1 hour, split file into pages
 
-    pageCount = Math.ceil(lengthSeconds / HOUR_SECONDS);
+    pageCount = Math.ceil(previewLength / HOUR_SECONDS);
 
     // Calculate how long the last page will be
 
-    let finalPageLength = lengthSeconds % HOUR_SECONDS;
+    let finalPageLength = previewLength % HOUR_SECONDS;
 
-    // If lengthSeconds is divisible by 1 hour, then the last page will be a full length page
+    // If previewLength is divisible by 1 hour, then the last page will be a full length page
 
     finalPageLength = (finalPageLength === 0) ? HOUR_SECONDS : finalPageLength;
 
@@ -364,7 +362,7 @@ async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, c
 
     // Start reading after header
 
-    let processedSampleCount = LENGTH_OF_WAV_HEADER;
+    let processedSampleIndex = header.size;
 
     let page = 0;
     let currentChunkSize = (page === pageCount - 1) ? finalPageChunkSize : chunkSize;
@@ -374,7 +372,7 @@ async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, c
 
     let index = 0;
 
-    while (processedSampleCount < fileSize) {
+    while (processedSampleIndex < header.size + header.data.size) {
 
         if (previewCancelled) {
 
@@ -383,8 +381,8 @@ async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, c
 
         }
 
-        const start = processedSampleCount;
-        const end = Math.min(processedSampleCount + currentChunkSizeBytes, fileSize);
+        const start = processedSampleIndex;
+        const end = Math.min(processedSampleIndex + currentChunkSizeBytes, header.size + header.data.size);
 
         const blob = file.slice(start, end);
         const buffer = await blob.arrayBuffer();
@@ -410,7 +408,7 @@ async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, c
 
         index++;
 
-        processedSampleCount += currentChunkSizeBytes;
+        processedSampleIndex += currentChunkSizeBytes;
 
         if (index === sliceCanvas.width) {
 
@@ -431,7 +429,8 @@ async function loadPreview (fileHandler, lengthSeconds, pSampleRate, callback, c
 
         }
 
-        const completion = processedSampleCount / fileSize;
+        const completion = processedSampleIndex / (header.size + header.data.size);
+
         drawSliceLoadingBar(completion);
 
     }
@@ -451,7 +450,7 @@ function getSecondWidth () {
 
         let finalPageLength = previewLength % HOUR_SECONDS;
 
-        // If lengthSeconds is divisible by 1 hour, then the last page will be a full length page
+        // If previewLength is divisible by 1 hour, then the last page will be a full length page
 
         finalPageLength = (finalPageLength === 0) ? HOUR_SECONDS : finalPageLength;
 
@@ -571,7 +570,7 @@ function convertPreviewPixelsToSeconds (x) {
 
         let finalPageLength = previewLength % HOUR_SECONDS;
 
-        // If lengthSeconds is divisible by 1 hour, then the last page will be a full length page
+        // If previewLength is divisible by 1 hour, then the last page will be a full length page
 
         finalPageLength = (finalPageLength === 0) ? HOUR_SECONDS : finalPageLength;
 

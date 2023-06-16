@@ -200,6 +200,12 @@ function readGeneralHeader (buffer, fileSize) {
 
                 }
 
+                if (header.data.size + header.size < fileSize) {
+
+                    console.log('WAVE READER: DATA chunk is followed by additional header information.');
+
+                }
+
                 return {
                     success: true,
                     header: header
@@ -514,25 +520,7 @@ async function readWav (fileHandler, start, length) {
 
     /* Check different sizes */
 
-    const dataSize = header.data.size;
-
-    const fileSizeSize = fileSize - headerLength;
-
-    const riffSize = header.riff.size + RIFF_ID_LENGTH + UINT32_LENGTH - headerLength;
-
-    let dataLength = dataSize;
-
-    if ((dataSize !== riffSize) || (dataSize !== fileSizeSize)) {
-
-        console.log("WAVE READER: Using minimum of inconsistent data sizes.");
- 
-        dataLength = Math.min(dataSize, Math.min(riffSize, fileSizeSize));
-
-        header.data.size = dataLength;
-
-        header.riff.size = dataLength + headerLength - RIFF_ID_LENGTH - UINT32_LENGTH;
-       
-    }
+    const dataLength = header.data.size;
 
     const sampleRate = header.wavFormat.samplesPerSecond;
 

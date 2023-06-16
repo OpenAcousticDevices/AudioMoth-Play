@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /* global XMLHttpRequest, bootstrap */
-/* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, SECONDS_IN_DAY */
+/* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, TIMESTAMP_REGEX, SECONDS_IN_DAY */
 /* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */
 
 /* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader */
@@ -19,7 +19,7 @@
 
 /* global prepareUI, sampleRateChange */
 /* global getPassFiltersObserved, getCentreObserved */
-/* global getFilterRadioValue, updateThresholdTypeUI, updateThresholdUI, updateFilterLabel, getFilterType */
+/* global getFilterRadioValue, updateThresholdTypeUI, updateThresholdUI, updateFilterLabel */
 /* global getThresholdTypeIndex, THRESHOLD_TYPE_NONE, THRESHOLD_TYPE_AMPLITUDE, THRESHOLD_TYPE_GOERTZEL, getFrequencyTriggerFilterFreq, getFrequencyTriggerWindowLength, updateFilterUI, getFrequencyTrigger */
 /* global thresholdScaleIndex, THRESHOLD_SCALE_PERCENTAGE, THRESHOLD_SCALE_16BIT, THRESHOLD_SCALE_DECIBEL */
 /* global thresholdTypeLabel, thresholdTypeRadioButtons, lowPassFilterSlider, highPassFilterSlider, bandPassFilterSlider, amplitudeThresholdSlider, amplitudeThresholdDurationRadioButtons, goertzelFilterCentreSlider, goertzelFilterWindowRadioButtons, goertzelDurationRadioButtons, goertzelThresholdSlider */
@@ -107,6 +107,10 @@ const panLeftIcon = document.getElementById('pan-left-icon');
 const panRightIcon = document.getElementById('pan-right-icon');
 const panDoubleLeftIcon = document.getElementById('pan-double-left-icon');
 const panDoubleRightIcon = document.getElementById('pan-double-right-icon');
+
+// Time constant
+
+const SECONDS_IN_A_MINUTE = 60;
 
 // Minimum amount of time which can be viewed on the plot
 
@@ -240,7 +244,7 @@ let originalFileLength = 0;
 // Timestamp when file was recorded
 
 let fileTimestamp = -1;
-let fileTimezone = 'UTC';
+let fileTimezone = '';
 let useFileTime = false;
 
 // Video export options
@@ -338,9 +342,19 @@ let isNewFile = false;
 /**
  * @returns Boolean check if currently loaded file is a T.WAV AudioMoth file
  */
-function isTWAV() {
+function isTWAV () {
 
     return fileSpan.innerText.includes('T.WAV');
+
+}
+
+function getFilterType () {
+
+    const triggerType = getThresholdTypeIndex();
+
+    // Frequency filter not available when triggering on frequency
+
+    return triggerType !== THRESHOLD_TYPE_GOERTZEL ? getFilterRadioValue() : FILTER_NONE;
 
 }
 
@@ -586,7 +600,24 @@ function drawAxisLabels () {
 
     // Get the label increment amount and label decimal precision
 
-    const incrementPrecision = getIncrementAndPrecision(displayLength, currentSampleRate);
+    let incrementPrecision;
+
+    const msOffset = fileTimestamp - Math.floor(fileTimestamp);
+
+    // If file time is enabled, you may need to take into account milliseconds when positioning labels
+    if (useFileTime && fileTimestamp > 0 && !isTWAV() && msOffset > 0) {
+
+        // The initial label is likely to be pushed off the edge, so set the increment and precision based on the reduced display length
+        incrementPrecision = getIncrementAndPrecision(displayLength - msOffset, currentSampleRate);
+
+        label -= msOffset * currentSampleRate;
+
+    } else {
+
+        incrementPrecision = getIncrementAndPrecision(displayLength, currentSampleRate);
+
+    }
+
     const xLabelIncrementSecs = incrementPrecision.xLabelIncrementSecs;
     const xLabelDecimalPlaces = incrementPrecision.xLabelDecimalPlaces;
 
@@ -1101,7 +1132,9 @@ function drawAxisHeadings () {
 
         }
 
-        xAxisHeading = 'Time of Day (' + format + ' ' + fileTimezone + ')';
+        xAxisHeading = 'Time of Day (' + format;
+        xAxisHeading += fileTimezone !== '' ? ' ' + fileTimezone : '';
+        xAxisHeading += ')';
 
     } else {
 
@@ -2161,7 +2194,7 @@ function zoomInWaveformY () {
 
             disableUI(false);
 
-            const filterIndex = getFilterRadioValue();
+            const filterIndex = getFilterType();
 
             // Redraw just the waveform plot
 
@@ -2198,7 +2231,7 @@ function zoomOutWaveformY () {
 
             disableUI(false);
 
-            const filterIndex = getFilterRadioValue();
+            const filterIndex = getFilterType();
 
             // Redraw just the waveform plot
 
@@ -2231,7 +2264,7 @@ function resetWaveformZoom () {
 
         disableUI(false);
 
-        const filterIndex = getFilterRadioValue();
+        const filterIndex = getFilterType();
 
         // Redraw just the waveform plot
 
@@ -2439,7 +2472,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
 
     const thresholdTypeIndex = getThresholdTypeIndex();
 
-    const filterIndex = getFilterRadioValue();
+    const filterIndex = getFilterType();
     const isFiltering = filterIndex !== FILTER_NONE;
 
     // Apply low/band/high pass filter
@@ -2552,7 +2585,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
  * @param {boolean} resetColourMap Whether or not to reset the stored max and min values used to calculate the colour map
  * @param {boolean} updateSpectrogram Whether or not to recalculate the spectrogram frames. Needs to be done when the contents of the samples or navigation changes
  * @param {boolean} updateThresholdedSampleArray Whether or not to recalculate the boolean array of thresholded samples.
- * @param {boolean} reapplyFilter Whether or not to reappply a frequency filter
+ * @param {boolean} reapplyFilter Whether or not to reapply a frequency filter
  * @param {boolean} recalculateGoertzelValues Whether or not the Goertzel filter used for frequency thresholding needs to be recalculated
  */
 async function updatePlots (resetColourMap, updateSpectrogram, updateThresholdedSampleArray, reapplyFilter, recalculateGoertzelValues) {
@@ -2582,7 +2615,7 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
 
     const thresholdTypeIndex = getThresholdTypeIndex();
 
-    const filterIndex = getFilterRadioValue();
+    const filterIndex = getFilterType();
 
     if (filterIndex === FILTER_NONE && thresholdTypeIndex === THRESHOLD_TYPE_NONE) {
 
@@ -2655,18 +2688,62 @@ function processReadResult (result, updateSampleRate, callback) {
     }
 
     fileTimestamp = -1;
+    fileTimezone = '';
+
+    const loadedFileName = fileHandler ? fileHandler.name : 'Example file';
+
+    /**
+     * Check for comment header
+     * If it includes a timestamp, use that
+     * If it includes a timezone, use that too
+     * If there is no header, check the file name for a timestamp
+     * Regex must search for the timestamp somewhere in the name to allow for prefixes
+     * If the file name is used, don't include the timezone on the labels
+     */
 
     if (result.comment !== '') {
 
-        const regex = DATE_REGEX.exec(result.comment);
+        console.log('Reading comment header for timestamp');
 
-        if (regex) {
+        const dateRegexResult = DATE_REGEX.exec(result.comment);
 
-            fileTimestamp = (parseInt(regex[1]) * 3600) + (parseInt(regex[2]) * 60) + parseInt(regex[3]);
+        if (dateRegexResult) {
 
-            fileTimezone = regex[7] === undefined ? 'UTC' : 'UTC' + regex[7];
+            console.log('Found timestamp');
+
+            fileTimestamp = (parseInt(dateRegexResult[1]) * 3600) + (parseInt(dateRegexResult[2]) * 60) + parseInt(dateRegexResult[3]);
+            fileTimestamp += dateRegexResult[4] === undefined ? '' : parseFloat(dateRegexResult[4]);
+
+            fileTimezone = dateRegexResult[8] === undefined ? 'UTC' : 'UTC' + dateRegexResult[8];
 
         }
+
+    }
+
+    // If no timestamp was found in the header, check the file name
+
+    if (fileTimestamp === -1) {
+
+        console.log('Checking file name for timestamp');
+
+        const timestampRegexResult = TIMESTAMP_REGEX.exec(loadedFileName);
+
+        if (timestampRegexResult) {
+
+            console.log('Found timestamp');
+
+            fileTimestamp = (parseInt(timestampRegexResult[2]) * 3600) + (parseInt(timestampRegexResult[3]) * 60) + parseInt(timestampRegexResult[4]);
+            fileTimestamp += timestampRegexResult[6] === undefined ? '' : (parseFloat(timestampRegexResult[6]) / 1000);
+
+            fileTimezone = '';
+
+        }
+
+    }
+
+    if (fileTimestamp !== -1) {
+
+        console.log('Loaded file with timestamp:', fileTimestamp, ' ', fileTimezone);
 
     }
 
@@ -2683,8 +2760,6 @@ function processReadResult (result, updateSampleRate, callback) {
     sampleCount = trueSampleCount;
 
     const duration = sampleCount / trueSampleRate;
-
-    const loadedFileName = fileHandler ? fileHandler.name : 'Example file';
 
     console.log('------ ' + loadedFileName + ' ------');
 
@@ -2777,22 +2852,20 @@ async function readFromFile (exampleFilePath, callback) {
 
         const header = checkResult.header;
 
-        const previewSampleRate = header.wavFormat.samplesPerSecond;
         overallFileLengthSamples = header.data.size / header.wavFormat.bytesPerCapture;
-        const previewFileLength = overallFileLengthSamples / previewSampleRate;
 
-        if (previewFileLength > 60) {
+        if (overallFileLengthSamples > SECONDS_IN_A_MINUTE * header.wavFormat.samplesPerSecond) {
 
             disableUI(false);
 
-            console.log('File is >60 seconds, loading preview');
+            console.log('File is greater than 60 seconds long. Loading preview.');
 
             sliceSelectionCallback = callback;
 
             showSliceLoadingUI();
             showSliceModal();
 
-            loadPreview(fileHandler, previewFileLength, previewSampleRate, () => {
+            loadPreview(fileHandler, header, () => {
 
                 isNewFile = true;
 
@@ -3192,7 +3265,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         const thresholdTypeIndex = getThresholdTypeIndex();
 
-        const filterIndex = getFilterRadioValue();
+        const filterIndex = getFilterType();
 
         // Flag that the first file has now been loaded
 
@@ -3603,7 +3676,7 @@ amplitudeThresholdScaleSelect.addEventListener('change', function () {
 
     setAmplitudeThresholdScaleIndex(parseInt(amplitudeThresholdScaleSelect.value));
 
-    const filterIndex = getFilterRadioValue();
+    const filterIndex = getFilterType();
 
     // If mode is changed to or from decibel, the scale of the waveform plot has changed slightly, so redraw
 
@@ -3939,7 +4012,7 @@ function exportConfig () {
 
     }
 
-    const filterIndex = getFilterRadioValue();
+    const filterIndex = getFilterType();
     let filterValue0 = 0;
     let filterValue1 = 0;
 
@@ -4013,7 +4086,7 @@ function exportConfig () {
 
     const thresholdTypeIndex = getThresholdTypeIndex();
 
-    const filterType = getFilterType();
+    const filterType = getThresholdTypeIndex();
 
     const passFiltersEnabled = thresholdTypeIndex !== THRESHOLD_TYPE_GOERTZEL && filterType !== 'none';
 
@@ -4352,7 +4425,7 @@ playButton.addEventListener('click', () => {
 
         // Get currently displayed samples to play
 
-        const filterIndex = getFilterRadioValue();
+        const filterIndex = getFilterType();
 
         const samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
 
@@ -4583,7 +4656,7 @@ function getAudioForExport () {
 
     // Get currently displayed samples to play
 
-    const filterIndex = getFilterRadioValue();
+    const filterIndex = getFilterType();
 
     const samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
 

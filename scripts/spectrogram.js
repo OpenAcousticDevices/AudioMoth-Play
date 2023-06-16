@@ -27,14 +27,15 @@ const rgbColours = [[0, 0, 131], [0, 2, 132], [0, 4, 133], [0, 6, 135], [0, 8, 1
  * @param {number} n Value to have log2() applied to
  * @returns log2(n)
  */
+
+const fastLogBuffer = new ArrayBuffer(4);
+const integerBuffer = new Int32Array(fastLogBuffer);
+const floatBuffer = new Float32Array(fastLogBuffer);
+
 function fastLog2 (n) {
-
-    const a = new ArrayBuffer(4);
-    const i = new Int32Array(a);
-    const f = new Float32Array(a);
-
-    f[0] = n;
-    const t = i[0] * 1.1920928955078125e-7;
+    
+    floatBuffer[0] = n;
+    const t = integerBuffer[0] * 1.1920928955078125e-7;
     return t - 126.94269504;
 
 }

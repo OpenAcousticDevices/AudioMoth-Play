@@ -179,7 +179,7 @@ function getFilterSliderStep (sampleRate) {
 
 /**
  * Get the filter type index
- * @returns The index of the filter type radio
+ * @returns The index of the filter type radio (FILTER_LOW, FILTER_HIGH, FILTER_BAND, FILTER_NONE)
  */
 function getFilterRadioValue () {
 
@@ -665,19 +665,6 @@ function filteringIsEnabled () {
     const filterIndex = getFilterRadioValue();
 
     return filterIndex !== FILTER_NONE;
-
-}
-
-/**
- * Get filter type used before threshold
- * @returns String describing filter type ('low', 'band', 'high', 'none')
- */
-function getFilterType () {
-
-    const filterIndex = getFilterRadioValue();
-    const filterTypes = ['low', 'band', 'high', 'none'];
-
-    return filterTypes[filterIndex];
 
 }
 
@@ -1542,8 +1529,6 @@ function prepareUI (changeFunction, checkRecordingDurationFunction, filterValueC
 // exports.setMinimumFrequencyTriggerDuration = setMinimumFrequencyTriggerDuration;
 
 // exports.filteringIsEnabled = filteringIsEnabled;
-
-// exports.getFilterType = getFilterType;
 
 // exports.getLowerSliderValue = getLowerSliderValue;
 // exports.getHigherSliderValue = getHigherSliderValue;
