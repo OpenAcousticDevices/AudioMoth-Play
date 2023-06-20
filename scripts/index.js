@@ -2712,7 +2712,7 @@ function processReadResult (result, updateSampleRate, callback) {
             console.log('Found timestamp');
 
             fileTimestamp = (parseInt(dateRegexResult[1]) * 3600) + (parseInt(dateRegexResult[2]) * 60) + parseInt(dateRegexResult[3]);
-            fileTimestamp += dateRegexResult[4] === undefined ? '' : parseFloat(dateRegexResult[4]);
+            fileTimestamp += dateRegexResult[4] === undefined ? 0 : parseFloat(dateRegexResult[4]);
 
             fileTimezone = dateRegexResult[8] === undefined ? 'UTC' : 'UTC' + dateRegexResult[8];
 
@@ -2733,7 +2733,7 @@ function processReadResult (result, updateSampleRate, callback) {
             console.log('Found timestamp');
 
             fileTimestamp = (parseInt(timestampRegexResult[2]) * 3600) + (parseInt(timestampRegexResult[3]) * 60) + parseInt(timestampRegexResult[4]);
-            fileTimestamp += timestampRegexResult[6] === undefined ? '' : (parseFloat(timestampRegexResult[6]) / 1000);
+            fileTimestamp += timestampRegexResult[6] === undefined ? 0 : (parseFloat(timestampRegexResult[6]) / 1000);
 
             fileTimezone = '';
 
