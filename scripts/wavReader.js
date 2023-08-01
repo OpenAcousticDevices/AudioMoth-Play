@@ -84,6 +84,15 @@ function readChunk (state, id) {
 
 /* WAV header read and write functions */
 
+function showWAVFormat (wavFormat) {
+
+    console.log("Number of channel:", wavFormat.numberOfChannels);
+    console.log("Bytes per second:", wavFormat.bytesPerSecond);
+    console.log("Bytes per capture:", wavFormat.bytesPerCapture);
+    console.log("Bits per sample:", wavFormat.bitsPerSample);
+
+}
+
 function readGeneralHeader (buffer, fileSize) {
 
     const header = {};
@@ -140,6 +149,8 @@ function readGeneralHeader (buffer, fileSize) {
 
         if (!formatValid || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
 
+            showWAVFormat(header.wavFormat);
+
             return {
                 success: false,
                 error: 'File format is not supported.'
@@ -154,6 +165,8 @@ function readGeneralHeader (buffer, fileSize) {
         for (let i = 0; i < VALID_RESAMPLE_RATES.length; i += 1) sampleRateAcceptable ||= (header.wavFormat.samplesPerSecond === VALID_RESAMPLE_RATES[i]);
 
         if (sampleRateAcceptable === false) {
+
+            showWAVFormat(header.wavFormat);
 
             return {
                 success: false,
