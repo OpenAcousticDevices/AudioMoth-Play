@@ -4994,6 +4994,10 @@ if (urlParams.get('dev')) {
 
 }
 
+// Each new window needs a unique name so multiple windows can be opened
+
+let popupCount = 0;
+
 launchAppLink.addEventListener('click', () => {
 
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -5004,11 +5008,11 @@ launchAppLink.addEventListener('click', () => {
 
     if (urlParams.get('dev')) {
 
-        window.open('http://localhost:8000/?app=true', 'mypopup', features);
+        window.open('http://localhost:8000/?app=true', 'window' + popupCount++, features);
 
     } else {
 
-        window.open('https://playground.openacousticdevices.info/?app=true', 'mypopup', features);
+        window.open('https://playground.openacousticdevices.info/?app=true', 'window' + popupCount++, features);
 
     }
 
