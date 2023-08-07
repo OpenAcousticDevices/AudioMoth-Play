@@ -4937,8 +4937,6 @@ disableUI(true);
 drawLoadingImage(waveformLoadingSVG);
 drawLoadingImage(spectrogramLoadingSVG);
 
-// Display error if current browser is not Chrome
-
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
