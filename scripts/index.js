@@ -4086,7 +4086,8 @@ function exportConfig () {
 
     const thresholdTypeIndex = getThresholdTypeIndex();
 
-    const filterType = getThresholdTypeIndex();
+    const filterTypes = ['low', 'band', 'high', 'none'];
+    const filterType = filterTypes[getFilterRadioValue()];
 
     const passFiltersEnabled = thresholdTypeIndex !== THRESHOLD_TYPE_GOERTZEL && filterType !== 'none';
 
