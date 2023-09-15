@@ -5011,7 +5011,7 @@ launchAppLink.addEventListener('click', () => {
 
     } else {
 
-        window.open('https://playground.openacousticdevices.info/?app=true', 'window' + popupCount++, features);
+        window.open('https://play.openacousticdevices.info/?app=true', 'window' + popupCount++, features);
 
     }
 
