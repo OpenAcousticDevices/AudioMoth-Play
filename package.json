@@ -1,13 +1,13 @@
 {
-    "name": "audiomoth-filter-playground",
+    "name": "audiomoth-play",
     "version": "1.0.0",
     "description": "A web-based analysis tool for experimenting with filter and amplitude threshold settings available in the AudioMoth Configuration App.",
     "license": "MIT",
-    "homepage": "https://playground.openacousticdevices.info/",
+    "homepage": "https://play.openacousticdevices.info/",
     "author": "openacousticdevices.info",
     "repository": {
         "type": "git",
-        "url": "https://github.com/OpenAcousticDevices/AudioMoth-Filter-Playground.git"
+        "url": "https://github.com/OpenAcousticDevices/AudioMoth-Play.git"
     },
     "devDependencies": {
         "eslint": "^7.28.0",

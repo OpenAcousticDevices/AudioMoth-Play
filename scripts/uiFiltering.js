@@ -4,12 +4,12 @@
  * November 2019
  *****************************************************************************/
 
-// Filter Playground/Config App each have different methods of initialising Slider
+// AudioMoth Play/Config App each have different methods of initialising Slider
 
 /* global Slider */
 // const Slider = require('bootstrap-slider');
 
-// Filter Playground/Config App import functions differently
+// AudioMoth Play/Config App import functions differently
 
 /* global enableSlider, disableSlider */
 // const sliderControl = require('./sliderControl.js');

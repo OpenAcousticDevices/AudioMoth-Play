@@ -119,7 +119,7 @@ function createAudioArray (samples, unthresholdedSamples, start, length, sampleR
 
     const numberOfSamples = playbackBufferLength * powMultiplier;
 
-    const header = createAudioMothHeader(numberOfSamples, acceptedSampleRate, 'Audio clip exported from the AudioMoth Filter Playground.', 'AudioMoth Filter Playground');
+    const header = createAudioMothHeader(numberOfSamples, acceptedSampleRate, 'Audio clip exported from AudioMoth Play.', 'AudioMoth Play');
 
     const headerBuffer = new ArrayBuffer(header.size);
 

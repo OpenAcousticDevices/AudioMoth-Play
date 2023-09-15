@@ -46,7 +46,7 @@ function enableSlider (slider, div) {
 
 }
 
-// Check if code is running on Config App or Filter Playground as importing/exporting works differently in Electron
+// Check if code is running on Config App or Play as importing/exporting works differently in Electron
 if (window && window.process && window.process.type) {
 
     exports.enableSlider = enableSlider;
