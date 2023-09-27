@@ -4814,9 +4814,19 @@ exportVideoButton.addEventListener('click', () => {
 
     const fileName = fileSpan.innerText.replace(/\.[^/.]+$/, '');
 
+    // FIXME: Line doesn't currently work when using Triggered T.WAV setting. Line is disabled until a fix is added
+
+    const showLine = videoLineEnabled && playbackMode !== PLAYBACK_MODE_SKIP;
+
+    if (videoLineEnabled && playbackMode === PLAYBACK_MODE_SKIP) {
+
+        console.log('Disabled video line as playback mode was set to "Triggered T.WAV"');
+
+    }
+
     // Process audio and image into video file
 
-    exportVideo(imageCanvas, audioFileArray, videoLength, fileName, videoLineEnabled, fixedFpsEnabled, (succeeded) => {
+    exportVideo(imageCanvas, audioFileArray, videoLength, fileName, showLine, fixedFpsEnabled, (succeeded) => {
 
         exportVideoIcon.style.display = '';
         exportVideoSpinner.style.display = 'none';
