@@ -4338,6 +4338,90 @@ function stopEvent () {
 
 }
 
+/* Build an array of X axis locations which map to playback progress */
+
+function fillSkipArray () {
+
+    const thresholdTypeIndex = getThresholdTypeIndex();
+
+    // Create x coordinate map
+
+    skippingXCoords = new Array(displayLength).fill(0);
+
+    const waveformW = waveformPlaybackCanvas.width;
+
+    let n = 0;
+
+    const displayedTime = displayLength / getSampleRate();
+
+    // Create mapping from sample index to x coordinate
+
+    const start = Math.floor(offset / AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
+    const end = Math.floor((offset + displayLength - 1) / AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
+
+    for (let i = start; i <= end; i++) {
+
+        const sampleIndex = i * AMPLITUDE_THRESHOLD_BUFFER_LENGTH;
+
+        const sampleAboveThreshold = (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold[i] : samplesAboveThreshold[i];
+
+        if (sampleAboveThreshold) {
+
+            // Add an x coordinate for each sample within the period above the threshold
+
+            for (let j = 0; j < AMPLITUDE_THRESHOLD_BUFFER_LENGTH; j++) {
+
+                const periodSample = sampleIndex + j - offset;
+
+                if (periodSample >= 0 && periodSample < displayLength) {
+
+                    let xCoord = periodSample / getSampleRate() / displayedTime;
+                    xCoord *= waveformW;
+
+                    skippingXCoords[n] = xCoord;
+                    n++;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    // Reduce length to just unthresholded samples on screen
+
+    skippingXCoords.length = n;
+    return n;
+
+}
+
+/* Convert an array of values to a percentage array of length outputSize */
+
+function convertSkipArray (inputArray, maxValue, outputSize) {
+
+    if (!Array.isArray(inputArray) || inputArray.length === 0 || outputSize === 0) {
+
+        return [];
+
+    }
+
+    const resultArray = new Array(outputSize);
+    const step = inputArray.length / outputSize;
+
+    for (let i = 0; i < outputSize; i++) {
+
+        const index = Math.floor(i * step);
+        resultArray[i] = inputArray[index];
+
+    }
+
+    const scaledArray = resultArray.map((value) => ((value / maxValue) * 100).toFixed(3));
+
+    return scaledArray;
+
+}
+
 /**
  * Play audio button
  */
@@ -4438,55 +4522,7 @@ playButton.addEventListener('click', () => {
 
         if (playbackMode === PLAYBACK_MODE_SKIP) {
 
-            // Create x coordinate map
-
-            skippingXCoords = new Array(displayLength).fill(0);
-
-            const waveformW = waveformPlaybackCanvas.width;
-
-            let n = 0;
-
-            const displayedTime = displayLength / getSampleRate();
-
-            // Create mapping from sample index to x coordinate
-
-            const start = Math.floor(offset / AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
-            const end = Math.floor((offset + displayLength - 1) / AMPLITUDE_THRESHOLD_BUFFER_LENGTH);
-
-            for (let i = start; i <= end; i++) {
-
-                const sampleIndex = i * AMPLITUDE_THRESHOLD_BUFFER_LENGTH;
-
-                const sampleAboveThreshold = (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold[i] : samplesAboveThreshold[i];
-
-                if (sampleAboveThreshold) {
-
-                    // Add an x coordinate for each sample within the period above the threshold
-
-                    for (let j = 0; j < AMPLITUDE_THRESHOLD_BUFFER_LENGTH; j++) {
-
-                        const periodSample = sampleIndex + j - offset;
-
-                        if (periodSample >= 0 && periodSample < displayLength) {
-
-                            let xCoord = periodSample / getSampleRate() / displayedTime;
-                            xCoord *= waveformW;
-
-                            skippingXCoords[n] = xCoord;
-                            n++;
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-            // Reduce length to just unthresholded samples on screen
-
-            skippingXCoords.length = n;
-            playbackBufferLength = n;
+            playbackBufferLength = fillSkipArray();
 
         }
 
@@ -4806,27 +4842,44 @@ exportVideoButton.addEventListener('click', () => {
 
     const imageCanvas = createExportCanvas(createImageCanvas);
 
-    // Get video length in ms
-
-    const videoLength = displayLength / sampleRate * 1000 / getPlaybackRate();
-
     // Prepare name for exported video
 
     const fileName = fileSpan.innerText.replace(/\.[^/.]+$/, '');
 
-    // FIXME: Line doesn't currently work when using Triggered T.WAV setting. Line is disabled until a fix is added
+    // Calculate video length in samples
 
-    const showLine = videoLineEnabled && playbackMode !== PLAYBACK_MODE_SKIP;
+    let videoLengthSamples = displayLength;
 
-    if (videoLineEnabled && playbackMode === PLAYBACK_MODE_SKIP) {
+    if (playbackMode === PLAYBACK_MODE_SKIP) {
 
-        console.log('Disabled video line as playback mode was set to "Triggered T.WAV"');
+        // If in skip mode, length of video is just the length of the unskipped period(s)
+
+        videoLengthSamples = fillSkipArray();
+
+    }
+
+    // Calculate video length in milliseconds
+
+    const videoLength = videoLengthSamples / sampleRate * 1000 / getPlaybackRate();
+
+    // Create array of skipping x co-ordinates if needed
+
+    let skipString = '-';
+
+    if (playbackMode === PLAYBACK_MODE_SKIP && videoLineEnabled) {
+
+        console.log('Creating skip array argument for ffmpeg.js');
+
+        const percentageSkipArrayLength = 500;
+        const percentageSkipArray = convertSkipArray(skippingXCoords, spectrogramPlaybackCanvas.width, percentageSkipArrayLength);
+
+        skipString = percentageSkipArray.join('|');
 
     }
 
     // Process audio and image into video file
 
-    exportVideo(imageCanvas, audioFileArray, videoLength, fileName, showLine, fixedFpsEnabled, (succeeded) => {
+    exportVideo(imageCanvas, audioFileArray, videoLength, fileName, videoLineEnabled, fixedFpsEnabled, skipString, (succeeded) => {
 
         exportVideoIcon.style.display = '';
         exportVideoSpinner.style.display = 'none';

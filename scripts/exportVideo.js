@@ -50,7 +50,7 @@ function done (output, name) {
 
 }
 
-function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, lineEnabled, fixedFpsEnabled, callback) {
+function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, lineEnabled, fixedFpsEnabled, skipString, callback) {
 
     const videoName = fileName + '_EXPORT.mp4';
 
@@ -84,7 +84,6 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
             framesPerSecond = MILLISECONDS_IN_SECOND / millisecondsPerFrame;
 
             numberOfFrames = Math.floor(durationInMilliseconds / millisecondsPerFrame);
-            console.log('numberOfFrames', numberOfFrames);
 
             roundedDurationInMilliseconds = millisecondsPerFrame * numberOfFrames;
 
@@ -113,6 +112,7 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
                 vfString0 += ':h=' + plot0H;
                 vfString0 += ':color=' + lineCol;
                 vfString0 += ':framecount=' + numberOfFrames;
+                vfString0 += ':skip=' + skipString;
 
                 vfString1 = 'audiomothanimation=';
                 vfString1 += 'x=' + plotX;
@@ -121,6 +121,7 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
                 vfString1 += ':h=' + plot1H;
                 vfString1 += ':color=' + lineCol;
                 vfString1 += ':framecount=' + numberOfFrames;
+                vfString1 += ':skip=' + skipString;
 
                 args.push('-vf', vfString0 + ',' + vfString1);
 
@@ -176,7 +177,7 @@ function finaliseVideo (imageData, audioData, durationInMilliseconds, fileName, 
 
 }
 
-function exportVideo (imageCanvas, audioArray, length, fileName, lineEnabled, fixedFpsEnabled, callback) {
+function exportVideo (imageCanvas, audioArray, length, fileName, lineEnabled, fixedFpsEnabled, skipString, callback) {
 
     const mimeType = 'image/jpeg';
     const imageString = imageCanvas.toDataURL(mimeType, 1);
@@ -192,6 +193,6 @@ function exportVideo (imageCanvas, audioArray, length, fileName, lineEnabled, fi
         data: audioArray
     };
 
-    finaliseVideo(imageData, audioData, length, fileName, lineEnabled, fixedFpsEnabled, callback);
+    finaliseVideo(imageData, audioData, length, fileName, lineEnabled, fixedFpsEnabled, skipString, callback);
 
 }
