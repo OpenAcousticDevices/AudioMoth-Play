@@ -145,9 +145,20 @@ function readGeneralHeader (buffer, fileSize) {
         header.wavFormat.bytesPerCapture = readUInt16LE(state);
         header.wavFormat.bitsPerSample = readUInt16LE(state);
 
+        if (header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS) {
+
+            showWAVFormat(header.wavFormat);
+
+            return {
+                success: false,
+                error: 'Invalid number of channels, you must mix down to mono.'
+            };
+
+        }
+
         const formatValid = header.wavFormat.format === PCM_WAV_FORMAT || header.wavFormat.format === EXTENSIBLE_WAV_FORMAT;
 
-        if (!formatValid || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
+        if (!formatValid || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
 
             showWAVFormat(header.wavFormat);
 
