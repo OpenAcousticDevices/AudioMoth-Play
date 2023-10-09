@@ -145,9 +145,37 @@ function readGeneralHeader (buffer, fileSize) {
         header.wavFormat.bytesPerCapture = readUInt16LE(state);
         header.wavFormat.bitsPerSample = readUInt16LE(state);
 
+        /* Check if file is mono */
+
+        if (header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS) {
+
+            showWAVFormat(header.wavFormat);
+
+            return {
+                success: false,
+                error: 'Invalid number of channels. Mix file down to mono to use.'
+            };
+
+        }
+
+        /* Check if file is 16-bit */
+
+        if (header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
+
+            showWAVFormat(header.wavFormat);
+
+            return {
+                success: false,
+                error: 'Invalid bits per sample. Resample to 16-bit to use.'
+            };
+
+        }
+
+        /* Check other aspects of file format */
+
         const formatValid = header.wavFormat.format === PCM_WAV_FORMAT || header.wavFormat.format === EXTENSIBLE_WAV_FORMAT;
 
-        if (!formatValid || header.wavFormat.numberOfChannels !== NUMBER_OF_CHANNELS || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE || header.wavFormat.bitsPerSample !== NUMBER_OF_BITS_IN_SAMPLE) {
+        if (!formatValid || header.wavFormat.bytesPerSecond !== NUMBER_OF_BYTES_IN_SAMPLE * header.wavFormat.samplesPerSecond || header.wavFormat.bytesPerCapture !== NUMBER_OF_BYTES_IN_SAMPLE) {
 
             showWAVFormat(header.wavFormat);
 
