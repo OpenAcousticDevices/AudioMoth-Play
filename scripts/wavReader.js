@@ -86,10 +86,10 @@ function readChunk (state, id) {
 
 function showWAVFormat (wavFormat) {
 
-    console.log("Number of channel:", wavFormat.numberOfChannels);
-    console.log("Bytes per second:", wavFormat.bytesPerSecond);
-    console.log("Bytes per capture:", wavFormat.bytesPerCapture);
-    console.log("Bits per sample:", wavFormat.bitsPerSample);
+    console.log('Number of channel:', wavFormat.numberOfChannels);
+    console.log('Bytes per second:', wavFormat.bytesPerSecond);
+    console.log('Bytes per capture:', wavFormat.bytesPerCapture);
+    console.log('Bits per sample:', wavFormat.bitsPerSample);
 
 }
 
