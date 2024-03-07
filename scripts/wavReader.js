@@ -580,7 +580,7 @@ async function readWav (fileHandler, start, length) {
     const startBytes = headerLength + (start * sampleRate * UINT16_LENGTH);
     const lengthBytes = length * sampleRate * UINT16_LENGTH;
 
-    const fileSlice = length ? file.slice(startBytes, startBytes + lengthBytes) : file.slice(startBytes, startBytes + dataLength);
+    const fileSlice = length ? file.slice(startBytes, startBytes + lengthBytes) : file.slice(startBytes, headerLength + dataLength);
     const contents = await fileSlice.arrayBuffer();
 
     const samples = new Int16Array(contents);
