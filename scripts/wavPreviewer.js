@@ -235,7 +235,7 @@ function drawPreviewWaveform (callback) {
 
     drawPreviewAxis(() => {
 
-        renderWaveform(sliceCanvas, waveformValues, startTime, callback);
+        renderWaveform(sliceCanvas, waveformValues, 0, startTime, callback);
 
     });
 
