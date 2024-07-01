@@ -10,18 +10,22 @@
 
 const wavCanvas = document.getElementById('waveform-canvas');
 
+const WAVEFORM_COLOURS_AGBR = [[0, 77, 153, 255], [0, 0, 0, 255], [0, 0, 0, 255]];
+const WAVEFORM_COLOURS_HEX = ['#004d99', '#000000', '#000000'];
+
 /**
  * Draw the waveform plot
  * @param {canvas} canvas Canvas to be drawn to
  * @param {number[]} data Absolute values of samples to be plotted. Either raw data or grouped into columns.
+ * @param {number} colourMapIndex Index of colour map
  * @param {number} startTime Time when render started
  * @param {function} callback Function called on completion
  */
-function renderRawWaveform (canvas, pointData, startTime, callback) {
+function renderRawWaveform (canvas, pointData, colourMapIndex, startTime, callback) {
 
     const ctx = canvas.getContext('2d');
 
-    ctx.strokeStyle = '#004d99';
+    ctx.strokeStyle = WAVEFORM_COLOURS_HEX[colourMapIndex];
     ctx.lineWidth = 1;
 
     ctx.beginPath();
@@ -59,10 +63,11 @@ function renderRawWaveform (canvas, pointData, startTime, callback) {
  * Draw the waveform plot
  * @param {canvas} canvas Canvas to be drawn to
  * @param {number[]} data Absolute values of samples to be plotted
+ * @param {number} colourMapIndex Index of colour map
  * @param {number} startTime Time when render started
  * @param {function} callback Function called on completion
  */
-function renderWaveform (canvas, data, startTime, callback) {
+function renderWaveform (canvas, data, colourMapIndex, startTime, callback) {
 
     const ctx = canvas.getContext('2d', {willReadFrequently: true});
 
@@ -85,10 +90,12 @@ function renderWaveform (canvas, data, startTime, callback) {
 
             const index = j * (WAV_PIXEL_WIDTH * 4) + i * 4;
 
-            pixels[index] = 0;
-            pixels[index + 1] = 77;
-            pixels[index + 2] = 153;
-            pixels[index + 3] = 255;
+            const colour = WAVEFORM_COLOURS_AGBR[colourMapIndex];
+
+            pixels[index] = colour[0];
+            pixels[index + 1] = colour[1];
+            pixels[index + 2] = colour[2];
+            pixels[index + 3] = colour[3];
 
         }
 
@@ -113,9 +120,10 @@ function renderWaveform (canvas, data, startTime, callback) {
  * @param {number} offset Offset from start of sample array to start rendering
  * @param {number} length Number of samples to render
  * @param {number} yZoom Amount to zoom in plot on y axis
+ * @param {number} colourMapIndex Index of colour map
  * @param {function} callback Function called on completion
  */
-function drawWaveform (samples, offset, length, yZoom, callback) {
+function drawWaveform (samples, offset, length, yZoom, colourMapIndex, callback) {
 
     const WAV_PIXEL_WIDTH = wavCanvas.width;
     const WAV_PIXEL_HEIGHT = wavCanvas.height;
@@ -177,7 +185,7 @@ function drawWaveform (samples, offset, length, yZoom, callback) {
 
         }
 
-        renderRawWaveform(wavCanvas, pointData, startTime, callback);
+        renderRawWaveform(wavCanvas, pointData, colourMapIndex, startTime, callback);
 
     } else {
 
@@ -217,7 +225,7 @@ function drawWaveform (samples, offset, length, yZoom, callback) {
 
         }
 
-        renderWaveform(wavCanvas, pointData, startTime, callback);
+        renderWaveform(wavCanvas, pointData, colourMapIndex, startTime, callback);
 
     }
 

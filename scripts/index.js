@@ -86,6 +86,7 @@ const settingsFileTimeLabel = document.getElementById('settings-file-time-label'
 const settingsDynamicColoursCheckbox = document.getElementById('settings-dynamic-colours-checkbox');
 const settingsVideoLineCheckbox = document.getElementById('settings-video-line-checkbox');
 const settingsVideoFixedFPSCheckbox = document.getElementById('settings-video-fixed-fps-checkbox');
+const settingsMonochromeSelect = document.getElementById('settings-monochrome-select');
 
 // Example file variables
 
@@ -202,6 +203,13 @@ let xAxisHeading = 'Time (S)';
 // Whether or not to dynamically generate a colour scheme for spectrograms
 
 let useDynamicColours = false;
+
+// Whether or not to use a monochrome colour palette
+
+const COLOUR_MAP_DEFAULT = 0;
+const COLOUR_MAP_MONOCHROME = 1;
+const COLOUR_MAP_INVERSE_MONOCHROME = 2;
+let colourMapIndex = COLOUR_MAP_DEFAULT;
 
 // File variables
 
@@ -1712,7 +1720,7 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
 
     const zoomLevel = (thresholdScaleIndex === THRESHOLD_SCALE_DECIBEL) ? getDecibelZoomY() : getZoomY();
 
-    drawWaveform(samples, offset, displayLength, zoomLevel, (waveformCompletionTime) => {
+    drawWaveform(samples, offset, displayLength, zoomLevel, colourMapIndex, (waveformCompletionTime) => {
 
         if (isInitialRender) {
 
@@ -1791,7 +1799,7 @@ function estimateRenderTime () {
  */
 function drawPlots (samples, isInitialRender) {
 
-    drawSpectrogram(processedSpectrumFrames, useDynamicColours ? spectrumMin : STATIC_COLOUR_MIN, useDynamicColours ? spectrumMax : STATIC_COLOUR_MAX, async (completionTime) => {
+    drawSpectrogram(processedSpectrumFrames, useDynamicColours ? spectrumMin : STATIC_COLOUR_MIN, useDynamicColours ? spectrumMax : STATIC_COLOUR_MAX, colourMapIndex, async (completionTime) => {
 
         resetCanvas(spectrogramThresholdCanvas);
         spectrogramLoadingSVG.style.display = 'none';
@@ -4931,11 +4939,13 @@ settingsApplyButton.addEventListener('click', () => {
 
     const changedUseFileTime = useFileTime !== settingsFileTimeCheckbox.checked;
     const changedUseDynamicColours = useDynamicColours !== settingsDynamicColoursCheckbox.checked;
+    const changedColourMap = colourMapIndex !== parseInt(settingsMonochromeSelect.value);
 
     useFileTime = settingsFileTimeCheckbox.checked;
     useDynamicColours = settingsDynamicColoursCheckbox.checked;
     videoLineEnabled = settingsVideoLineCheckbox.checked;
     fixedFpsEnabled = settingsVideoFixedFPSCheckbox.checked;
+    colourMapIndex = parseInt(settingsMonochromeSelect.value);
 
     // If setting has been changed, update the relevant UI
 
@@ -4946,7 +4956,7 @@ settingsApplyButton.addEventListener('click', () => {
 
     }
 
-    if (changedUseDynamicColours) {
+    if (changedUseDynamicColours || changedColourMap) {
 
         setTimeout(() => {
 
