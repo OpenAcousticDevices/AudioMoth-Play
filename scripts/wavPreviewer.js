@@ -554,8 +554,6 @@ function updateSliceSelection (seconds) {
     sliceSelectionLeftButton.disabled = (sliceSelection === 0 || pageSeconds === -30);
     sliceSelectionRightButton.disabled = (sliceSelection === finalPeriod || pageSeconds === HOUR_SECONDS - 30);
 
-    pageSelections[currentPage] = seconds;
-
 }
 
 /**
