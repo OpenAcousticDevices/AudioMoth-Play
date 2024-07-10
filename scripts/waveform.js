@@ -152,7 +152,7 @@ function drawWaveform (samples, offset, length, yZoom, colourMapIndex, callback)
 
     if (samplesPerPixel <= 1) {
 
-        console.log('Plotting raw sample data on waveform');
+        // console.log('Plotting raw sample data on waveform');
 
         const pointData = new Array((length * 2) + 2).fill(0);
 
@@ -189,7 +189,7 @@ function drawWaveform (samples, offset, length, yZoom, colourMapIndex, callback)
 
     } else {
 
-        console.log('Plotting max and min sample per pixel column on waveform');
+        // console.log('Plotting max and min sample per pixel column on waveform');
 
         // Array to store the max and min y for each x
 

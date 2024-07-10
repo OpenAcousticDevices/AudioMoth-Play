@@ -40,6 +40,7 @@ const slicePageRightButton = document.getElementById('slice-page-right-button');
 const slicePageSpan = document.getElementById('slice-page-span');
 
 const sliceSelectButton = document.getElementById('slice-select-button');
+const sliceCancelButton = document.getElementById('slice-close-button');
 
 // Function called when a slice is selected, either by clicking the select button or by double clicking the canvas
 
@@ -54,16 +55,19 @@ let previewLength, previewSampleRate;
 let waveformPages;
 let currentPage = 0;
 let pageCount = 1;
+let savedPage = 0;
 
 const HOUR_SECONDS = 3600;
 
 // Start of selected period in seconds
 
 let sliceSelection = 0;
+let savedSliceSelection = 0;
 
 // Selected positions for each page
 
 let pageSelections;
+let pageStarts;
 
 // Whether or not the loading process has been cancelled
 
@@ -249,8 +253,6 @@ function updatePreviewPage (newPage) {
 
     currentPage = newPage;
 
-    updateSliceSelection(pageSelections[currentPage]);
-
     slicePageLeftButton.disabled = (currentPage === 0);
     slicePageRightButton.disabled = (currentPage === waveformPages.length - 1);
 
@@ -351,10 +353,12 @@ async function loadPreview (fileHandler, header, callback, cancelCallback) {
     waveformPages = new Array(pageCount);
 
     pageSelections = new Array(pageCount);
+    pageStarts = new Array(pageCount);
 
     for (let i = 0; i < pageCount; i++) {
 
         pageSelections[i] = i * HOUR_SECONDS;
+        pageStarts[i] = i * HOUR_SECONDS;
 
     }
 
@@ -554,6 +558,8 @@ function updateSliceSelection (seconds) {
     sliceSelectionLeftButton.disabled = (sliceSelection === 0 || pageSeconds === -30);
     sliceSelectionRightButton.disabled = (sliceSelection === finalPeriod || pageSeconds === HOUR_SECONDS - 30);
 
+    pageSelections[currentPage] = seconds;
+
 }
 
 /**
@@ -642,49 +648,11 @@ sliceSelectionCanvas.addEventListener('mousemove', (e) => {
 
 });
 
-/**
- * Add functionality to a button which runs a function every delay ms while it is held
- * @param {Element} button Button to apply functionality to
- * @param {number} delay Amount of time between each firing of the action
- * @param {function} action Function to be run every delay ms
- */
-function holdButton (button, delay, action) {
-
-    let t;
-
-    const repeat = () => {
-
-        if (button.disabled) {
-
-            clearTimeout(t);
-            return;
-
-        }
-
-        action();
-        t = setTimeout(repeat, delay);
-
-    };
-
-    button.addEventListener('mousedown', () => {
-
-        repeat();
-
-    });
-
-    button.addEventListener('mouseup', () => {
-
-        clearTimeout(t);
-
-    });
-
-}
-
 function moveSliceSelectionLeft () {
 
     updateSliceSelection(sliceSelection - 30);
 
-    if (sliceSelection - 30 + 30 < currentPage * HOUR_SECONDS) {
+    if (sliceSelection < currentPage * HOUR_SECONDS) {
 
         updatePreviewPage(currentPage - 1);
 
@@ -698,7 +666,11 @@ function moveSliceSelectionRight () {
 
     updateSliceSelection(sliceSelection + 30);
 
-    if (sliceSelection + 30 + 30 > (currentPage + 1) * HOUR_SECONDS) {
+    // Check if the end of the newly moved slice crosses over to the new page
+
+    const endOfSlice = sliceSelection + 30;
+
+    if (endOfSlice > (currentPage + 1) * HOUR_SECONDS) {
 
         updatePreviewPage(currentPage + 1);
 
@@ -708,33 +680,11 @@ function moveSliceSelectionRight () {
 
 }
 
-holdButton(sliceSelectionLeftButton, 300, () => {
-
-    // Add 30 seconds to check if middle overlaps start of page
-
-    if (sliceSelection - 30 + 30 >= currentPage * HOUR_SECONDS) {
-
-        updateSliceSelection(sliceSelection - 30);
-
-    }
-
-});
-
-holdButton(sliceSelectionRightButton, 300, () => {
-
-    // Selection is recorded from start of 60 second period, so add 30 seconds to check if middle overlaps end of page
-
-    if (sliceSelection + 30 + 30 <= (currentPage + 1) * HOUR_SECONDS) {
-
-        updateSliceSelection(sliceSelection + 30);
-
-    }
-
-});
-
 slicePageLeftButton.addEventListener('click', () => {
 
     updatePreviewPage(currentPage - 1);
+
+    updateSliceSelection(pageStarts[currentPage]);
 
     drawPreviewWaveform();
 
@@ -743,6 +693,8 @@ slicePageLeftButton.addEventListener('click', () => {
 slicePageRightButton.addEventListener('click', () => {
 
     updatePreviewPage(currentPage + 1);
+
+    updateSliceSelection(pageStarts[currentPage]);
 
     drawPreviewWaveform();
 
@@ -755,6 +707,26 @@ slicePageRightButton.addEventListener('click', () => {
 function setSliceSelectButtonEventHandler (eventHandler) {
 
     sliceSelectEventHandler = eventHandler;
+
+}
+
+/**
+ * Set function used by cancel button
+ * @param {function} eventHandler Cancel function
+ */
+function setSliceCancelButtonListener (eventHandler) {
+
+    sliceCancelButton.addEventListener('click', () => {
+
+        currentPage = savedPage;
+        updatePreviewPage(currentPage);
+        drawPreviewWaveform();
+
+        updateSliceSelection(savedSliceSelection);
+
+        eventHandler();
+
+    });
 
 }
 
@@ -784,6 +756,13 @@ sliceLoadingCancelButton.addEventListener('click', () => {
 function sliceClickEvent () {
 
     usePreviewSelection(false);
+
+}
+
+function saveCurrentSlicePosition () {
+
+    savedPage = currentPage;
+    savedSliceSelection = sliceSelection;
 
 }
 

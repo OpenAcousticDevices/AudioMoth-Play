@@ -9,7 +9,7 @@
 /* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */
 
 /* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader */
-/* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler, usePreviewSelection, moveSliceSelectionLeft, moveSliceSelectionRight */
+/* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler, setSliceCancelButtonListener, saveCurrentSlicePosition, usePreviewSelection, moveSliceSelectionLeft, moveSliceSelectionRight */
 /* global applyLowPassFilter, applyHighPassFilter, applyBandPassFilter, FILTER_NONE, FILTER_LOW, FILTER_BAND, FILTER_HIGH, applyAmplitudeThreshold */
 /* global playAudio, stopAudio, getTimestamp, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_ALL, AMPLITUDE_THRESHOLD_BUFFER_LENGTH, createAudioContext */
 /* global applyGoertzelFilter, drawGoertzelPlot, applyGoertzelThreshold, GOERTZEL_THRESHOLD_BUFFER_LENGTH, generateHammingValues */
@@ -70,7 +70,6 @@ const commentSpan = document.getElementById('comment-span');
 // Recording slice UI
 const sliceLoadingBorderSVG = document.getElementById('slice-loading-border-svg');
 const sliceBorderSVG = document.getElementById('slice-border-svg');
-const sliceCloseButton = document.getElementById('slice-close-button');
 const sliceReselectSpan = document.getElementById('slice-reselect-span');
 const sliceReselectLink = document.getElementById('slice-reselect-link');
 let showReselectLink = false;
@@ -654,6 +653,16 @@ function drawAxisLabels () {
     }
 
     const overallLengthSeconds = overallLength / currentSampleRate;
+
+    // Work out the true range being displayed
+
+    const startSeconds = (offset / currentSampleRate) + timeLabelOffset;
+    const endSeconds = startSeconds + (displayLength / currentSampleRate);
+
+    const startSecondsFormatted = formatTimeLabel(startSeconds, overallLengthSeconds, xLabelDecimalPlaces, useFileTime && fileTimestamp > 0 && !isTWAV());
+    const endSecondsFormatted = formatTimeLabel(endSeconds, overallLengthSeconds, xLabelDecimalPlaces, useFileTime && fileTimestamp > 0 && !isTWAV());
+
+    console.log('Displaying:', startSecondsFormatted, '-', endSecondsFormatted);
 
     while (label <= currentSampleCount) {
 
@@ -1710,7 +1719,7 @@ function reenableUI () {
  */
 function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) {
 
-    console.log('Drawing waveform');
+    // console.log('Drawing waveform');
 
     resetCanvas(waveformCanvas);
 
@@ -1887,7 +1896,7 @@ function processContents (samples, isInitialRender, renderPlots) {
 
     setTimeout(() => {
 
-        console.log('Calculating spectrogram frames');
+        // console.log('Calculating spectrogram frames');
 
         // If the resulting frames aren't for rendering or the colour map hasn't been calculated yet, use all the samples
 
@@ -1948,6 +1957,9 @@ function resetTransformations () {
 
 /**
  * Shift plot along if zooming out at current location would create a gap at the end of the plot
+ * Also, if a displayed period can't be displayed in a single slice, push it into a valid slice
+ * For example, 0:55 - 1:25 won't fit in the slice 0:30 - 1:30 or 1:00 - 2:00. So it has to be nudged back inside a valid slice
+ * These periods which can't fit into a single slice will always be longer than 30 seconds as they must cross two 30 second barriers simultaneously
  */
 function removeEndGap () {
 
@@ -1955,7 +1967,7 @@ function removeEndGap () {
 
     const gapLength = sampleEnd - sampleCount;
 
-    if (gapLength > 0) {
+    if (gapLength > 0 && displayLength < 30 * sampleRate) {
 
         offset -= gapLength;
 
@@ -2614,7 +2626,7 @@ async function updatePlots (resetColourMap, updateSpectrogram, updateThresholded
 
     if (resetColourMap) {
 
-        console.log('Resetting colour map');
+        // console.log('Resetting colour map');
 
         spectrumMin = Number.MAX_SAFE_INTEGER;
         spectrumMax = Number.MIN_SAFE_INTEGER;
@@ -2732,7 +2744,7 @@ function processReadResult (result, updateSampleRate, callback) {
 
     if (fileTimestamp === -1) {
 
-        console.log('Checking file name for timestamp');
+        // console.log('Checking file name for timestamp');
 
         const timestampRegexResult = TIMESTAMP_REGEX.exec(loadedFileName);
 
@@ -2803,7 +2815,7 @@ async function readFromFile (exampleFilePath, callback) {
     timeLabelOffset = 0;
     overallFileLengthSamples = 0;
 
-    console.log('Reading samples');
+    // console.log('Reading samples');
 
     let result;
 
@@ -2885,6 +2897,8 @@ async function readFromFile (exampleFilePath, callback) {
 
                     hideSliceLoadingUI();
 
+                    saveCurrentSlicePosition();
+
                 });
 
             }, cancelPreview);
@@ -2942,7 +2956,7 @@ setSliceSelectButtonEventHandler(async (selection, length, setTransformations) =
 
 });
 
-sliceCloseButton.addEventListener('click', cancelPreview);
+setSliceCancelButtonListener(cancelPreview);
 
 sliceReselectLink.addEventListener('click', () => {
 
@@ -2951,6 +2965,8 @@ sliceReselectLink.addEventListener('click', () => {
     displaySpans(1);
 
     showSliceModal();
+
+    saveCurrentSlicePosition();
 
 });
 
@@ -3200,7 +3216,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         // Reset values used to calculate colour map
 
-        console.log('Resetting colour map');
+        // console.log('Resetting colour map');
 
         spectrumMin = Number.MAX_SAFE_INTEGER;
         spectrumMax = Number.MIN_SAFE_INTEGER;
@@ -3952,7 +3968,7 @@ addSampleRateUIListeners(() => {
 
     // Reset colour map here, rather than as part of updatePlots() so the max and min don't use the possibly filtered values
 
-    console.log('Resetting colour map');
+    // console.log('Resetting colour map');
 
     spectrumMin = Number.MAX_SAFE_INTEGER;
     spectrumMax = Number.MIN_SAFE_INTEGER;
