@@ -2524,7 +2524,17 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
             bandPassFilterValue1 = Math.max(...bandPassFilterSlider.getValue());
             console.log('Applying band-pass filter between', bandPassFilterValue0, 'and', bandPassFilterValue1, 'Hz');
 
-            applyBandPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), bandPassFilterValue0, bandPassFilterValue1);
+            if (bandPassFilterValue1 < sampleRate / 2) {
+
+                applyBandPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), bandPassFilterValue0, bandPassFilterValue1);
+
+            } else {
+
+                console.log('Applying high-pass filter as band-pass top value = Nyquist');
+
+                applyHighPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), bandPassFilterValue1);
+
+            }
 
             break;
 

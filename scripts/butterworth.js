@@ -258,16 +258,6 @@ function applyBandPassFilter (input, inputLength, output, sampleRate, freq1, fre
 
     }
 
-    if (freq2 >= sampleRate / 2) {
-
-        console.log('Applying high-pass filter as band-pass top value = Nyquist');
-
-        applyHighPassFilter(input, inputLength, output, sampleRate, freq1);
-
-        return;
-
-    }
-
     const filterCoefficients = designFilter(BUTTERWORTH_FILTER_BAND, sampleRate, freq1, freq2);
 
     const filter = {
