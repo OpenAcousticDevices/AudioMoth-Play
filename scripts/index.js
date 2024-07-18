@@ -2532,7 +2532,7 @@ function getRenderSamples (reapplyFilter, updateThresholdedSampleArray, recalcul
 
                 console.log('Applying high-pass filter as band-pass top value = Nyquist');
 
-                applyHighPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), bandPassFilterValue1);
+                applyHighPassFilter(downsampledUnfilteredSamples, sampleCount, filteredSamples, getSampleRate(), bandPassFilterValue0);
 
             }
 
