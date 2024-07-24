@@ -4,6 +4,7 @@
  * June 2021
  *****************************************************************************/
 
+/* global VERSION */
 /* global XMLHttpRequest, bootstrap */
 /* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, TIMESTAMP_REGEX, SECONDS_IN_DAY */
 /* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */
@@ -4996,107 +4997,14 @@ settingsApplyButton.addEventListener('click', () => {
 
 });
 
-// Start zoom and offset level on default values
-
-resetTransformations();
-updateNavigationUI();
-
-// Add filler axis labels
-
-drawAxisLabels();
-drawAxisHeadings();
-drawBorders();
-
-// Prepare threshold UI
-
-updateThresholdTypePlaybackUI();
-updateThresholdUI();
-
-// Prepare filter UI
-// First 2 arguments only used in Config app
-
-prepareUI(null, null, () => {
-
-    // If a Goertzel value has been changed, don't rescale the values to defaults as sample rate changes
-    const passFiltersObserved = getPassFiltersObserved();
-    const centreObserved = getCentreObserved();
-    sampleRateChange(!passFiltersObserved, !centreObserved, getSampleRate());
-    handleFilterChange();
-
-});
-
-updateFilterUI();
-updateFilterLabel();
-
-// Disable controls until file is loaded
-
-disableUI(true);
-
-// Draw loading SVG texts
-
-drawLoadingImage(waveformLoadingSVG);
-drawLoadingImage(spectrogramLoadingSVG);
-
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-
-const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-
-disabledFileButton.style.display = isChrome ? 'none' : '';
-fileButton.style.display = isChrome ? '' : 'none';
-
-if (!isChrome) {
-
-    fileSelectionTitleDiv.classList.add('grey');
-    fileSelectionTitleSpan.style.display = 'none';
-
-    if (urlParams.get('app')) {
-
-        browserErrorSpanApp.style.display = '';
-
-    } else {
-
-        browserErrorSpan.style.display = '';
-
-    }
-
-}
-
-// Check for dev mode
-
-instructionsContent.style.display = '';
-
-if (urlParams.get('dev')) {
-
-    loadingSpan.style.display = 'none';
-    spectrogramLoadingSVG.style.display = 'none';
-    waveformLoadingSVG.style.display = 'none';
-
-    fileButton.disabled = false;
-
-} else if (urlParams.get('app')) {
-
-    console.log('APP MODE - Hiding instructions and link to app mode');
-    instructionsContent.style.display = 'none';
-    launchAppLink.style.display = 'none';
-
-    loadingSpan.style.display = 'none';
-    spectrogramLoadingSVG.style.display = 'none';
-    waveformLoadingSVG.style.display = 'none';
-
-    fileButton.disabled = false;
-
-} else {
-
-    loadExampleFiles();
-
-}
-
 // Each new window needs a unique name so multiple windows can be opened
 
 let popupCount = 0;
 
 launchAppLink.addEventListener('click', () => {
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
 
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
@@ -5111,6 +5019,146 @@ launchAppLink.addEventListener('click', () => {
     } else {
 
         window.open('https://play.openacousticdevices.info/?app=true', 'window' + popupCount++, features);
+
+    }
+
+});
+
+function loadPage () {
+
+    // Start zoom and offset level on default values
+
+    resetTransformations();
+    updateNavigationUI();
+
+    // Add filler axis labels
+
+    drawAxisLabels();
+    drawAxisHeadings();
+    drawBorders();
+
+    // Prepare threshold UI
+
+    updateThresholdTypePlaybackUI();
+    updateThresholdUI();
+
+    // Prepare filter UI
+    // First 2 arguments only used in Config app
+
+    prepareUI(null, null, () => {
+
+        // If a Goertzel value has been changed, don't rescale the values to defaults as sample rate changes
+        const passFiltersObserved = getPassFiltersObserved();
+        const centreObserved = getCentreObserved();
+        sampleRateChange(!passFiltersObserved, !centreObserved, getSampleRate());
+        handleFilterChange();
+
+    });
+
+    updateFilterUI();
+    updateFilterLabel();
+
+    // Disable controls until file is loaded
+
+    disableUI(true);
+
+    // Draw loading SVG texts
+
+    drawLoadingImage(waveformLoadingSVG);
+    drawLoadingImage(spectrogramLoadingSVG);
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+
+    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+
+    disabledFileButton.style.display = isChrome ? 'none' : '';
+    fileButton.style.display = isChrome ? '' : 'none';
+
+    if (!isChrome) {
+
+        fileSelectionTitleDiv.classList.add('grey');
+        fileSelectionTitleSpan.style.display = 'none';
+
+        if (urlParams.get('app')) {
+
+            browserErrorSpanApp.style.display = '';
+
+        } else {
+
+            browserErrorSpan.style.display = '';
+
+        }
+
+    }
+
+    // Check for dev mode
+
+    instructionsContent.style.display = '';
+
+    if (urlParams.get('dev')) {
+
+        loadingSpan.style.display = 'none';
+        spectrogramLoadingSVG.style.display = 'none';
+        waveformLoadingSVG.style.display = 'none';
+
+        fileButton.disabled = false;
+
+    } else if (urlParams.get('app')) {
+
+        console.log('APP MODE - Hiding instructions and link to app mode');
+        instructionsContent.style.display = 'none';
+        launchAppLink.style.display = 'none';
+
+        loadingSpan.style.display = 'none';
+        spectrogramLoadingSVG.style.display = 'none';
+        waveformLoadingSVG.style.display = 'none';
+
+        fileButton.disabled = false;
+
+    } else {
+
+        loadExampleFiles();
+
+    }
+
+}
+
+window.addEventListener('load', () => {
+
+    // Register service worker
+
+    if (!('serviceWorker' in navigator)) {
+
+        console.log('Service workers not supported');
+
+        loadPage();
+
+    } else {
+
+        // Ensure service worker is updated
+
+        navigator.serviceWorker.register('./worker.js?v=' + VERSION).then(
+            () => {
+
+                console.log('Service worker registered');
+
+            },
+            (err) => {
+
+                console.error('Service worker registration failed', err);
+
+            }
+
+        );
+
+        navigator.serviceWorker.ready.then(() => {
+
+            console.log('Ready');
+
+            loadPage();
+
+        });
 
     }
 
