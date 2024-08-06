@@ -3372,7 +3372,15 @@ fileButton.addEventListener('click', () => {
 
     if (!drawing && !playing) {
 
-        loadFile();
+        try {
+
+            loadFile();
+
+        } catch (error) {
+
+            showErrorDisplay('File could not be opened.');
+
+        }
 
     }
 
