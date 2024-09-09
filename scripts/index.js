@@ -9,7 +9,7 @@
 /* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, TIMESTAMP_REGEX, SECONDS_IN_DAY */
 /* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */
 
-/* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader */
+/* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader, readGuano */
 /* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler, setSliceCancelButtonListener, saveCurrentSlicePosition, usePreviewSelection, moveSliceSelectionLeft, moveSliceSelectionRight */
 /* global applyLowPassFilter, applyHighPassFilter, applyBandPassFilter, FILTER_NONE, FILTER_LOW, FILTER_BAND, FILTER_HIGH, applyAmplitudeThreshold */
 /* global playAudio, stopAudio, getTimestamp, PLAYBACK_MODE_SKIP, PLAYBACK_MODE_ALL, AMPLITUDE_THRESHOLD_BUFFER_LENGTH, createAudioContext */
@@ -44,6 +44,10 @@ const launchAppLink = document.getElementById('launch-app-link');
 const FILLER_SAMPLE_RATE = 384000;
 const FILLER_SAMPLE_COUNT = FILLER_SAMPLE_RATE * 60;
 
+// Body element
+
+const body = document.getElementsByTagName('body')[0];
+
 // Error display elements
 
 const errorSpan = document.getElementById('error-span');
@@ -65,8 +69,19 @@ const loadingSpan = document.getElementById('loading-span');
 let isExampleFile = true;
 
 // File information modal
+const informationModalElem = document.getElementById('information-modal');
+const informationModal = new bootstrap.Modal(informationModalElem, {
+    backdrop: 'static',
+    keyboard: false
+});
+const informationModalDialog = document.getElementById('information-modal-dialog');
+const informationModalCloseButton = document.getElementById('information-modal-close-button');
 const artistSpan = document.getElementById('artist-span');
 const commentSpan = document.getElementById('comment-span');
+const guanoHolder = document.getElementById('guano-holder');
+
+const DEFAULT_INFORMATION_MODAL_WIDTH = 400;
+const INFORMATION_MODAL_PADDING = 40;
 
 // Recording slice UI
 const sliceLoadingBorderSVG = document.getElementById('slice-loading-border-svg');
@@ -226,6 +241,7 @@ let firstFile = true;
 
 let artist = '';
 let comment = '';
+let possibleGuano = false;
 
 let resampledFile = false;
 
@@ -372,7 +388,7 @@ function getFilterType () {
  * 2 - Error
  * @param {number} index Which span to show
  */
-function displaySpans (index) {
+async function displaySpans (index) {
 
     if (resampledFile) {
 
@@ -399,10 +415,91 @@ function displaySpans (index) {
 
         } else {
 
+            // Find the AudioMoth recording line and make sure it fits in the window
+
+            const recordedRegex0 = /^Recorded at (\d\d:\d\d:\d\d \d\d\/\d\d\/\d{4}) \(UTC([-|+]\d+)?:?(\d\d)?\) by AudioMoth [A-F0-9]{16}/;
+            const found0 = comment.match(recordedRegex0);
+            const recordedRegex1 = /^Recorded at (\d\d:\d\d:\d\d \d\d\/\d\d\/\d{4}) \(UTC([-|+]\d+)?:?(\d\d)?\) during deployment [A-F0-9]{16}/;
+            const found1 = comment.match(recordedRegex1);
+
+            let line = found0 ? found0[0] : '';
+            line = found1 ? found1[0] : line;
+
+            // Create an offscreen canvas to measure
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const computedStyle = window.getComputedStyle(fileSpan);
+            const font = `${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+            ctx.font = font;
+
+            const recordingTextWidth = ctx.measureText(line).width;
+
+            let newModalWidth = Math.max(DEFAULT_INFORMATION_MODAL_WIDTH, recordingTextWidth + INFORMATION_MODAL_PADDING);
+
+            // If GUANO data exists, check the widest line fits in the window
+
+            let guanoData;
+
+            guanoHolder.innerHTML = '';
+
+            if (possibleGuano) {
+
+                const result = await readGuano(fileHandler);
+
+                if (result.success) {
+
+                    guanoData = result.guano;
+
+                    let longestLineWidth = 0;
+
+                    const boldFont = 'bold ' + font;
+
+                    for (let i = 0; i < guanoData.length; i++) {
+
+                        const titleSpan = document.createElement('span');
+                        titleSpan.style = 'font-weight: bold; display: inline;';
+                        titleSpan.innerText = guanoData[i][0] + ': ';
+
+                        guanoHolder.appendChild(titleSpan);
+
+                        const valueSpan = document.createElement('span');
+                        valueSpan.style = 'display: inline;';
+                        valueSpan.innerText = guanoData[i][1];
+
+                        guanoHolder.appendChild(valueSpan);
+
+                        const breakElement = document.createElement('br');
+
+                        guanoHolder.appendChild(breakElement);
+
+                        ctx.font = boldFont;
+                        const titleWidth = ctx.measureText(guanoData[i][0] + ': ').width;
+
+                        ctx.font = font;
+                        const valueWidth = ctx.measureText(guanoData[i][1]).width;
+
+                        const totalWidth = titleWidth + valueWidth;
+
+                        longestLineWidth = Math.max(longestLineWidth, totalWidth);
+
+                    }
+
+                    newModalWidth = Math.max(newModalWidth, longestLineWidth + INFORMATION_MODAL_PADDING);
+
+                }
+
+            }
+
+            informationModalDialog.style = `min-width: ${newModalWidth}px !important; max-width: ${newModalWidth}px !important;`;
+
+            guanoHolder.style.display = !guanoData ? 'none' : '';
+
             artistSpan.innerText = artist;
             commentSpan.innerText = comment;
 
-            if (artist !== '' || comment !== '') fileInformationLink.style.display = '';
+            if (artist !== '' || comment !== '' || guanoData) fileInformationLink.style.display = '';
 
             artistSpan.style.display = (artist === '') ? 'none' : '';
             commentSpan.style.display = (comment === '') ? 'none' : '';
@@ -3158,6 +3255,10 @@ async function loadFile (exampleFilePath, exampleName) {
 
         comment = result.comment;
 
+        // Collect possibility of GUANO data
+
+        possibleGuano = result.possibleGuano;
+
         // Reset threshold arrays
 
         samplesAboveThreshold = new Array(Math.ceil(samples.length / AMPLITUDE_THRESHOLD_BUFFER_LENGTH));
@@ -5029,6 +5130,24 @@ launchAppLink.addEventListener('click', () => {
         window.open('https://play.openacousticdevices.info/?app=true', 'window' + popupCount++, features);
 
     }
+
+});
+
+// Enable/disable dragging to select when the information modal is open/closed
+
+fileInformationLink.addEventListener('click', (e) => {
+
+    e.preventDefault();
+
+    body.classList.remove('body-no-select');
+
+    informationModal.show();
+
+});
+
+informationModalCloseButton.addEventListener('click', () => {
+
+    body.classList.add('body-no-select');
 
 });
 

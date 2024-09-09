@@ -229,6 +229,8 @@ function readGeneralHeader (buffer, fileSize) {
 
             } else if (id === 'data') {
 
+                let possibleGuano = false;
+
                 header.data = {id: id, size: size};
 
                 header.size = state.index;
@@ -245,11 +247,14 @@ function readGeneralHeader (buffer, fileSize) {
 
                     console.log('WAVE READER: DATA chunk is followed by additional header information.');
 
+                    possibleGuano = true;
+
                 }
 
                 return {
                     success: true,
-                    header: header
+                    header: header,
+                    possibleGuano
                 };
 
             } else if (id !== 'LIST') {
@@ -373,14 +378,24 @@ function readAudioMothHeader (buffer, fileSize) {
 
         /* Set the header size and check DATA chunk size */
 
+        let possibleGuano = false;
+
         header.size = state.index;
 
-        if (header.data.size + header.size !== fileSize) {
+        if (header.data.size + header.size > fileSize) {
 
             return {
                 success: false,
-                error: 'DATA chunk size does not match file size.'
+                error: 'DATA chunk size exceeds file size.'
             };
+
+        }
+
+        if (header.data.size + header.size < fileSize) {
+
+            console.log('WAVE READER: DATA chunk is followed by additional header information.');
+
+            possibleGuano = true;
 
         }
 
@@ -388,7 +403,8 @@ function readAudioMothHeader (buffer, fileSize) {
 
         return {
             success: true,
-            header: header
+            header: header,
+            possibleGuano: possibleGuano
         };
 
     } catch (e) {
@@ -404,7 +420,7 @@ function readAudioMothHeader (buffer, fileSize) {
 
 }
 
-function readSamples (header, samples, originalDataSize) {
+function readSamples (header, samples, originalDataSize, possibleGuano) {
 
     const sampleRate = header.wavFormat.samplesPerSecond;
 
@@ -455,6 +471,7 @@ function readSamples (header, samples, originalDataSize) {
         sampleRate: resampled ? resampleRate : sampleRate,
         resampled: resampled,
         comment: header.icmt ? header.icmt.comment : '',
+        possibleGuano: possibleGuano,
         artist: header.iart ? header.iart.artist : '',
         originalDataSize: originalDataSize,
         originalSampleRate: sampleRate
@@ -507,7 +524,7 @@ function readExampleWav (contents) {
 
     const samples = new Int16Array(contents, header.size, sampleCount);
 
-    return readSamples(header, samples, header.data.size);
+    return readSamples(header, samples, header.data.size, false);
 
 }
 
@@ -559,6 +576,8 @@ async function readWav (fileHandler, start, length) {
 
     const headerLength = header.size;
 
+    const possibleGuano = headerResult.possibleGuano;
+
     /* Check different sizes */
 
     const dataLength = header.data.size;
@@ -585,7 +604,7 @@ async function readWav (fileHandler, start, length) {
 
     const samples = new Int16Array(contents);
 
-    return readSamples(header, samples, header.data.size);
+    return readSamples(header, samples, header.data.size, possibleGuano);
 
 }
 
@@ -599,5 +618,102 @@ async function checkHeader (fileHandler) {
     const buffer = await blob.arrayBuffer();
 
     return readGeneralHeader(buffer, fileSize);
+
+}
+
+async function readGuano (fileHandler) {
+
+    let file, fileSize;
+
+    try {
+
+        file = await fileHandler.getFile();
+        fileSize = file.size;
+
+    } catch (e) {
+
+        return {
+            success: false,
+            error: 'Could not read input file.'
+        };
+
+    }
+
+    if (fileSize === 0) {
+
+        return {
+            success: false,
+            error: 'Input file has zero size.'
+        };
+
+    }
+
+    try {
+
+        /* Check header for DATA chunk */
+
+        const headerBlob = file.slice(0, MAXIMUM_LENGTH_OF_WAV_HEADER);
+
+        const headerBuffer = await headerBlob.arrayBuffer();
+
+        let state = {buffer: headerBuffer, index: 0};
+
+        readChunk(state, 'RIFF');
+
+        readID(state, 'WAVE');
+
+        let size = 0;
+
+        while (true) {
+
+            const id = readString(state, RIFF_ID_LENGTH);
+
+            size = readUInt32LE(state);
+
+            if (id === 'data') break;
+
+            state.index += size;
+
+        }
+
+        /* Check for GUANO chunk after DATA chunk */
+
+        const startBytes = state.index + size;
+
+        const guanoBlob = file.slice(startBytes, startBytes + MAXIMUM_LENGTH_OF_WAV_HEADER);
+
+        const guanoBuffer = await guanoBlob.arrayBuffer();
+
+        state = {buffer: guanoBuffer, index: 0};
+
+        const guanoChunk = readChunk(state, 'guan');
+
+        /* Read GUANO data */
+
+        const guano = [];
+
+        const lines = readString(state, guanoChunk.size).split('\n');
+
+        for (let i = 0; i < lines.length; i += 1) {
+
+            let [first, ...rest] = lines[i].split(':');
+
+            guano.push([first, rest.join(':')]);
+
+        }
+
+        return {
+            success: true,
+            guano: guano
+        };
+
+    } catch (e) {
+
+        return {
+            success: false,
+            error: 'No GUANO data found.'
+        };
+
+    }
 
 }

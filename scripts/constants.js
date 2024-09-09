@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 // TODO: Update this with changes, along with the version in worker.js
-const VERSION = 1;
+const VERSION = 2;
 
 /* Regex used to extract timestamp from header comment */
 

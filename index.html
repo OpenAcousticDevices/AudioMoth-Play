@@ -16,7 +16,7 @@
         <script src="scripts/external/bootstrap.bundle.min.js"></script>
         <script src="scripts/external/bootstrap-slider.min.js"></script>
     </head>
-    <body style="font-size: 10pt;">
+    <body class="body-no-select" style="font-size: 10pt;">
         <div class="container-fluid" style="padding: 11px; margin-left: 0px; margin-right: 0px;">
 
             <!-- Title -->
@@ -46,7 +46,7 @@
                     <button class="btn btn-primary" id="disabled-file-button" style="vertical-align: middle;" disabled>Select File</button>
                     <span id="file-span" style="margin-left: 10px; vertical-align: middle; display: none;"></span>
                     <span id="slice-reselect-span" style="margin-left: 2px; vertical-align: middle; display: none;">(<a href="#" id="slice-reselect-link">00:00:00 - 00:00:00</a>)</span>
-                    <a href="#" id="file-information-link" style="margin-left: 10px; vertical-align: middle; display: none;" data-toggle="modal" data-target="#comment-modal">Show file information</a>
+                    <a href="#" id="file-information-link" style="margin-left: 10px; vertical-align: middle; display: none;">Show file information</a>
                     <span class="loading" id="loading-span" style="margin-left: 10px; vertical-align: middle;">Loading</span>
                     <span id="resampled-span" style="color: blue; vertical-align: middle; margin-left: 10px; display: none;"></span>
                     <span id="error-span" style="color: red; vertical-align: middle; margin-left: 10px; display: none;"></span>
@@ -789,18 +789,19 @@
                 </div>
             </div>
 
-            <div class="modal fade" id="comment-modal" tabindex="-1" role="dialog" aria-labelledby="commentModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
+            <div class="modal fade" id="information-modal" tabindex="-1" role="dialog" aria-labelledby="commentModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document" id="information-modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                         <h5 class="modal-title" id="commentModalLabel">File Information</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="information-modal-close-button">
                             <span aria-hidden="true">&times;</span>
                         </button>
                         </div>
                         <div class="modal-body" id="comment-text">
-                            <span id="artist-span" style="margin-bottom: 5px; float: left; clear: left;">AudioMoth</span>
-                            <span id="comment-span" style="float: left; clear: left;">-</span>
+                            <span id="artist-span" style="margin-bottom: 5px; float: left; clear: left; font-weight: bold;">AudioMoth</span>
+                            <span id="comment-span" style="float: left; clear: left; margin-bottom: 10px;">-</span>
+                            <div id="guano-holder" style="float: left; clear: left;"></div>
                         </div>
                     </div>
                 </div>
