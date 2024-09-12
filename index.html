@@ -46,6 +46,7 @@
                     <button class="btn btn-primary" id="disabled-file-button" style="vertical-align: middle;" disabled>Select File</button>
                     <span id="file-span" style="margin-left: 10px; vertical-align: middle; display: none;"></span>
                     <span id="slice-reselect-span" style="margin-left: 2px; vertical-align: middle; display: none;">(<a href="#" id="slice-reselect-link">00:00:00 - 00:00:00</a>)</span>
+                    <a href="#" id="file-information-link" style="margin-left: 10px; vertical-align: middle; display: none;" data-toggle="modal" data-target="#information-modal">Show file information</a>
                     <a href="#" id="file-information-link" style="margin-left: 10px; vertical-align: middle; display: none;">Show file information</a>
                     <span class="loading" id="loading-span" style="margin-left: 10px; vertical-align: middle;">Loading</span>
                     <span id="resampled-span" style="color: blue; vertical-align: middle; margin-left: 10px; display: none;"></span>
@@ -802,6 +803,10 @@
                             <span id="artist-span" style="margin-bottom: 5px; float: left; clear: left; font-weight: bold;">AudioMoth</span>
                             <span id="comment-span" style="float: left; clear: left; margin-bottom: 10px;">-</span>
                             <div id="guano-holder" style="float: left; clear: left;"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" id="information-download-button">Download</button>
+                            <button type="button" class="btn btn-primary" id="information-clipboard-button">Copy to Clipboard</button>
                         </div>
                     </div>
                 </div>

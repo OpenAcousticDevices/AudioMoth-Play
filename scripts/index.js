@@ -44,10 +44,6 @@ const launchAppLink = document.getElementById('launch-app-link');
 const FILLER_SAMPLE_RATE = 384000;
 const FILLER_SAMPLE_COUNT = FILLER_SAMPLE_RATE * 60;
 
-// Body element
-
-const body = document.getElementsByTagName('body')[0];
-
 // Error display elements
 
 const errorSpan = document.getElementById('error-span');
@@ -69,16 +65,12 @@ const loadingSpan = document.getElementById('loading-span');
 let isExampleFile = true;
 
 // File information modal
-const informationModalElem = document.getElementById('information-modal');
-const informationModal = new bootstrap.Modal(informationModalElem, {
-    backdrop: 'static',
-    keyboard: false
-});
 const informationModalDialog = document.getElementById('information-modal-dialog');
-const informationModalCloseButton = document.getElementById('information-modal-close-button');
 const artistSpan = document.getElementById('artist-span');
 const commentSpan = document.getElementById('comment-span');
 const guanoHolder = document.getElementById('guano-holder');
+const informationDownloadButton = document.getElementById('information-download-button');
+const informationClipboardButton = document.getElementById('information-clipboard-button');
 
 const DEFAULT_INFORMATION_MODAL_WIDTH = 400;
 const INFORMATION_MODAL_PADDING = 40;
@@ -242,6 +234,7 @@ let firstFile = true;
 let artist = '';
 let comment = '';
 let possibleGuano = false;
+let guanoData = [];
 
 let resampledFile = false;
 
@@ -440,7 +433,7 @@ async function displaySpans (index) {
 
             // If GUANO data exists, check the widest line fits in the window
 
-            let guanoData;
+            guanoData = [];
 
             guanoHolder.innerHTML = '';
 
@@ -504,6 +497,9 @@ async function displaySpans (index) {
             artistSpan.style.display = (artist === '') ? 'none' : '';
             commentSpan.style.display = (comment === '') ? 'none' : '';
 
+            informationDownloadButton.disabled = artist === '';
+            informationClipboardButton.disabled = artist === '';
+
         }
 
         sliceReselectSpan.style.display = showReselectLink ? '' : 'none';
@@ -532,6 +528,47 @@ async function displaySpans (index) {
     }
 
 }
+
+function getInformationString () {
+
+    let str = '';
+
+    str += artist + '\n';
+    str += comment + '\n';
+
+    for (let i = 0; i < guanoData.length; i++) {
+
+        str += guanoData[i][0] + ': ' + guanoData[i][1] + '\n';
+
+    }
+
+    return str;
+
+}
+
+informationDownloadButton.addEventListener('click', () => {
+
+    const downloadElement = document.createElement('a');
+    downloadElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(getInformationString()));
+
+    const infoFileName = fileSpan.innerText.replace(/\.wav|\.WAV/, '.txt');
+
+    downloadElement.setAttribute('download', infoFileName);
+
+    downloadElement.style.display = 'none';
+    document.body.appendChild(downloadElement);
+
+    downloadElement.click();
+
+    document.body.removeChild(downloadElement);
+
+});
+
+informationClipboardButton.addEventListener('click', () => {
+
+    navigator.clipboard.writeText(getInformationString());
+
+});
 
 /**
  * Update UI based on which threshold type is selected
@@ -5130,24 +5167,6 @@ launchAppLink.addEventListener('click', () => {
         window.open('https://play.openacousticdevices.info/?app=true', 'window' + popupCount++, features);
 
     }
-
-});
-
-// Enable/disable dragging to select when the information modal is open/closed
-
-fileInformationLink.addEventListener('click', (e) => {
-
-    e.preventDefault();
-
-    body.classList.remove('body-no-select');
-
-    informationModal.show();
-
-});
-
-informationModalCloseButton.addEventListener('click', () => {
-
-    body.classList.add('body-no-select');
 
 });
 
