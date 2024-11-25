@@ -492,7 +492,7 @@ async function displaySpans (index) {
             artistSpan.innerText = artist;
             commentSpan.innerText = comment;
 
-            if (artist !== '' || comment !== '' || guanoData) fileInformationLink.style.display = '';
+            if (artist !== '' || comment !== '' || guanoData.length !== 0) fileInformationLink.style.display = '';
 
             artistSpan.style.display = (artist === '') ? 'none' : '';
             commentSpan.style.display = (comment === '') ? 'none' : '';
