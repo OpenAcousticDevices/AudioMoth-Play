@@ -11,7 +11,7 @@
 
 // AudioMoth Play/Config App import functions differently
 
-/* global enableSlider, disableSlider */
+/* global enableSlider, disableSlider, getSampleRate */
 // const sliderControl = require('./sliderControl.js');
 // const enableSlider = sliderControl.enableSlider;
 // const disableSlider = sliderControl.disableSlider;
@@ -35,7 +35,21 @@ const filterTypeTable = document.getElementById('filter-type-table');
 const thresholdTypeLabel = document.getElementById('threshold-type-label');
 const thresholdTypeTable = document.getElementById('threshold-type-table');
 
-const FILTER_SLIDER_STEPS = {8000: 100, 16000: 100, 32000: 100, 48000: 100, 96000: 200, 192000: 500, 250000: 500, 384000: 1000};
+const FILTER_SLIDER_STEPS = {
+    250: 25,
+    500: 50,
+    1000: 100,
+    2000: 100,
+    4000: 100,
+    8000: 100,
+    16000: 100,
+    32000: 100,
+    48000: 100,
+    96000: 200,
+    192000: 500,
+    250000: 500,
+    384000: 1000
+};
 
 const filterRadioLabels = document.getElementsByName('filter-radio-label');
 const filterRadioButtons = document.getElementsByName('filter-radio');
@@ -262,6 +276,11 @@ function updateFilterLabel () {
 
     const filterIndex = getFilterRadioValue();
 
+    const sampleRate = getSampleRate();
+
+    const unit = sampleRate <= 1000 ? 'Hz' : 'kHz';
+    const fixedDp = sampleRate <= 1000 ? 0 : 1;
+
     let currentBandPassLower, currentBandPassHigher, currentHighPass, currentLowPass;
 
     switch (filterIndex) {
@@ -269,17 +288,21 @@ function updateFilterLabel () {
     case FILTER_NONE:
         return;
     case FILTER_HIGH:
-        currentHighPass = highPassFilterSlider.getValue() / 1000;
-        filterLabel.textContent = 'Recordings will be filtered to frequencies above ' + currentHighPass.toFixed(1) + ' kHz.';
+        currentHighPass = highPassFilterSlider.getValue();
+        currentHighPass = sampleRate > 1000 ? currentHighPass / 1000 : currentHighPass;
+        filterLabel.textContent = 'Recordings will be filtered to frequencies above ' + currentHighPass.toFixed(fixedDp) + ' ' + unit + '.';
         break;
     case FILTER_LOW:
-        currentLowPass = lowPassFilterSlider.getValue() / 1000;
-        filterLabel.textContent = 'Recordings will be filtered to frequencies below ' + currentLowPass.toFixed(1) + ' kHz.';
+        currentLowPass = lowPassFilterSlider.getValue();
+        currentLowPass = sampleRate > 1000 ? currentLowPass / 1000 : currentLowPass;
+        filterLabel.textContent = 'Recordings will be filtered to frequencies below ' + currentLowPass.toFixed(fixedDp) + ' ' + unit + '.';
         break;
     case FILTER_BAND:
-        currentBandPassLower = Math.min(...bandPassFilterSlider.getValue()) / 1000;
-        currentBandPassHigher = Math.max(...bandPassFilterSlider.getValue()) / 1000;
-        filterLabel.textContent = 'Recordings will be filtered to frequencies between ' + currentBandPassLower.toFixed(1) + ' and ' + currentBandPassHigher.toFixed(1) + ' kHz.';
+        currentBandPassLower = Math.min(...bandPassFilterSlider.getValue());
+        currentBandPassHigher = Math.max(...bandPassFilterSlider.getValue());
+        currentBandPassLower = sampleRate > 1000 ? currentBandPassLower / 1000 : currentBandPassLower;
+        currentBandPassHigher = sampleRate > 1000 ? currentBandPassHigher / 1000 : currentBandPassHigher;
+        filterLabel.textContent = 'Recordings will be filtered to frequencies between ' + currentBandPassLower.toFixed(fixedDp) + ' and ' + currentBandPassHigher.toFixed(fixedDp) + ' ' + unit + '.';
         break;
 
     }
@@ -1001,13 +1024,19 @@ function sampleRateChange (resetPassSliders, resetCentreSlider, sampleRate) {
 
     const maxFreq = sampleRate / 2;
 
-    const labelText = (maxFreq / 1000) + 'kHz';
+    let labelText = sampleRate > 1000 ? maxFreq / 1000 : maxFreq;
+
+    const unit = sampleRate > 1000 ? 'kHz' : 'Hz';
+
+    labelText += unit;
 
     disabledMaxLabel.textContent = labelText;
     lowPassMaxLabel.textContent = labelText;
     highPassMaxLabel.textContent = labelText;
     bandPassMaxLabel.textContent = labelText;
     goertzelFilterMaxLabel.textContent = labelText;
+
+    disabledMinLabel.textContent = '0' + unit;
 
     highPassFilterSlider.setAttribute('max', maxFreq);
     lowPassFilterSlider.setAttribute('max', maxFreq);

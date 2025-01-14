@@ -6,8 +6,11 @@
 
 /* global VERSION */
 /* global XMLHttpRequest, bootstrap */
-/* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, TIMESTAMP_REGEX, SECONDS_IN_DAY */
+/* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, TIMESTAMP_REGEX, SECONDS_IN_DAY, MIN_SAMPLE_RATE */
 /* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */
+/* global Y_LABEL_COUNTS */
+
+/* global showLowFrequencyTabs, hideLowFrequencyTabs, addLowFrequencyRadioButtonListeners, isLowFrequencyTabEnabled, addLowFrequencyTabCloseListener, addLowFrequencyTabOpenListener, standardTabButton, enableLowFrequencyControls, disableLowFrequencyControls */
 
 /* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader, readGuano */
 /* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler, setSliceCancelButtonListener, saveCurrentSlicePosition, usePreviewSelection, moveSliceSelectionLeft, moveSliceSelectionRight */
@@ -90,6 +93,7 @@ const settingsApplyButton = document.getElementById('settings-apply-button');
 const settingsModal = new bootstrap.Modal(document.getElementById('settings-modal'));
 const settingsFileTimeCheckbox = document.getElementById('settings-file-time-checkbox');
 const settingsFileTimeLabel = document.getElementById('settings-file-time-label');
+const settingsLowFrequencyCheckbox = document.getElementById('settings-low-frequency-checkbox');
 const settingsDynamicColoursCheckbox = document.getElementById('settings-dynamic-colours-checkbox');
 const settingsVideoLineCheckbox = document.getElementById('settings-video-line-checkbox');
 const settingsVideoFixedFPSCheckbox = document.getElementById('settings-video-fixed-fps-checkbox');
@@ -269,6 +273,10 @@ let useFileTime = false;
 let videoLineEnabled = true;
 let fixedFpsEnabled = false;
 
+// Low frequency setting
+
+let lowFrequencyEnabled = false;
+
 // Drawing/processing flag
 
 let drawing = false;
@@ -283,6 +291,10 @@ let samplesAboveThreshold;
 let samplesAboveGoertzelThreshold;
 let thresholdedValueCount = 0;
 
+// When low frequency panel is switched to, disable the threshold UI but remember what it was on
+
+let previousTriggerSetting = 0;
+
 // Panel which states how much size reduction the amplitude threshold settings chosen will do
 
 const sizeInformationPanel = document.getElementById('size-information-panel');
@@ -291,6 +303,7 @@ const sizeInformationPanel = document.getElementById('size-information-panel');
 
 const resetButton = document.getElementById('reset-button');
 const exportButton = document.getElementById('export-button');
+const disabledExportButton = document.getElementById('disabled-export-button');
 
 // Audio playback controls
 
@@ -355,6 +368,10 @@ const instructionsContent = document.getElementById('instructions-content');
 // When preview UI opens, if it's a new file then the sample rate should change when a slice is selected, otherwise it should stay the same
 
 let isNewFile = false;
+
+// Warning modal which displays when window is too narrow
+
+const resizeModal = new bootstrap.Modal(document.getElementById('resize-modal'));
 
 /**
  * @returns Boolean check if currently loaded file is a T.WAV AudioMoth file
@@ -492,7 +509,7 @@ async function displaySpans (index) {
             artistSpan.innerText = artist;
             commentSpan.innerText = comment;
 
-            if (artist !== '' || comment !== '' || guanoData.length !== 0) fileInformationLink.style.display = '';
+            if (artist !== '' || comment !== '' || guanoData) fileInformationLink.style.display = '';
 
             artistSpan.style.display = (artist === '') ? 'none' : '';
             commentSpan.style.display = (comment === '') ? 'none' : '';
@@ -865,18 +882,7 @@ function drawAxisLabels () {
 
     clearSVG(spectrogramLabelSVG);
 
-    const yLabelCounts = {
-        8000: 4,
-        16000: 4,
-        32000: 4,
-        48000: 4,
-        96000: 4,
-        192000: 4,
-        250000: 5,
-        384000: 4
-    };
-
-    const yLabelCount = yLabelCounts[getSampleRate()];
+    const yLabelCount = Y_LABEL_COUNTS[getSampleRate()];
 
     const ySpecLabelIncrement = getSampleRate() / 2 / yLabelCount;
 
@@ -887,7 +893,17 @@ function drawAxisLabels () {
 
     for (let i = 0; i <= yLabelCount; i++) {
 
-        const labelText = (i * ySpecLabelIncrement / 1000) + 'kHz';
+        let labelText;
+
+        if (getSampleRate() <= 1000) {
+
+            labelText = (i * ySpecLabelIncrement) + 'Hz';
+
+        } else {
+
+            labelText = (i * ySpecLabelIncrement / 1000) + 'kHz';
+
+        }
 
         const y = spectrogramLabelSVG.height.baseVal.value - (i * ySpecIncrement);
 
@@ -1802,6 +1818,7 @@ function reenableUI () {
     }
 
     enableSampleRateControl();
+    enableLowFrequencyControls();
 
     updateNavigationUI();
     updateYZoomUI();
@@ -3338,7 +3355,7 @@ async function loadFile (exampleFilePath, exampleName) {
 
         downsampledUnfilteredSamples = new Int16Array(sampleCount);
 
-        const downsampleResult = downsample(unfilteredSamples, getTrueSampleRate(), downsampledUnfilteredSamples, getSampleRate());
+        const downsampleResult = downsample(unfilteredSamples, getTrueSampleRate(), downsampledUnfilteredSamples, getSampleRate(), isLowFrequencyTabEnabled());
 
         if (!downsampleResult.success) {
 
@@ -3370,20 +3387,16 @@ async function loadFile (exampleFilePath, exampleName) {
         spectrumMin = Number.MAX_SAFE_INTEGER;
         spectrumMax = Number.MIN_SAFE_INTEGER;
 
-        // Update filter range, resetting values if it's the first file loaded or the sliders have been observed
-
-        const resetSliders = firstFile || prevSampleRate === undefined;
-
-        const passFiltersObserved = getPassFiltersObserved();
-        const centreObserved = getCentreObserved();
-
-        sampleRateChange(resetSliders || !passFiltersObserved, resetSliders || !centreObserved, getSampleRate());
-
         if (!setTransformations && isNewFile) {
 
             updateSampleRateUI(getTrueSampleRate());
 
         }
+
+        // Update filter range, resetting values if it's the first file loaded or the sliders have been observed
+
+        const resetSliders = firstFile || prevSampleRate === undefined;
+        sampleRateChangeListener(resetSliders);
 
         if (resetSliders) {
 
@@ -4052,7 +4065,7 @@ function reset () {
         sampleRateChange(true, true, getSampleRate());
         updateSampleRateUI(getTrueSampleRate());
 
-        const downsampleResult = downsample(unfilteredSamples, getTrueSampleRate(), downsampledUnfilteredSamples, sampleRate);
+        const downsampleResult = downsample(unfilteredSamples, getTrueSampleRate(), downsampledUnfilteredSamples, sampleRate, false);
 
         if (!downsampleResult.success) {
 
@@ -4091,16 +4104,16 @@ resetButton.addEventListener('click', reset);
 
 // Add sample rate UI listeners
 
-addSampleRateUIListeners(() => {
+function sampleRateChangeListener (resetSliders) {
 
     const oldSampleRate = sampleRate;
     sampleRate = getSampleRateSelection();
 
     const passFiltersObserved = getPassFiltersObserved();
     const centreObserved = getCentreObserved();
-    sampleRateChange(!passFiltersObserved, !centreObserved, getSampleRate());
+    sampleRateChange(resetSliders || !passFiltersObserved, resetSliders || !centreObserved, getSampleRate());
 
-    const downsampleResult = downsample(unfilteredSamples, trueSampleRate, downsampledUnfilteredSamples, sampleRate);
+    const downsampleResult = downsample(unfilteredSamples, trueSampleRate, downsampledUnfilteredSamples, sampleRate, isLowFrequencyTabEnabled());
 
     if (!downsampleResult.success) {
 
@@ -4139,6 +4152,37 @@ addSampleRateUIListeners(() => {
     updateThresholdUI();
 
     updatePlots(false, true, true, true, true);
+
+}
+
+addLowFrequencyRadioButtonListeners(sampleRateChangeListener);
+addSampleRateUIListeners(sampleRateChangeListener);
+
+addLowFrequencyTabCloseListener(() => {
+
+    thresholdTypeRadioButtons[previousTriggerSetting].checked = true;
+
+    exportButton.style.display = '';
+    disabledExportButton.style.display = 'none';
+
+    sampleRateChangeListener();
+
+});
+
+addLowFrequencyTabOpenListener(() => {
+
+    // Disable triggering but remember setting
+
+    previousTriggerSetting = getThresholdTypeIndex();
+    thresholdTypeRadioButtons[0].checked = true;
+
+    disabledExportButton.style.display = '';
+    exportButton.style.display = 'none';
+
+    updateThresholdTypeUI();
+    updateThresholdUI();
+
+    sampleRateChangeListener();
 
 });
 
@@ -4604,6 +4648,97 @@ function convertSkipArray (inputArray, maxValue, outputSize) {
 }
 
 /**
+ * Create a set of samples at a sample rate of MIN_SAMPLE_RATE with a user-selected filter applied as well as a Nyquist low-pass filter
+ * @param {Array} outputArray Where to store the samples
+ * @returns success: true if successful, false otherwise. error: error message if not successful
+ */
+function createMinSampleRateSamples (outputArray) {
+
+    const targetSampleRate = getSampleRate();
+
+    const downsampledMinSamples = new Int16Array(trueSampleCount);
+
+    /* Downsample to minimum sample rate (8 kHz) */
+
+    const downsampleResult = downsample(unfilteredSamples, getTrueSampleRate(), downsampledMinSamples, MIN_SAMPLE_RATE, false);
+
+    if (!downsampleResult.success) {
+
+        return {
+            success: false,
+            error: downsampleResult.error
+        };
+
+    }
+
+    /* Apply low-pass filter at Nyquist limit of targeted sample rate (e.g. 500 Hz). If user-selected filters are also required, combine them */
+
+    let lowPassFilterValue;
+    let highPassFilterValue;
+    let bandPassFilterValue0, bandPassFilterValue1;
+
+    const nyquistLimit = targetSampleRate / 2;
+
+    const filterIndex = getFilterType();
+
+    switch (filterIndex) {
+
+    case FILTER_NONE:
+    case FILTER_LOW:
+
+        if (filterIndex === FILTER_LOW) {
+
+            console.log('Attempting to apply low-pass filter at ' + lowPassFilterValue + ' Hz and Nyquist low-pass filter at ' + nyquistLimit + ' Hz');
+
+            lowPassFilterValue = Math.min(lowPassFilterSlider.getValue(), nyquistLimit);
+
+        } else {
+
+            console.log('Attempting to apply Nyquist low-pass filter at ' + nyquistLimit + ' Hz');
+
+            lowPassFilterValue = nyquistLimit;
+
+        }
+
+        console.log('Applying low-pass filter at ' + lowPassFilterValue + ' Hz');
+
+        applyLowPassFilter(downsampledMinSamples, trueSampleCount, outputArray, MIN_SAMPLE_RATE, lowPassFilterValue);
+
+        break;
+    case FILTER_HIGH:
+
+        highPassFilterValue = highPassFilterSlider.getValue();
+
+        console.log('Combined high-pass filter at ' + highPassFilterValue + ' Hz and Nyquist low-pass filter at ' + nyquistLimit + ' Hz');
+        console.log('Applying band-pass filter between ' + highPassFilterValue + ' and ' + nyquistLimit + ' Hz');
+
+        applyBandPassFilter(downsampledMinSamples, trueSampleCount, outputArray, MIN_SAMPLE_RATE, highPassFilterValue, nyquistLimit);
+
+        break;
+    case FILTER_BAND:
+
+        bandPassFilterValue0 = Math.min(...bandPassFilterSlider.getValue());
+        bandPassFilterValue1 = Math.max(...bandPassFilterSlider.getValue());
+
+        console.log('Attempting to apply band-pass filter between ' + bandPassFilterValue0 + ' and ' + bandPassFilterValue1 + ' Hz and Nyquist low-pass filter at ' + nyquistLimit + 'Hz');
+
+        bandPassFilterValue1 = Math.min(bandPassFilterValue1, nyquistLimit);
+
+        console.log('Applying band-pass filter between ' + bandPassFilterValue0 + ' and ' + bandPassFilterValue1 + ' Hz');
+
+        applyBandPassFilter(downsampledMinSamples, trueSampleCount, outputArray, MIN_SAMPLE_RATE, bandPassFilterValue0, bandPassFilterValue1);
+
+        break;
+
+    }
+
+    return {
+        success: true
+    };
+
+}
+
+/**
  * Play audio button
  */
 playButton.addEventListener('click', () => {
@@ -4655,6 +4790,7 @@ playButton.addEventListener('click', () => {
             }
 
             disableSampleRateControl();
+            disableLowFrequencyControls();
 
             resetButton.disabled = true;
             exportButton.disabled = true;
@@ -4693,7 +4829,29 @@ playButton.addEventListener('click', () => {
 
         const filterIndex = getFilterType();
 
-        const samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
+        let samples;
+
+        if (getSampleRate() < MIN_SAMPLE_RATE) {
+
+            samples = new Int16Array(trueSampleCount);
+            const minSampleRateSamplesResult = createMinSampleRateSamples(samples);
+
+            if (!minSampleRateSamplesResult.success) {
+
+                console.error(minSampleRateSamplesResult.error);
+                showErrorDisplay('Failed to downsample audio.');
+
+                stopEvent();
+
+                return;
+
+            }
+
+        } else {
+
+            samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
+
+        }
 
         let playbackBufferLength = displayLength;
 
@@ -4711,15 +4869,22 @@ playButton.addEventListener('click', () => {
 
         if (playbackBufferLength > 0) {
 
-            if (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) {
+            // If sample rate is below minimum, rescale values to match altered sample rate
 
-                playAudio(samples, samplesAboveGoertzelThreshold, offset, displayLength, getSampleRate(), playbackRate, playbackMode, playbackBufferLength, getVolume(), stopEvent);
+            const unthresholdedSamples = (getSampleRate() >= MIN_SAMPLE_RATE && thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold;
 
-            } else {
+            const lowSampleRateMultiplier = getSampleRate() < MIN_SAMPLE_RATE ? MIN_SAMPLE_RATE / getSampleRate() : 1;
 
-                playAudio(samples, samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackRate, playbackMode, playbackBufferLength, getVolume(), stopEvent);
+            const playOffset = offset * lowSampleRateMultiplier;
+            const playDisplayLength = displayLength * lowSampleRateMultiplier;
 
-            }
+            const playSampleRate = Math.max(MIN_SAMPLE_RATE, getSampleRate());
+
+            const playPlaybackBufferLength = playbackBufferLength * lowSampleRateMultiplier;
+
+            const playPlaybackMode = getSampleRate() < MIN_SAMPLE_RATE ? PLAYBACK_MODE_ALL : playbackMode;
+
+            playAudio(samples, unthresholdedSamples, playOffset, playDisplayLength, playSampleRate, playbackRate, playPlaybackMode, playPlaybackBufferLength, getVolume(), stopEvent);
 
             // Start animation loop
 
@@ -4866,7 +5031,7 @@ function handleExportAudioResult (err) {
 
 }
 
-function getAudioForExport () {
+function getAudioForExport (useLowSampleRateProcessing) {
 
     // Get mode which dictates how amplitude thresholded periods are handled
 
@@ -4876,15 +5041,39 @@ function getAudioForExport () {
 
     const filterIndex = getFilterType();
 
-    const samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
-
+    let samples;
     let playbackBufferLength = displayLength;
+
+    if (useLowSampleRateProcessing) {
+
+        samples = new Int16Array(trueSampleCount);
+        const minSampleRateSamplesResult = createMinSampleRateSamples(samples);
+
+        if (!minSampleRateSamplesResult.success) {
+
+            console.error(minSampleRateSamplesResult.error);
+            showErrorDisplay('Failed to downsample audio.');
+
+            return {
+                success: false,
+                error: minSampleRateSamplesResult.error
+            };
+
+        }
+
+        playbackBufferLength = MIN_SAMPLE_RATE / getSampleRate() * displayLength;
+
+    } else {
+
+        samples = filterIndex !== FILTER_NONE ? filteredSamples : downsampledUnfilteredSamples;
+
+    }
 
     const thresholdTypeIndex = getThresholdTypeIndex();
 
     // If playback mode is to skip thresholded periods, build an array of X axis locations which map to playback progress
 
-    if (playbackMode === PLAYBACK_MODE_SKIP) {
+    if (!useLowSampleRateProcessing && playbackMode === PLAYBACK_MODE_SKIP) {
 
         // Create x coordinate map
 
@@ -4939,17 +5128,18 @@ function getAudioForExport () {
     }
 
     return {
+        success: true,
         samples: samples,
-        thresholdTypeIndex: thresholdTypeIndex,
+        thresholdTypeIndex: useLowSampleRateProcessing ? THRESHOLD_TYPE_NONE : thresholdTypeIndex,
         playbackBufferLength: playbackBufferLength,
-        playbackMode: playbackMode
+        playbackMode: useLowSampleRateProcessing ? PLAYBACK_MODE_ALL : playbackMode
     };
 
 }
 
 exportAudioButton.addEventListener('click', () => {
 
-    const audioData = getAudioForExport();
+    const audioData = getAudioForExport(false);
 
     const playbackBufferLength = audioData.playbackBufferLength;
     const thresholdTypeIndex = audioData.thresholdTypeIndex;
@@ -4985,16 +5175,29 @@ exportVideoButton.addEventListener('click', () => {
 
     // Create audio blob
 
-    const audioData = getAudioForExport();
+    const exportAudioDataResult = getAudioForExport(getSampleRate() < MIN_SAMPLE_RATE);
 
-    const playbackBufferLength = audioData.playbackBufferLength;
-    const thresholdTypeIndex = audioData.thresholdTypeIndex;
-    const samples = audioData.samples;
-    const playbackMode = audioData.playbackMode;
+    if (!exportAudioDataResult.success) {
+
+        showErrorDisplay('File was not written. Failed to downsample audio.');
+
+        reenableUI();
+
+        exportVideoIcon.style.display = '';
+        exportVideoSpinner.style.display = 'none';
+
+        return;
+
+    }
+
+    const playbackBufferLength = exportAudioDataResult.playbackBufferLength;
+    const thresholdTypeIndex = exportAudioDataResult.thresholdTypeIndex;
+    const samples = exportAudioDataResult.samples;
+    const playbackMode = exportAudioDataResult.playbackMode;
 
     if (playbackBufferLength <= 0) {
 
-        showErrorDisplay('File was not written. File length would be 0 samples.');
+        // showErrorDisplay('File was not written. File length would be 0 samples.');
 
         reenableUI();
 
@@ -5007,7 +5210,18 @@ exportVideoButton.addEventListener('click', () => {
 
     // Prepare audio data
 
-    const audioArray = createAudioArray(samples, (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold, offset, displayLength, getSampleRate(), playbackMode, playbackBufferLength, getVolume(), getPlaybackRate());
+    const unthresholdedSamples = (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) ? samplesAboveGoertzelThreshold : samplesAboveThreshold;
+
+    // If sample rate is below minimum, rescale values to match altered sample rate
+
+    const minSampleRateMultiplier = MIN_SAMPLE_RATE / getSampleRate();
+
+    const videoSampleRate = Math.max(MIN_SAMPLE_RATE, getSampleRate());
+    const videoPlaybackMode = getSampleRate() < MIN_SAMPLE_RATE ? PLAYBACK_MODE_ALL : playbackMode;
+    const videoDisplayLength = getSampleRate() < MIN_SAMPLE_RATE ? displayLength * minSampleRateMultiplier : displayLength;
+    const videoOffset = getSampleRate() < MIN_SAMPLE_RATE ? offset * minSampleRateMultiplier : offset;
+
+    const audioArray = createAudioArray(samples, unthresholdedSamples, videoOffset, videoDisplayLength, videoSampleRate, videoPlaybackMode, playbackBufferLength, getVolume(), getPlaybackRate());
 
     const header = new Uint8Array(audioArray[0]);
 
@@ -5093,6 +5307,7 @@ settingsModalButton.addEventListener('click', () => {
     settingsDynamicColoursCheckbox.checked = useDynamicColours;
     settingsVideoLineCheckbox.checked = videoLineEnabled;
     settingsVideoFixedFPSCheckbox.checked = fixedFpsEnabled;
+    settingsLowFrequencyCheckbox.checked = lowFrequencyEnabled;
 
     // Warn user that setting will do nothing to current file
 
@@ -5113,12 +5328,14 @@ settingsApplyButton.addEventListener('click', () => {
     const changedUseFileTime = useFileTime !== settingsFileTimeCheckbox.checked;
     const changedUseDynamicColours = useDynamicColours !== settingsDynamicColoursCheckbox.checked;
     const changedColourMap = colourMapIndex !== parseInt(settingsMonochromeSelect.value);
+    const changedLowFrequency = lowFrequencyEnabled !== settingsLowFrequencyCheckbox.checked;
 
     useFileTime = settingsFileTimeCheckbox.checked;
     useDynamicColours = settingsDynamicColoursCheckbox.checked;
     videoLineEnabled = settingsVideoLineCheckbox.checked;
     fixedFpsEnabled = settingsVideoFixedFPSCheckbox.checked;
     colourMapIndex = parseInt(settingsMonochromeSelect.value);
+    lowFrequencyEnabled = settingsLowFrequencyCheckbox.checked;
 
     // If setting has been changed, update the relevant UI
 
@@ -5136,6 +5353,21 @@ settingsApplyButton.addEventListener('click', () => {
             updatePlots(false, true, false, false, false);
 
         }, 0);
+
+    }
+
+    if (changedLowFrequency) {
+
+        if (lowFrequencyEnabled) {
+
+            showLowFrequencyTabs();
+
+        } else {
+
+            standardTabButton.click();
+            hideLowFrequencyTabs();
+
+        }
 
     }
 
@@ -5238,6 +5470,19 @@ function loadPage () {
 
     }
 
+    // Check for low frequency mode
+
+    if (urlParams.get('infra')) {
+
+        lowFrequencyEnabled = true;
+        showLowFrequencyTabs();
+
+    } else {
+
+        hideLowFrequencyTabs();
+
+    }
+
     // Check for dev mode
 
     instructionsContent.style.display = '';
@@ -5309,3 +5554,41 @@ window.addEventListener('load', () => {
     }
 
 });
+
+/* Check column tops match up and warn users to resize if needed */
+
+document.addEventListener('DOMContentLoaded', checkColumnLayout);
+window.addEventListener('resize', debounce(checkColumnLayout, 200));
+
+function checkColumnLayout () {
+
+    const column0 = document.getElementById('main-column0');
+    const column1 = document.getElementById('main-column1');
+
+    if (column0 && column1) {
+
+        const column0Rect = column0.getBoundingClientRect();
+        const column1Rect = column1.getBoundingClientRect();
+
+        if (column0Rect.top !== column1Rect.top) {
+
+            resizeModal.show();
+
+        }
+
+    }
+
+}
+
+function debounce (func, wait) {
+
+    let timeout;
+
+    return (...args) => {
+
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+
+    };
+
+}

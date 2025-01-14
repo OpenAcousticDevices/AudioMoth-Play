@@ -98,11 +98,23 @@
                         </div>
                     </div>
                 </div>
-                <div class="col control-width control-margin" style="padding-left: 0px;"></div>
+
+                <div class="col control-width control-margin" style="padding-left: 0px; padding-right: 0px;">
+
+                    <ul class="nav nav-tabs" style="display: none;" id="low-frequency-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="#" id="standard-tab-button">Trigger Settings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="low-frequency-tab-button">Low Frequency View</a>
+                        </li>
+                    </ul>
+
+                </div>
             </div>
 
             <div class="row justify-content-md-center">
-                <div class="col plot-width">
+                <div class="col plot-width" id="main-column0">
 
                     <!-- Plots -->
 
@@ -167,153 +179,189 @@
 
                 </div>
 
-                <div class="col control-width control-margin" style="padding: 0px;">
+                <div class="col control-width control-margin" style="padding: 0px;" id="main-column1">
 
-                    <!-- Sample rate selection -->
+                    <div id="standard-tab">
 
-                    <div id="sample-rate-holder" style="border: #cdcdcd thin solid; width: 100%; margin-top: 20px; display: none;">
-                        <div class="row" style="margin-top: 8px;">
-                            <div class="col-12">
-                                <div style="margin-left: 5px; margin-right: 4px">
-                                    <table class="table" style="margin-bottom: 8px;">
-                                        <tr class="settings-text" style="font-size: 12px;" title="Sample rate used when making recordings.">
-                                            <td align="center" style="padding: 0px; padding-left: 0px;"></td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">8</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">16</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">32</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">48</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">96</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">192</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">250</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">384</td>
-                                        </tr>
-                                        <tr class="settings-text" title="Sample rate used when making recordings.">
-                                            <td align="left" style="padding-top: 0px; padding-bottom: 0px;">Sample rate (kHz):</td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="0" name="sample-rate-radio">
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="1" name="sample-rate-radio">
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="2" name="sample-rate-radio">
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="3" name="sample-rate-radio">
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="4" name="sample-rate-radio">
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="5" name="sample-rate-radio" checked>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="6" name="sample-rate-radio">
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="7" name="sample-rate-radio">
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        <!-- Sample rate selection -->
 
-                    <div id="disabled-sample-rate-holder" style="border: #cdcdcd thin solid; width: 100%; margin-top: 20px;">
-                        <div class="row" style="margin-top: 8px;">
-                            <div class="col-12">
-                                <div style="margin-left: 5px; margin-right: 4px">
-                                    <table class="table" style="margin-bottom: 8px;">
-                                        <tr class="settings-text grey" style="font-size: 12px;" title="Sample rate used when making recordings.">
-                                            <td align="center" style="padding: 0px; padding-left: 0px;"></td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">8</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">16</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">32</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">48</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">96</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">192</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">250</td>
-                                            <td align="center" style="padding: 0px; padding-left: 0px;">384</td>
-                                        </tr>
-                                        <tr class="settings-text grey" title="Sample rate used when making recordings.">
-                                            <td align="left" style="padding-top: 0px; padding-bottom: 0px;">Sample rate (kHz):</td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="0" name="disabled-sample-rate-radio" disabled>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="1" name="disabled-sample-rate-radio" disabled>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="2" name="disabled-sample-rate-radio" disabled>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="3" name="disabled-sample-rate-radio" disabled>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="4" name="disabled-sample-rate-radio" disabled>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="5" name="disabled-sample-rate-radio" checked disabled>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="6" name="disabled-sample-rate-radio" disabled>
-                                            </td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="7" name="disabled-sample-rate-radio" disabled>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Threshold selection -->
-
-                    <div class="row" style="margin-top: 8px;">
-                        <div class="col-12">
-                            <div style="border: #cdcdcd thin solid; width: 100%; margin-top: 0px; ">
-                            
-                                <div class="row" style="margin-top: 8px; margin-bottom: 4px;">
-                                    <div class="col-12">
-                                        <div style="margin-left: 5px; margin-right: 4px">
-                                            <table class="table" style="margin-bottom: 4px;" title="Type of threshold." id="threshold-type-table">
-                                                <tr class="settings-text" style="font-size: 12px;">
-                                                    <td align="center" style="padding: 0px"></td>
-                                                    <td align="center" style="padding: 0px"></td>
-                                                    <td align="center" style="padding: 0px"></td>
-                                                    <td align="center" style="padding: 0px"></td>
-                                                    <td align="center" style="padding: 0px"></td>
-                                                    <td align="center" style="padding: 0px"></td>
-                                                    <td align="center" style="padding: 0px" name="threshold-radio-label">None</td>                     
-                                                    <td align="center" style="padding: 0px" name="threshold-radio-label">Amplitude</td>
-                                                    <td align="center" style="padding: 0px" name="threshold-radio-label">Frequency</td>
-                                                </tr>
-                                                <tr class="settings-text">
-                                                    <td align="left" style="padding-top: 0px; padding-bottom: 0px;" id="threshold-type-label">Trigger type:</td>
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                        <input type="radio" value="0" name="threshold-type-radio" checked>
-                                                    </td>                        
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                        <input type="radio" value="1" name="threshold-type-radio">
-                                                    </td>
-                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                        <input type="radio" value="2" name="threshold-type-radio">
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </div>
+                        <div id="sample-rate-holder" style="border: #cdcdcd thin solid; width: 100%; margin-top: 20px; display: none;">
+                            <div class="row" style="margin-top: 8px;">
+                                <div class="col-12">
+                                    <div style="margin-left: 5px; margin-right: 4px">
+                                        <table class="table" style="margin-bottom: 8px;">
+                                            <tr class="settings-text" style="font-size: 12px;" title="Sample rate used when making recordings.">
+                                                <td align="center" style="padding: 0px; padding-left: 0px;"></td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">8</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">16</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">32</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">48</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">96</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">192</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">250</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="sample-rate-label">384</td>
+                                            </tr>
+                                            <tr class="settings-text" title="Sample rate used when making recordings.">
+                                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">Sample rate (kHz):</td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="0" name="sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="1" name="sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="2" name="sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="3" name="sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="4" name="sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="5" name="sample-rate-radio" checked>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="6" name="sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="7" name="sample-rate-radio">
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </div>
                                 </div>
-                    
                             </div>
                         </div>
+
+                        <div id="disabled-sample-rate-holder" style="border: #cdcdcd thin solid; width: 100%; margin-top: 20px;">
+                            <div class="row" style="margin-top: 8px;">
+                                <div class="col-12">
+                                    <div style="margin-left: 5px; margin-right: 4px">
+                                        <table class="table" style="margin-bottom: 8px;">
+                                            <tr class="settings-text grey" style="font-size: 12px;" title="Sample rate used when making recordings.">
+                                                <td align="center" style="padding: 0px; padding-left: 0px;"></td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">8</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">16</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">32</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">48</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">96</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">192</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">250</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">384</td>
+                                            </tr>
+                                            <tr class="settings-text grey" title="Sample rate used when making recordings.">
+                                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">Sample rate (kHz):</td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="0" name="disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="1" name="disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="2" name="disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="3" name="disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="4" name="disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="5" name="disabled-sample-rate-radio" checked disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="6" name="disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="7" name="disabled-sample-rate-radio" disabled>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div id="low-frequency-tab" style="display: none;">
+                        <!-- Sample rate selection -->
+
+                        <div id="low-frequency-sample-rate-holder" style="border: #cdcdcd thin solid; width: 100%; margin-top: 20px;">
+                            <div class="row" style="margin-top: 8px;">
+                                <div class="col-12">
+                                    <div style="margin-left: 5px; margin-right: 4px">
+                                        <table class="table" style="margin-bottom: 8px;">
+                                            <tr class="settings-text" style="font-size: 12px;" title="Sample rate used when making recordings.">
+                                                <td align="center" style="padding: 0px; padding-left: 0px;"></td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="low-frequency-sample-rate-label">250</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="low-frequency-sample-rate-label">500</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="low-frequency-sample-rate-label">1000</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="low-frequency-sample-rate-label">2000</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;" name="low-frequency-sample-rate-label">4000</td>
+                                            </tr>
+                                            <tr class="settings-text" title="Sample rate used when making recordings.">
+                                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">Sample rate (Hz):</td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="0" name="low-frequency-sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="1" name="low-frequency-sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="2" name="low-frequency-sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="3" name="low-frequency-sample-rate-radio">
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="4" name="low-frequency-sample-rate-radio" checked>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="low-frequency-disabled-sample-rate-holder" style="border: #cdcdcd thin solid; width: 100%; margin-top: 20px; display: none;">
+                            <div class="row" style="margin-top: 8px;">
+                                <div class="col-12">
+                                    <div style="margin-left: 5px; margin-right: 4px">
+                                        <table class="table" style="margin-bottom: 8px;">
+                                            <tr class="settings-text grey" style="font-size: 12px;" title="Sample rate used when making recordings.">
+                                                <td align="center" style="padding: 0px; padding-left: 0px;"></td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">250</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">500</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">1000</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">2000</td>
+                                                <td align="center" style="padding: 0px; padding-left: 0px;">4000</td>
+                                            </tr>
+                                            <tr class="settings-text grey" title="Sample rate used when making recordings.">
+                                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">Sample rate (Hz):</td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="0" name="low-frequency-disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="1" name="low-frequency-disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="2" name="low-frequency-disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="3" name="low-frequency-disabled-sample-rate-radio" disabled>
+                                                </td>
+                                                <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                    <input class="settings-inputs" type="radio" value="4" name="low-frequency-disabled-sample-rate-radio" checked disabled>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                     
                     <!-- Filtering -->
@@ -419,6 +467,53 @@
                                     </div>
                                 </div>
                             
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Threshold selection -->
+
+                    <div class="row" style="margin-top: 8px;" id="threshold-selection">
+                        <div class="col-12">
+                            <div style="border: #cdcdcd thin solid; width: 100%; margin-top: 0px; ">
+                            
+                                <div class="row" style="margin-top: 8px; margin-bottom: 4px;">
+                                    <div class="col-12">
+                                        <div style="margin-left: 5px; margin-right: 4px">
+                                            <table class="table" style="margin-bottom: 4px;" title="Type of threshold." id="threshold-type-table">
+                                                <tr class="settings-text" style="font-size: 12px;">
+                                                    <td align="center" style="padding: 0px"></td>
+                                                    <td align="center" style="padding: 0px"></td>
+                                                    <td align="center" style="padding: 0px"></td>
+                                                    <td align="center" style="padding: 0px"></td>
+                                                    <td align="center" style="padding: 0px"></td>
+                                                    <td align="center" style="padding: 0px"></td>
+                                                    <td align="center" style="padding: 0px" name="threshold-radio-label">None</td>                     
+                                                    <td align="center" style="padding: 0px" name="threshold-radio-label">Amplitude</td>
+                                                    <td align="center" style="padding: 0px" name="threshold-radio-label">Frequency</td>
+                                                </tr>
+                                                <tr class="settings-text">
+                                                    <td align="left" style="padding-top: 0px; padding-bottom: 0px;" id="threshold-type-label">Trigger type:</td>
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                        <input type="radio" value="0" name="threshold-type-radio" checked>
+                                                    </td>                        
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                        <input type="radio" value="1" name="threshold-type-radio">
+                                                    </td>
+                                                    <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                        <input type="radio" value="2" name="threshold-type-radio">
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                    
                             </div>
                         </div>
                     </div>
@@ -640,6 +735,7 @@
                             <div class="col-12">
                                 <div style="display: table-cell; vertical-align: middle; width: 543px; height: 58px; text-align: center;">
                                     <label class="grey" id="size-information-panel" style="width: 100%; resize:none; text-align: center; font-weight: normal;">No WAV file selected.</label>
+                                    <label id="low-frequency-information-panel" style="width: 100%; resize:none; text-align: center; font-weight: normal; display: none;">Export not available.</label>
                                 </div>
                             </div>
                         </div>
@@ -653,12 +749,11 @@
                             </div>
                             <div class="col-6" style="padding-right: 0%;">
                                 <button class="btn btn-success" id="export-button" style="width: 100%;" disabled>Export Configuration</button>
+                                <button class="btn btn-success" id="disabled-export-button" style="width: 100%; display: none;" disabled>Export Configuration</button>
                             </div>
                         </div>
                     
                     </div>
-
-
 
                 </div>
             </div>
@@ -748,7 +843,10 @@
                             <label for="settings-video-line-checkbox" id="settings-video-line-label">Enable tracking line on exported video</label>
                             <br>
                             <input type="checkbox" id="settings-video-fixed-fps-checkbox" style="vertical-align: middle;">
-                            <label for="settings-video-fixed-fps-checkbox" id="settings-video-fixed-fps-label">Favour frame rate over file size when generating videos</label>
+                            <label for="settings-video-fixed-fps-checkbox" id="settings-video-fixed-fps-label" style="margin-bottom: 0px;">Favour frame rate over file size when generating videos</label>
+                            <hr>
+                            <input type="checkbox" id="settings-low-frequency-checkbox" style="vertical-align: middle;">
+                            <label for="settings-low-frequency-checkbox" id="settings-dynamic-colours-label" style="margin-bottom: 0px;">Enable low frequency view</label>
                             <hr>
                             <label for="settings-monochrome-select" id="settings-monochrome-label" style="margin-right: 5px; margin-top: 3px;">Colour palette:</label>
                             <select id="settings-monochrome-select">
@@ -909,6 +1007,25 @@
                 </div>
             </div>
 
+            <div class="modal fade" id="resize-modal" tabindex="-1" aria-labelledby="resize-modal-label" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="resize-modal-label">Window Size Warning</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            The current window isn't wide enough to display the columns side by side. Please resize the window.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="instructions-content" style="display: none;">
 
                 <div class="row justify-content-md-center" style="margin-top: 15px;">
@@ -965,7 +1082,7 @@
                 </div>
                 <div class="row justify-content-md-center" style="margin-top: 5px;">
                     <div class="col total-width">
-                        AudioMoth Play will open any 16-bit PCM WAV files recorded at a sample rate supported by AudioMoth (8, 16, 32, 48, 96, 192, 250, and 384 kHz). Files recorded at 44.1, 125, 312.5 and 576 kHz will be automatically resampled to 48, 192, and 384 kHz respectively.
+                        AudioMoth Play will open any 16-bit PCM WAV files recorded at a sample rate supported by AudioMoth (8, 16, 32, 48, 96, 192, 250, and 384 kHz). Files recorded at 44.1, 125, and 312.5 kHz will be automatically resampled to 48, 192, and 384 kHz respectively.
                     </div>
                 </div>
 
@@ -1056,5 +1173,6 @@
     <script src="scripts/exportAudio.js"></script>
     <script src="scripts/exportVideo.js"></script>
     <script src="scripts/downsampler.js"></script>
+    <script src="scripts/lowFrequency.js"></script>
     <script src="scripts/index.js"></script>
 </html>

@@ -4,7 +4,7 @@
  * May 2022
  *****************************************************************************/
 
-/* global VALID_AUDIOMOTH_SAMPLE_RATES */
+/* global VALID_AUDIOMOTH_SAMPLE_RATES, isLowFrequencyTabEnabled, getLowFrequencySampleRate */
 
 const sampleRateHolder = document.getElementById('sample-rate-holder');
 const disabledSampleRateHolder = document.getElementById('disabled-sample-rate-holder');
@@ -66,7 +66,15 @@ function updateSampleRateUI (sampleRate) {
  */
 function getSampleRateSelection () {
 
-    return VALID_AUDIOMOTH_SAMPLE_RATES[parseInt(document.querySelector('input[name="sample-rate-radio"]:checked').value, 10)];
+    if (isLowFrequencyTabEnabled()) {
+
+        return getLowFrequencySampleRate();
+
+    } else {
+
+        return VALID_AUDIOMOTH_SAMPLE_RATES[parseInt(document.querySelector('input[name="sample-rate-radio"]:checked').value, 10)];
+
+    }
 
 }
 

@@ -8,9 +8,9 @@
 
 /* Debug constant */
 
-/* global INT16_MIN, INT16_MAX, HERTZ_IN_KILOHERTZ, VALID_AUDIOMOTH_SAMPLE_RATES */
+/* global INT16_MIN, INT16_MAX, HERTZ_IN_KILOHERTZ, VALID_AUDIOMOTH_SAMPLE_RATES, LOW_FREQUENCY_SAMPLE_RATES */
 
-const DEBUG = false;
+const DEBUG = true;
 
 /* Greatest common divisor function */
 
@@ -32,7 +32,7 @@ function greatestCommonDivider (a, b) {
 
 /* Downsample an input array */
 
-function downsample (inputArray, originalSampleRate, outputArray, requestedSampleRate) {
+function downsample (inputArray, originalSampleRate, outputArray, requestedSampleRate, lowFrequencyEnabled) {
 
     /* Check parameters */
 
@@ -44,6 +44,16 @@ function downsample (inputArray, originalSampleRate, outputArray, requestedSampl
         if (originalSampleRate === VALID_AUDIOMOTH_SAMPLE_RATES[i]) originalSampleRateValid = true;
 
         if (requestedSampleRate === VALID_AUDIOMOTH_SAMPLE_RATES[i]) requestedSampleRateValid = true;
+
+    }
+
+    if (lowFrequencyEnabled) {
+
+        for (let i = 0; i < LOW_FREQUENCY_SAMPLE_RATES.length; i += 1) {
+
+            if (requestedSampleRate === LOW_FREQUENCY_SAMPLE_RATES[i]) requestedSampleRateValid = true;
+
+        }
 
     }
 
