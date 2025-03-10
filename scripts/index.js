@@ -5578,10 +5578,34 @@ window.addEventListener('load', () => {
 
         // Ensure service worker is updated
 
-        navigator.serviceWorker.register('./worker.js?v=' + VERSION).then(
-            () => {
+        navigator.serviceWorker.register('./worker.js').then(
+            (registration) => {
 
-                console.log('Service worker registered');
+                registration.update();
+
+                registration.onupdatefound = () => {
+
+                    const installingWorker = registration.installing;
+
+                    installingWorker.onstatechange = () => {
+
+                        if (installingWorker.state === 'installed') {
+
+                            if (navigator.serviceWorker.controller) {
+
+                                console.log('New or updated content is available.');
+
+                            } else {
+
+                                console.log('Content is now available offline!');
+
+                            }
+
+                        }
+
+                    };
+
+                };
 
             },
             (err) => {
