@@ -372,6 +372,12 @@ let isNewFile = false;
 // Warning modal which displays when window is too narrow
 
 const resizeModal = new bootstrap.Modal(document.getElementById('resize-modal'));
+const resizeModalDontTellAgainCheckbox = document.getElementById('resize-modal-dont-tell-again-checkbox');
+
+// Warning modal which displays when the file loaded was recorded on a device without the clock set
+
+const unsetClockModal = new bootstrap.Modal(document.getElementById('unset-clock-modal'));
+const unsetClockModalDontTellAgainCheckbox = document.getElementById('unset-clock-modal-dont-tell-again-checkbox');
 
 /**
  * @returns Boolean check if currently loaded file is a T.WAV AudioMoth file
@@ -460,6 +466,8 @@ async function displaySpans (index) {
 
                 if (result.success) {
 
+                    guanoHolder.innerHTML = '';
+
                     guanoData = result.guano;
 
                     let longestLineWidth = 0;
@@ -476,7 +484,18 @@ async function displaySpans (index) {
 
                         const valueSpan = document.createElement('span');
                         valueSpan.style = 'display: inline;';
-                        valueSpan.innerText = guanoData[i][1];
+
+                        if (guanoData[i][0] === 'Loc Position') {
+
+                            const [latitude, longitude] = guanoData[i][1].split(' ');
+                            const googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                            valueSpan.innerHTML = `<a href="${googleMapsLink}" target="_blank">${latitude}, ${longitude}</a>`;
+
+                        } else {
+
+                            valueSpan.innerText = guanoData[i][1];
+
+                        }
 
                         guanoHolder.appendChild(valueSpan);
 
@@ -3205,6 +3224,32 @@ function updateFileSizePanel () {
 
 }
 
+function checkFileDate () {
+
+    if (unsetClockModalDontTellAgainCheckbox.checked) {
+
+        return;
+
+    }
+
+    const regex = /^Recorded at (\d\d:\d\d:\d\d \d\d\/\d\d\/\d{4}) \(UTC([-|+]\d+)?:?(\d\d)?\)/;
+    const match = comment.match(regex);
+
+    if (match) {
+
+        const dateStr = match[1];
+        const date = new Date(dateStr);
+
+        if (date.getFullYear() === 1970) {
+
+            unsetClockModal.show();
+
+        }
+
+    }
+
+}
+
 /**
  * Load a file either from a user-selected location or a hosted example file
  * @param {string} exampleFilePath Path of an example recording if file isn't chosen by user
@@ -3308,6 +3353,10 @@ async function loadFile (exampleFilePath, exampleName) {
         artist = result.artist;
 
         comment = result.comment;
+
+        // Check if file had date set correctly
+
+        checkFileDate();
 
         // Collect possibility of GUANO data
 
@@ -5561,6 +5610,12 @@ document.addEventListener('DOMContentLoaded', checkColumnLayout);
 window.addEventListener('resize', debounce(checkColumnLayout, 200));
 
 function checkColumnLayout () {
+
+    if (/Mobi|Android/i.test(navigator.userAgent) || resizeModalDontTellAgainCheckbox.checked) {
+
+        return;
+
+    }
 
     const column0 = document.getElementById('main-column0');
     const column1 = document.getElementById('main-column1');

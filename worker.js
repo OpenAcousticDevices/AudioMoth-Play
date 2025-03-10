@@ -6,7 +6,7 @@
 
 /* global self, caches, fetch */
 
-const VERSION = '6';
+const VERSION = '7';
 const cacheName = 'audiomothplay-v' + VERSION;
 
 self.addEventListener('install', (e) => {
@@ -31,6 +31,7 @@ self.addEventListener('install', (e) => {
                 './scripts/exportVideo.js',
                 './scripts/goertzelFilter.js',
                 './scripts/labelBuilding.js',
+                './scripts/lowFrequency.js',
                 './scripts/playAudio.js',
                 './scripts/resampler.js',
                 './scripts/sampleRateControl.js',

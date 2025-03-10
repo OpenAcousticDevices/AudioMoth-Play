@@ -732,11 +732,9 @@
 
                     <div style="border: #cdcdcd thin solid; margin-top: 10px;">
                         <div class="row" style="margin-top: 5px; margin-bottom: 5px;">
-                            <div class="col-12">
-                                <div style="display: table-cell; vertical-align: middle; width: 543px; height: 58px; text-align: center;">
-                                    <label class="grey" id="size-information-panel" style="width: 100%; resize:none; text-align: center; font-weight: normal;">No WAV file selected.</label>
-                                    <label id="low-frequency-information-panel" style="width: 100%; resize:none; text-align: center; font-weight: normal; display: none;">Export not available.</label>
-                                </div>
+                            <div class="col-12" style="display: flex; align-items: center; justify-content: center; height: 58px;">
+                                <span class="grey" id="size-information-panel" style="width: 100%; resize: none; text-align: center; font-weight: normal;">No WAV file selected.</span>
+                                <span id="low-frequency-information-panel" style="width: 100%; resize: none; text-align: center; font-weight: normal; display: none;">Export not available.</span>
                             </div>
                         </div>
                     </div>
@@ -1020,6 +1018,34 @@
                             The current window isn't wide enough to display the columns side by side. Please resize the window.
                         </div>
                         <div class="modal-footer">
+                            <div style="display: flex; align-items: center; margin-right: 10px;">
+                                <input type="checkbox" id="resize-modal-dont-tell-again-checkbox">
+                                <label for="resize-modal-dont-tell-again-checkbox" style="margin-left: 5px; margin-bottom: 0px;">Don't show again</label>
+                            </div>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="unset-clock-modal" tabindex="-1" aria-labelledby="unset-clock-modal-label" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="unset-clock-modal-label">Clock Warning</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="margin-bottom: 5px;">The file you are trying to load was created using an AudioMoth which did not have have its clock set.</div>
+                            <div>In future, set the clock using either the AudioMoth Configuration App for MacOS, Windows, and Linux, or the AudioMoth App for Android and iOS.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <div style="display: flex; align-items: center; margin-right: 10px;">
+                                <input type="checkbox" id="unset-clock-modal-dont-tell-again-checkbox">
+                                <label for="unset-clock-modal-dont-tell-again-checkbox" style="margin-left: 5px; margin-bottom: 0px;">Don't show again</label>
+                            </div>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                         </div>
                     </div>
