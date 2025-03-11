@@ -4,7 +4,6 @@
  * June 2021
  *****************************************************************************/
 
-/* global VERSION */
 /* global XMLHttpRequest, bootstrap */
 /* global INT16_MAX, LENGTH_OF_WAV_HEADER, DATE_REGEX, TIMESTAMP_REGEX, SECONDS_IN_DAY, MIN_SAMPLE_RATE */
 /* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */

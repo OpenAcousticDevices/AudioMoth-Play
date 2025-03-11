@@ -4,9 +4,6 @@
  * June 2022
  *****************************************************************************/
 
-// TODO: Update this with changes, along with the version in worker.js
-const VERSION = 6;
-
 /* Regex used to extract timestamp from header comment */
 
 const DATE_REGEX = /^Recorded at (\d\d):(\d\d):(\d\d)(\.\d\d\d)? (\d\d)\/(\d\d)\/(\d\d\d\d) \(UTC(((\+|\-)\d{1,2}(:\d{1,2})?)?)?\)/;
