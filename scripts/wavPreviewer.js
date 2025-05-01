@@ -592,6 +592,9 @@ function convertPreviewPixelsToSeconds (x) {
 
 }
 
+sliceSelectionRightButton.addEventListener('click', moveSliceSelectionRight);
+sliceSelectionLeftButton.addEventListener('click', moveSliceSelectionLeft);
+
 sliceSelectionCanvas.addEventListener('click', (e) => {
 
     const rect = sliceSelectionCanvas.getBoundingClientRect();
