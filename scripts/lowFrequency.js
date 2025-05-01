@@ -5,15 +5,14 @@
  *****************************************************************************/
 
 /* global LOW_FREQUENCY_SAMPLE_RATES */
-
-const lowFrequencyTabs = document.getElementById('low-frequency-tabs');
+/* global filesTabButton, filesTab, extraSettingsDiv, previousTabIndex */
 
 const thresholdSelection = document.getElementById('threshold-selection');
 
 const standardInformationPanel = document.getElementById('size-information-panel');
 const lowFrequencyInformationPanel = document.getElementById('low-frequency-information-panel');
 
-const standardTabButton = document.getElementById('standard-tab-button');
+const triggerTabButton = document.getElementById('trigger-tab-button');
 const lowFrequencyTabButton = document.getElementById('low-frequency-tab-button');
 
 const standardTab = document.getElementById('standard-tab');
@@ -54,15 +53,15 @@ function isLowFrequencyTabEnabled () {
 
 }
 
-function showLowFrequencyTabs () {
+function showLowFrequencyTabButton () {
 
-    lowFrequencyTabs.style.display = '';
+    lowFrequencyTabButton.style.display = '';
 
 }
 
-function hideLowFrequencyTabs () {
+function hideLowFrequencyTabButton () {
 
-    lowFrequencyTabs.style.display = 'none';
+    lowFrequencyTabButton.style.display = 'none';
 
 }
 
@@ -88,20 +87,27 @@ function addLowFrequencyTabCloseListener (listener) {
 
     // Listener will reset the sample rate back to what it was before
 
-    standardTabButton.addEventListener('click', () => {
+    triggerTabButton.addEventListener('click', () => {
 
-        if (standardTabButton.classList.contains('active')) {
+        if (triggerTabButton.classList.contains('active')) {
 
             return;
 
         }
+
+        const previousButtonWasFiles = filesTabButton.classList.contains('active');
+
+        filesTabButton.classList.remove('active');
+        filesTab.style.display = 'none';
+
+        extraSettingsDiv.style.display = '';
 
         thresholdSelection.style.display = '';
 
         lowFrequencyInformationPanel.style.display = 'none';
         standardInformationPanel.style.display = '';
 
-        standardTabButton.classList.add('active');
+        triggerTabButton.classList.add('active');
         lowFrequencyTabButton.classList.remove('active');
 
         standardTab.style.display = '';
@@ -109,7 +115,17 @@ function addLowFrequencyTabCloseListener (listener) {
 
         displayingLowFrequencyUI = false;
 
-        listener();
+        // If the previous tab was Files, then check if the tab before it was Trigger Settings or Low Frequency
+
+        if (!previousButtonWasFiles) {
+
+            listener();
+
+        } else if (previousTabIndex === 2) {
+
+            listener();
+
+        }
 
     });
 
@@ -125,6 +141,13 @@ function addLowFrequencyTabOpenListener (listener) {
 
         }
 
+        const previousButtonWasFiles = filesTabButton.classList.contains('active');
+
+        filesTabButton.classList.remove('active');
+        filesTab.style.display = 'none';
+
+        extraSettingsDiv.style.display = '';
+
         thresholdSelection.style.display = 'none';
 
         standardInformationPanel.style.display = 'none';
@@ -134,14 +157,24 @@ function addLowFrequencyTabOpenListener (listener) {
         disabledInfrasoundRadioButtons[disabledInfrasoundRadioButtons.length - 1].checked = true;
 
         lowFrequencyTabButton.classList.add('active');
-        standardTabButton.classList.remove('active');
+        triggerTabButton.classList.remove('active');
 
         lowFrequencyTab.style.display = '';
         standardTab.style.display = 'none';
 
         displayingLowFrequencyUI = true;
 
-        listener();
+        // If the previous tab was Files, then check if the tab before it was Trigger Settings or Low Frequency
+
+        if (!previousButtonWasFiles) {
+
+            listener();
+
+        } else if (previousTabIndex === 1) {
+
+            listener();
+
+        }
 
     });
 

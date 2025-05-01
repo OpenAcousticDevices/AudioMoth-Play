@@ -9,7 +9,7 @@
 /* global STATIC_COLOUR_MIN, STATIC_COLOUR_MAX */
 /* global Y_LABEL_COUNTS */
 
-/* global showLowFrequencyTabs, hideLowFrequencyTabs, addLowFrequencyRadioButtonListeners, isLowFrequencyTabEnabled, addLowFrequencyTabCloseListener, addLowFrequencyTabOpenListener, standardTabButton, enableLowFrequencyControls, disableLowFrequencyControls */
+/* global showLowFrequencyTabButton, hideLowFrequencyTabButton, addLowFrequencyRadioButtonListeners, isLowFrequencyTabEnabled, addLowFrequencyTabCloseListener, addLowFrequencyTabOpenListener, enableLowFrequencyControls, disableLowFrequencyControls */
 
 /* global calculateSpectrogramFrames, drawSpectrogram, drawWaveform, readWav, readExampleWav, checkHeader, readGuano */
 /* global showSliceLoadingUI, hideSliceLoadingUI, loadPreview, drawPreviewWaveform, updateSelectionSpan, drawSliceSelection, showSliceModal, hideSliceModal, setSliceSelectButtonEventHandler, setSliceCancelButtonListener, saveCurrentSlicePosition, usePreviewSelection, moveSliceSelectionLeft, moveSliceSelectionRight */
@@ -36,6 +36,10 @@
 /* global enableSampleRateControl, disableSampleRateControl, updateSampleRateUI, getSampleRateSelection, addSampleRateUIListeners */
 
 /* global downsample, resampleOutputLength */
+
+/* global displayFileFolderModal, fileFolderMode, fileFolderModal, loadFolder, setDisplayFileFolderModal, setRememberTransformations, getDisplayFileFolderModal, getRememberTransformations, openFileFromFolderButton, fileList */
+
+/* global filesTabButton, triggerTabButton, lowFrequencyTabButton */
 
 // Launch page as app without instructions
 
@@ -90,6 +94,8 @@ let sliceSelectionCallback;
 const settingsModalButton = document.getElementById('settings-modal-button');
 const settingsApplyButton = document.getElementById('settings-apply-button');
 const settingsModal = new bootstrap.Modal(document.getElementById('settings-modal'));
+const settingsFileFolderCheckbox = document.getElementById('settings-file-folder-checkbox');
+const settingsRememberTransformationsCheckbox = document.getElementById('settings-remember-transformations-checkbox');
 const settingsFileTimeCheckbox = document.getElementById('settings-file-time-checkbox');
 const settingsFileTimeLabel = document.getElementById('settings-file-time-label');
 const settingsLowFrequencyCheckbox = document.getElementById('settings-low-frequency-checkbox');
@@ -397,6 +403,22 @@ function getFilterType () {
 
 }
 
+function disableTabButtons () {
+
+    filesTabButton.classList.add('disabled');
+    triggerTabButton.classList.add('disabled');
+    lowFrequencyTabButton.classList.add('disabled');
+
+}
+
+function enableTabButtons () {
+
+    filesTabButton.classList.remove('disabled');
+    triggerTabButton.classList.remove('disabled');
+    lowFrequencyTabButton.classList.remove('disabled');
+
+}
+
 /**
  * 0 - Default
  * 1 - Loading
@@ -423,6 +445,9 @@ async function displaySpans (index) {
         loadingSpan.style.display = 'none';
         errorSpan.style.display = 'none';
         fileButton.disabled = false;
+        openFileFromFolderButton.disabled = false;
+        fileList.disabled = false;
+        enableTabButtons();
 
         if (isExampleFile) {
 
@@ -558,6 +583,9 @@ async function displaySpans (index) {
         resampledSpan.style.display = 'none';
         sliceReselectSpan.style.display = 'none';
         fileButton.disabled = false;
+        openFileFromFolderButton.disabled = false;
+        fileList.disabled = false;
+        enableTabButtons();
         break;
 
     }
@@ -1828,6 +1856,9 @@ function reenableUI () {
     uiDisabled = false;
 
     fileButton.disabled = false;
+    openFileFromFolderButton.disabled = false;
+    fileList.disabled = false;
+    enableTabButtons();
 
     for (let i = 0; i < exampleLinks.length; i++) {
 
@@ -1926,6 +1957,9 @@ function drawWaveformPlot (samples, isInitialRender, spectrogramCompletionTime) 
         drawing = false;
 
         fileButton.disabled = false;
+        openFileFromFolderButton.disabled = false;
+        fileList.disabled = false;
+        enableTabButtons();
         if (thresholdTypeIndex === THRESHOLD_TYPE_GOERTZEL) {
 
             resetCanvas(goertzelCanvas);
@@ -1999,6 +2033,9 @@ function disableUI (startUp) {
     if (!startUp) {
 
         fileButton.disabled = true;
+        openFileFromFolderButton.disabled = true;
+        fileList.disabled = true;
+        disableTabButtons();
 
         for (let i = 0; i < exampleLinks.length; i++) {
 
@@ -3253,8 +3290,11 @@ function checkFileDate () {
  * Load a file either from a user-selected location or a hosted example file
  * @param {string} exampleFilePath Path of an example recording if file isn't chosen by user
  * @param {string} exampleName Name of example file if file isn't chosen by user
+ * @param {File} folderFile File in selected folder
+ * @param {number} selectedFileOffset Offset in seconds of the file to display
+ * @param {number} selectedFileDisplayLength Length to display in seconds
  */
-async function loadFile (exampleFilePath, exampleName) {
+async function loadFile (exampleFilePath, exampleName, folderFile, selectedFileOffset, selectedFileDisplayLength) {
 
     let fileName;
 
@@ -3264,6 +3304,14 @@ async function loadFile (exampleFilePath, exampleName) {
 
         fileName = exampleName;
         isExampleFile = true;
+
+    } else if (folderFile) {
+
+        fileHandler = folderFile;
+
+        fileName = fileHandler.name;
+
+        isExampleFile = false;
 
     } else {
 
@@ -3381,7 +3429,20 @@ async function loadFile (exampleFilePath, exampleName) {
 
             const downsampledDisplayLength = displayLength;
 
-            resetTransformations();
+            if (folderFile && selectedFileOffset !== -1 && selectedFileDisplayLength !== -1) {
+
+                console.log('Loading offset and display length from last time file was loaded');
+
+                offset = selectedFileOffset;
+                displayLength = selectedFileDisplayLength;
+
+            } else {
+
+                console.log('Resetting offset and display length');
+
+                resetTransformations();
+
+            }
 
             // If the sample rate was changed in another slice, don't reset the displayLength
 
@@ -3571,13 +3632,29 @@ fileButton.addEventListener('click', () => {
 
     if (!drawing && !playing) {
 
-        try {
+        if (displayFileFolderModal) {
 
-            loadFile();
+            fileFolderModal.show();
 
-        } catch (error) {
+            return;
 
-            showErrorDisplay('File could not be opened.');
+        }
+
+        if (fileFolderMode) {
+
+            try {
+
+                loadFile();
+
+            } catch (error) {
+
+                showErrorDisplay('File could not be opened.');
+
+            }
+
+        } else {
+
+            loadFolder();
 
         }
 
@@ -4820,6 +4897,9 @@ playButton.addEventListener('click', () => {
         if (displayLength / getSampleRate() / playbackRate > DISABLE_BUTTON_BUSY_LENGTH) {
 
             fileButton.disabled = true;
+            openFileFromFolderButton.disabled = true;
+            fileList.disabled = true;
+            disableTabButtons();
 
             homeButton.disabled = true;
             zoomInButton.disabled = true;
@@ -5351,6 +5431,8 @@ exportVideoButton.addEventListener('click', () => {
 
 settingsModalButton.addEventListener('click', () => {
 
+    settingsFileFolderCheckbox.checked = getDisplayFileFolderModal();
+    settingsRememberTransformationsCheckbox.checked = getRememberTransformations();
     settingsFileTimeCheckbox.checked = useFileTime;
     settingsDynamicColoursCheckbox.checked = useDynamicColours;
     settingsVideoLineCheckbox.checked = videoLineEnabled;
@@ -5378,6 +5460,8 @@ settingsApplyButton.addEventListener('click', () => {
     const changedColourMap = colourMapIndex !== parseInt(settingsMonochromeSelect.value);
     const changedLowFrequency = lowFrequencyEnabled !== settingsLowFrequencyCheckbox.checked;
 
+    setDisplayFileFolderModal(settingsFileFolderCheckbox.checked);
+    setRememberTransformations(settingsRememberTransformationsCheckbox.checked);
     useFileTime = settingsFileTimeCheckbox.checked;
     useDynamicColours = settingsDynamicColoursCheckbox.checked;
     videoLineEnabled = settingsVideoLineCheckbox.checked;
@@ -5408,12 +5492,12 @@ settingsApplyButton.addEventListener('click', () => {
 
         if (lowFrequencyEnabled) {
 
-            showLowFrequencyTabs();
+            showLowFrequencyTabButton();
 
         } else {
 
-            standardTabButton.click();
-            hideLowFrequencyTabs();
+            triggerTabButton.click();
+            hideLowFrequencyTabButton();
 
         }
 
@@ -5523,11 +5607,11 @@ function loadPage () {
     if (urlParams.get('infra')) {
 
         lowFrequencyEnabled = true;
-        showLowFrequencyTabs();
+        showLowFrequencyTabButton();
 
     } else {
 
-        hideLowFrequencyTabs();
+        hideLowFrequencyTabButton();
 
     }
 
@@ -5542,6 +5626,9 @@ function loadPage () {
         waveformLoadingSVG.style.display = 'none';
 
         fileButton.disabled = false;
+        openFileFromFolderButton.disabled = false;
+        fileList.disabled = false;
+        enableTabButtons();
 
     } else if (urlParams.get('app')) {
 
@@ -5554,6 +5641,9 @@ function loadPage () {
         waveformLoadingSVG.style.display = 'none';
 
         fileButton.disabled = false;
+        openFileFromFolderButton.disabled = false;
+        fileList.disabled = false;
+        enableTabButtons();
 
     } else {
 
