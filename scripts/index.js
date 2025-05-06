@@ -88,6 +88,7 @@ const sliceReselectSpan = document.getElementById('slice-reselect-span');
 const sliceReselectLink = document.getElementById('slice-reselect-link');
 let showReselectLink = false;
 let sliceSelectionCallback;
+let isSlicedFile = false;
 
 // Settings UI
 
@@ -2152,13 +2153,22 @@ function resetXTransformations () {
 }
 
 /**
+ * Reset y axis zoom settings
+ */
+function resetYTransformations () {
+
+    waveformZoomYIndex = 0;
+    goertzelZoomYIndex = 0;
+
+}
+
+/**
  * Reset all zoom/pan settings
  */
 function resetTransformations () {
 
     resetXTransformations();
-    waveformZoomYIndex = 0;
-    goertzelZoomYIndex = 0;
+    resetYTransformations();
 
 }
 
@@ -3098,6 +3108,7 @@ async function readFromFile (exampleFilePath, callback) {
             console.log('File is greater than 60 seconds long. Loading preview.');
 
             sliceSelectionCallback = callback;
+            isSlicedFile = true;
 
             showSliceLoadingUI();
             showSliceModal();
@@ -3121,6 +3132,8 @@ async function readFromFile (exampleFilePath, callback) {
             }, cancelPreview);
 
         } else {
+
+            isSlicedFile = false;
 
             isNewFile = true;
 
@@ -3203,19 +3216,25 @@ function updateMaxZoom () {
  */
 function formatFileSize (fileSize) {
 
-    if (fileSize < 1000) return fileSize + ' B';
+    fileSize = Math.round(fileSize / 1000);
 
-    fileSize /= 1000;
+    if (fileSize < 10000) {
 
-    if (Math.round(fileSize) < 1000) return fileSize.toPrecision(3) + ' kB';
+        return fileSize + ' kB';
 
-    fileSize /= 1000;
+    }
 
-    if (Math.round(fileSize) < 1000) return fileSize.toPrecision(3) + ' MB';
+    fileSize = Math.round(fileSize / 1000);
 
-    fileSize /= 1000;
+    if (fileSize < 10000) {
 
-    return fileSize.toPrecision(3) + ' GB';
+        return fileSize + ' MB';
+
+    }
+
+    fileSize = Math.round(fileSize / 1000);
+
+    return fileSize + ' GB';
 
 }
 
@@ -3429,7 +3448,7 @@ async function loadFile (exampleFilePath, exampleName, folderFile, selectedFileO
 
             const downsampledDisplayLength = displayLength;
 
-            if (folderFile && selectedFileOffset !== -1 && selectedFileDisplayLength !== -1) {
+            if (folderFile && selectedFileOffset !== -1 && selectedFileDisplayLength !== -1 && !isSlicedFile) {
 
                 console.log('Loading offset and display length from last time file was loaded');
 
@@ -3440,7 +3459,7 @@ async function loadFile (exampleFilePath, exampleName, folderFile, selectedFileO
 
                 console.log('Resetting offset and display length');
 
-                resetTransformations();
+                resetXTransformations();
 
             }
 

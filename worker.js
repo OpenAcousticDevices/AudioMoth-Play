@@ -6,7 +6,7 @@
 
 /* global self, caches, fetch */
 
-const VERSION = '10';
+const VERSION = '11';
 const cacheName = 'audiomothplay-v' + VERSION;
 
 self.addEventListener('install', (e) => {

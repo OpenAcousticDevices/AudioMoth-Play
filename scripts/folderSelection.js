@@ -6,7 +6,7 @@
 
 /* global bootstrap */
 
-/* global checkHeader */
+/* global checkHeader, formatFileSize */
 
 /* global triggerTabButton, lowFrequencyTabButton, standardTab, lowFrequencyTab */
 /* global loadFile, showErrorDisplay */
@@ -32,6 +32,7 @@ const fileFolderDontAskAgainCheckbox = document.getElementById('file-folder-dont
 
 const folderNameSpan = document.getElementById('folder-name-span');
 const fileCountSpan = document.getElementById('file-count-span');
+const fileSSpan = document.getElementById('file-s-span');
 const fileList = document.getElementById('file-list');
 
 const fileNameSpan = document.getElementById('file-name-span');
@@ -139,9 +140,15 @@ async function updateFileInformationPanel (index) {
     fileDateSpan.innerText = f.date ? f.date : '--/--/----';
     fileTimeSpan.innerText = f.time ? f.time : '--:--:--';
     fileSizeSpan.innerText = f.size ? f.size : '-';
-    fileLengthSpan.innerText = f.formattedLength ? f.formattedLength : '--:--:--';
 
-    fileSampleRateSpan.innerText = f.sampleRate ? (f.sampleRate / 1000).toFixed(1) + ' kHz' : '-';
+    const formattedLength = formatTime(f.hours, f.minutes, f.seconds, f.milliseconds);
+    fileLengthSpan.innerText = formattedLength;
+
+    fileSampleRateSpan.innerText = f.sampleRate
+        ? (f.sampleRate % 1000 === 0
+            ? `${f.sampleRate / 1000} kHz`
+            : `${(f.sampleRate / 1000).toFixed(1)} kHz`)
+        : '-';
 
 }
 
@@ -162,6 +169,13 @@ async function getWavFilesFromDirectory (directoryHandle) {
     files.sort((a, b) => a.name.localeCompare(b.name));
 
     return files;
+
+}
+
+function formatTime (hours, minutes, seconds, milliseconds) {
+
+    const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return milliseconds ? `${formattedTime}.${String(milliseconds).padStart(3, '0')}` : formattedTime;
 
 }
 
@@ -220,7 +234,7 @@ async function loadFolder () {
 
         fileList.innerHTML = '';
 
-        const regex = /^\d{8}_\d{6}\.wav$/i;
+        const regex = /^\d{8}_\d{6}.*\.wav$/i;
 
         const formattedLengths = []; // Array to store formatted lengths
 
@@ -246,14 +260,22 @@ async function loadFolder () {
 
                 const length = lengthSamples / sampleRate;
 
+                console.log('File:', file.name, 'Length in seconds:', length);
+
                 // Convert length to HH:MM:SS format
                 const hours = Math.floor(length / 3600);
                 const minutes = Math.floor((length % 3600) / 60);
                 const seconds = Math.floor(length % 60);
-                const formattedLength = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                // If milliseconds are needed, calculate them
+                let milliseconds = Math.floor((length % 1) * 1000);
+                milliseconds = milliseconds > 0 ? milliseconds : false;
 
                 newFileInformation.sampleRate = sampleRate;
-                newFileInformation.formattedLength = formattedLength;
+                newFileInformation.hours = hours;
+                newFileInformation.minutes = minutes;
+                newFileInformation.seconds = seconds;
+                newFileInformation.milliseconds = milliseconds;
 
             }
 
@@ -278,7 +300,11 @@ async function loadFolder () {
                 newFileInformation.date = testDate.getTime() <= 0 ? '--/--/----' : creationDate.toLocaleDateString();
                 newFileInformation.time = creationDate.toLocaleTimeString();
 
+                // console.log('Reading date/time from file name:', file.name, '=>', creationDate.toLocaleDateString(), creationDate.toLocaleTimeString());
+
             } else {
+
+                // console.log('Reading date/time from file header:', f.lastModifiedDate.toLocaleDateString(), f.lastModifiedDate.toLocaleTimeString());
 
                 newFileInformation.date = f.lastModifiedDate.toLocaleDateString();
                 newFileInformation.time = f.lastModifiedDate.toLocaleTimeString();
@@ -287,28 +313,17 @@ async function loadFolder () {
 
             const fileSizeInBytes = f.size;
 
-            if (fileSizeInBytes < 1024 * 1024) {
+            newFileInformation.size = formatFileSize(fileSizeInBytes);
 
-                newFileInformation.size = `${Math.floor(fileSizeInBytes / 1024)} KB`;
-
-            } else if (fileSizeInBytes < 1024 * 1024 * 1024) {
-
-                newFileInformation.size = `${(fileSizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
-
-            } else {
-
-                newFileInformation.size = `${(fileSizeInBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-
-            }
-
-            formattedLengths.push(newFileInformation.formattedLength);
+            const formattedLength = formatTime(newFileInformation.hours, newFileInformation.minutes, newFileInformation.seconds);
+            formattedLengths.push(formattedLength);
 
             const listItem = document.createElement('option');
             let displayName = file.name;
-            if (file.name.length > 40) {
+            if (file.name.length > 42) {
 
                 const start = file.name.substring(0, 20);
-                const end = file.name.substring(file.name.length - (40 - 23)); // 23 = 20 (start) + 3 ("...")
+                const end = file.name.substring(file.name.length - (42 - 23)); // 23 = 20 (start) + 3 ("...")
                 displayName = `${start}...${end}`;
 
             }
@@ -324,12 +339,22 @@ async function loadFolder () {
         }
 
         fileCountSpan.innerText = i.toString();
+        fileSSpan.style.display = i === 1 ? 'none' : '';
 
         openFileFromFolderButton.disabled = i === 0;
 
         // Adjust padding and align formatted lengths
         const paddingRight = parseInt(window.getComputedStyle(fileList).paddingRight, 10) || 0;
-        const averageCharWidth = 8; // Approximate average width of a character in pixels
+
+        // Dynamically calculate the width of a character
+        const testSpan = document.createElement('span');
+        testSpan.style.font = window.getComputedStyle(fileList).font;
+        testSpan.style.visibility = 'hidden';
+        testSpan.innerText = 'A'; // Use a representative character
+        document.body.appendChild(testSpan);
+        const averageCharWidth = testSpan.getBoundingClientRect().width;
+        document.body.removeChild(testSpan);
+
         const charW = Math.floor((fileList.clientWidth - paddingRight) / averageCharWidth);
 
         Array.from(fileList.options).forEach((listItem, index) => {
