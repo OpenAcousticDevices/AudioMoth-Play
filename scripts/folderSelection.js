@@ -26,7 +26,7 @@ const filesTabButton = document.getElementById('files-tab-button');
 const filesTab = document.getElementById('files-tab');
 const extraSettingsDiv = document.getElementById('extra-settings-div');
 
-let previousTabIndex = 1; // 0 = trigger settings, 1 = low frequency
+let previousTabIndex = 0; // 0 = trigger settings, 1 = low frequency
 
 const fileFolderDontAskAgainCheckbox = document.getElementById('file-folder-dont-ask-again-checkbox');
 
@@ -397,8 +397,6 @@ fileFolderSelectButton.addEventListener('click', () => {
     if (fileFolderMode) {
 
         filesTabButton.style.display = 'none';
-
-        console.log(previousTabIndex);
 
         if (previousTabIndex === 0) {
 
