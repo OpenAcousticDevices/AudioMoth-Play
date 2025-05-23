@@ -553,7 +553,7 @@ async function displaySpans (index) {
             artistSpan.innerText = artist;
             commentSpan.innerText = comment;
 
-            if (artist !== '' || comment !== '' || guanoData) fileInformationLink.style.display = '';
+            fileInformationLink.style.display = artist !== '' || comment !== '' || guanoData.length > 0 ? '' : 'none';
 
             artistSpan.style.display = (artist === '') ? 'none' : '';
             commentSpan.style.display = (comment === '') ? 'none' : '';
@@ -845,7 +845,7 @@ function drawAxisLabels () {
 
     let overallLength = isExampleFile ? currentSampleCount : overallFileLengthSamples;
 
-    if (resampledFile) {
+    if (originalSampleRate !== sampleRate) {
 
         overallLength = resampleOutputLength(overallFileLengthSamples, originalSampleRate, sampleRate);
 
@@ -1355,7 +1355,7 @@ function drawAxisHeadings () {
 
         let currentSampleCount = (sampleCount !== 0) ? sampleCount : FILLER_SAMPLE_COUNT;
         currentSampleCount = Math.max(currentSampleCount, originalFileLength);
-        const overallLengthSeconds = currentSampleCount / currentSampleRate;
+        const overallLengthSeconds = currentSampleCount / originalSampleRate;
 
         format = formatAxisUnits(overallLengthSeconds, xLabelDecimalPlaces);
 

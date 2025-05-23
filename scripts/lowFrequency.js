@@ -19,7 +19,7 @@ const standardTab = document.getElementById('standard-tab');
 const lowFrequencyTab = document.getElementById('low-frequency-tab');
 
 const lowFrequencyRadioButtons = document.getElementsByName('low-frequency-sample-rate-radio');
-const disabledInfrasoundRadioButtons = document.getElementsByName('low-frequency-disabled-sample-rate-radio');
+const disabledLowFrequencyRadioButtons = document.getElementsByName('low-frequency-disabled-sample-rate-radio');
 
 const lowFrequencySampleRateHolder = document.getElementById('low-frequency-sample-rate-holder');
 const lowFrequencyDisabledSampleRateHolder = document.getElementById('low-frequency-disabled-sample-rate-holder');
@@ -73,7 +73,7 @@ function addLowFrequencyRadioButtonListeners (listener) {
 
         lowFrequencyRadioButton.addEventListener('change', () => {
 
-            disabledInfrasoundRadioButtons[i].checked = true;
+            disabledLowFrequencyRadioButtons[i].checked = true;
 
             listener(LOW_FREQUENCY_SAMPLE_RATES[i]);
 
@@ -152,9 +152,6 @@ function addLowFrequencyTabOpenListener (listener) {
 
         standardInformationPanel.style.display = 'none';
         lowFrequencyInformationPanel.style.display = '';
-
-        lowFrequencyRadioButtons[lowFrequencyRadioButtons.length - 1].checked = true;
-        disabledInfrasoundRadioButtons[disabledInfrasoundRadioButtons.length - 1].checked = true;
 
         lowFrequencyTabButton.classList.add('active');
         triggerTabButton.classList.remove('active');

@@ -81,11 +81,6 @@ function formatAxisUnits (overallLengthSeconds, decimalPlaces) {
  */
 function formatTimeLabel (time, maxTime, decimalPlaces, displayAll) {
 
-    if (!decimalPlaces) {
-
-        decimalPlaces = 0;
-
-    }
 
     // If the value is a decimal, 2 characters are used to display the integer value + 1 character for the decimal point
 
