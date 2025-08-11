@@ -769,5 +769,14 @@ function saveCurrentSlicePosition () {
 
 }
 
+function resetSliceSelection () {
+
+    currentPage = 0;
+    sliceSelection = 0;
+    savedPage = 0;
+    savedSliceSelection = 0;
+
+}
+
 sliceSelectButton.addEventListener('click', sliceClickEvent);
 sliceSelectionCanvas.addEventListener('dblclick', sliceClickEvent);
